@@ -84,7 +84,7 @@
       }, 1000);
     }
 
-    fetch('movie_list_cleaned.json')
+    fetch('./movie_list_cleaned.json')
       .then(response => response.json())
       .then(data => {
         movies = data.filter(movie => movie.title && movie.year); // filter junk
