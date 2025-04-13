@@ -4,41 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Movie Night with Michael</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #111;
-      color: #fff;
-      text-align: center;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    .movie-card {
-      border: 2px solid #444;
-      padding: 1rem;
-      margin: 1rem auto;
-      max-width: 300px;
-      background-color: #222;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .movie-card:hover {
-      transform: scale(1.05);
-      border-color: #888;
-    }
-    #options {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    #message {
-      margin-top: 1rem;
-      color: #aaa;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>🎬 Movie Night with Michael</h1>
@@ -51,56 +17,63 @@
     let movies = [];
 
     function getTwoRandomMovies() {
-      const shuffled = [...movies].sort(() => 0.5 - Math.random());
+      const valid = movies.filter(m => m.poster && m.title && m.year);
+      const shuffled = [...valid].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, 2);
     }
 
-function displayMovies() {
-  const container = document.getElementById('options');
-  container.innerHTML = '';
+    function displayMovies() {
+      const container = document.getElementById('options');
+      container.innerHTML = '';
 
-  const [movie1, movie2] = getTwoRandomMovies();
+      const [movie1, movie2] = getTwoRandomMovies();
 
-  [movie1, movie2].forEach((movie, index) => {
-    const card = document.createElement('div');
-    card.className = 'movie-card';
+      [movie1, movie2].forEach((movie, index) => {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
 
-    const img = document.createElement('img');
-    img.src = movie.poster;
-    img.alt = movie.title;
-    img.style.width = '100%';
-    img.style.borderRadius = '6px';
+        const poster = document.createElement('img');
+        poster.src = movie.poster;
+        poster.alt = movie.title;
 
-    const title = document.createElement('p');
-    title.textContent = `${movie.title} (${movie.year})`;
+        const title = document.createElement('p');
+        title.textContent = `${movie.title} (${movie.year})`;
 
-    const voteBtn = document.createElement('button');
-    voteBtn.textContent = '👍 I Prefer This';
-    voteBtn.className = 'vote-btn';
-    voteBtn.onclick = () => handleVote(movie, index === 0 ? movie2 : movie1);
+        const voteButton = document.createElement('button');
+        voteButton.className = 'vote-btn';
+        voteButton.textContent = 'Vote';
+        voteButton.onclick = () => handleVote(movie, index === 0 ? movie2 : movie1);
 
-    const skipBtn = document.createElement('button');
-    skipBtn.textContent = "Haven't Seen";
-    skipBtn.className = 'skip-btn';
-    skipBtn.onclick = () => handleSkip(movie);
+        const skipButton = document.createElement('button');
+        skipButton.className = 'skip-btn';
+        skipButton.textContent = "Haven't Seen";
+        skipButton.onclick = () => handleSkip(movie);
 
-    card.appendChild(img);
-    card.appendChild(title);
-    card.appendChild(voteBtn);
-    card.appendChild(skipBtn);
+        card.appendChild(poster);
+        card.appendChild(title);
+        card.appendChild(voteButton);
+        card.appendChild(skipButton);
+        container.appendChild(card);
+      });
+    }
 
-    container.appendChild(card);
-  });
-}
+    function handleVote(winner, loser) {
+      console.log('Voted for:', winner.title, 'over', loser.title);
+      document.getElementById('message').textContent = `You voted for: ${winner.title}`;
+      setTimeout(() => {
+        document.getElementById('message').textContent = '';
+        displayMovies();
+      }, 1000);
+    }
 
-function handleSkip(movie) {
-  document.getElementById('message').textContent = `You skipped: ${movie.title}`;
-  setTimeout(() => {
-    document.getElementById('message').textContent = '';
-    displayMovies();
-  }, 1000);
-}
-
+    function handleSkip(movie) {
+      console.log('Skipped (not seen):', movie.title);
+      document.getElementById('message').textContent = `You skipped: ${movie.title}`;
+      setTimeout(() => {
+        document.getElementById('message').textContent = '';
+        displayMovies();
+      }, 1000);
+    }
 
     fetch('https://timeformoneyau.github.io/90sranker/movie_list_cleaned.json')
       .then(response => response.json())
@@ -115,5 +88,3 @@ function handleSkip(movie) {
   </script>
 </body>
 </html>
-
-<!-- Rebuild trigger -->
