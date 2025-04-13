@@ -8,36 +8,91 @@
     body {
       font-family: Arial, sans-serif;
       padding: 2rem;
-      background-color: #f8f8f8;
+      background-color: #111;
+      color: #fff;
+      text-align: center;
     }
     h1 {
       font-size: 2rem;
       margin-bottom: 1rem;
     }
-    .movie {
-      margin: 0.5rem 0;
+    .movie-card {
+      border: 2px solid #444;
+      padding: 1rem;
+      margin: 1rem auto;
+      max-width: 300px;
+      background-color: #222;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .movie-card:hover {
+      transform: scale(1.05);
+      border-color: #888;
+    }
+    #options {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    #message {
+      margin-top: 1rem;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
   <h1>🎬 Movie Night with Michael</h1>
-  <p>More to come... stay tuned!</p>
+  <p>Which movie do you prefer?</p>
 
-  <div id="movie-list"></div>
+  <div id="options"></div>
+  <div id="message"></div>
 
   <script>
+    let movies = [];
+
+    function getTwoRandomMovies() {
+      const shuffled = [...movies].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, 2);
+    }
+
+    function displayMovies() {
+      const container = document.getElementById('options');
+      container.innerHTML = '';
+
+      const [movie1, movie2] = getTwoRandomMovies();
+
+      const card1 = document.createElement('div');
+      card1.className = 'movie-card';
+      card1.textContent = `${movie1.title} (${movie1.year})`;
+      card1.onclick = () => handleVote(movie1, movie2);
+
+      const card2 = document.createElement('div');
+      card2.className = 'movie-card';
+      card2.textContent = `${movie2.title} (${movie2.year})`;
+      card2.onclick = () => handleVote(movie2, movie1);
+
+      container.appendChild(card1);
+      container.appendChild(card2);
+    }
+
+    function handleVote(winner, loser) {
+      console.log('Voted for:', winner.title, 'over', loser.title);
+      document.getElementById('message').textContent = `You voted for: ${winner.title}`;
+      setTimeout(() => {
+        document.getElementById('message').textContent = '';
+        displayMovies();
+      }, 1000);
+    }
+
     fetch('movie_list_cleaned.json')
       .then(response => response.json())
       .then(data => {
-        const container = document.getElementById('movie-list');
-        const html = data.slice(0, 10).map(movie => 
-          `<div class="movie">${movie.title} (${movie.year})</div>`
-        ).join('');
-        container.innerHTML = html;
+        movies = data.filter(movie => movie.title && movie.year); // filter junk
+        displayMovies();
       })
       .catch(error => {
         console.error('Error loading movie list:', error);
-        document.getElementById('movie-list').textContent = 'Failed to load movie list.';
+        document.getElementById('options').textContent = 'Failed to load movie list.';
       });
   </script>
 </body>
