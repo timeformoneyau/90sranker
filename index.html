@@ -55,34 +55,52 @@
       return shuffled.slice(0, 2);
     }
 
-    function displayMovies() {
-      const container = document.getElementById('options');
-      container.innerHTML = '';
+function displayMovies() {
+  const container = document.getElementById('options');
+  container.innerHTML = '';
 
-      const [movie1, movie2] = getTwoRandomMovies();
+  const [movie1, movie2] = getTwoRandomMovies();
 
-      const card1 = document.createElement('div');
-      card1.className = 'movie-card';
-      card1.textContent = `${movie1.title} (${movie1.year})`;
-      card1.onclick = () => handleVote(movie1, movie2);
+  [movie1, movie2].forEach((movie, index) => {
+    const card = document.createElement('div');
+    card.className = 'movie-card';
 
-      const card2 = document.createElement('div');
-      card2.className = 'movie-card';
-      card2.textContent = `${movie2.title} (${movie2.year})`;
-      card2.onclick = () => handleVote(movie2, movie1);
+    const img = document.createElement('img');
+    img.src = movie.poster;
+    img.alt = movie.title;
+    img.style.width = '100%';
+    img.style.borderRadius = '6px';
 
-      container.appendChild(card1);
-      container.appendChild(card2);
-    }
+    const title = document.createElement('p');
+    title.textContent = `${movie.title} (${movie.year})`;
 
-    function handleVote(winner, loser) {
-      console.log('Voted for:', winner.title, 'over', loser.title);
-      document.getElementById('message').textContent = `You voted for: ${winner.title}`;
-      setTimeout(() => {
-        document.getElementById('message').textContent = '';
-        displayMovies();
-      }, 1000);
-    }
+    const voteBtn = document.createElement('button');
+    voteBtn.textContent = '👍 I Prefer This';
+    voteBtn.className = 'vote-btn';
+    voteBtn.onclick = () => handleVote(movie, index === 0 ? movie2 : movie1);
+
+    const skipBtn = document.createElement('button');
+    skipBtn.textContent = "Haven't Seen";
+    skipBtn.className = 'skip-btn';
+    skipBtn.onclick = () => handleSkip(movie);
+
+    card.appendChild(img);
+    card.appendChild(title);
+    card.appendChild(voteBtn);
+    card.appendChild(skipBtn);
+
+    container.appendChild(card);
+  });
+}
+
+function handleSkip(movie) {
+  document.getElementById('message').textContent = `You skipped: ${movie.title}`;
+  setTimeout(() => {
+    document.getElementById('message').textContent = '';
+    displayMovies();
+  }, 1000);
+}
+
 
     fetch('https://timeformoneyau.github.io/90sranker/movie_list_cleaned.json')
       .then(response => response.json())
