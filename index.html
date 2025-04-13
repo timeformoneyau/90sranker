@@ -4,9 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Movie Night with Michael</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f8f8f8;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .movie {
+      margin: 0.5rem 0;
+    }
+  </style>
 </head>
 <body>
   <h1>🎬 Movie Night with Michael</h1>
   <p>More to come... stay tuned!</p>
+
+  <div id="movie-list"></div>
+
+  <script>
+    fetch('movie_list_cleaned.json')
+      .then(response => response.json())
+      .then(data => {
+        const container = document.getElementById('movie-list');
+        const html = data.slice(0, 10).map(movie => 
+          `<div class="movie">${movie.title} (${movie.year})</div>`
+        ).join('');
+        container.innerHTML = html;
+      })
+      .catch(error => {
+        console.error('Error loading movie list:', error);
+        document.getElementById('movie-list').textContent = 'Failed to load movie list.';
+      });
+  </script>
 </body>
 </html>
