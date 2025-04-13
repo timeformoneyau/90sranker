@@ -890,14 +890,14 @@
     "category": "cult"
   },
   {
-    "title": NaN,
-    "year": NaN,
-    "genre": NaN,
-    "blurb": NaN,
-    "poster": NaN,
-    "vibes": NaN,
-    "tone": NaN,
-    "category": NaN
+    "title": null,
+    "year": null,
+    "genre": null,
+    "blurb": null,
+    "poster": null,
+    "vibes": null,
+    "tone": null,
+    "category": null
   },
   {
     "title": "The Sandlot",
@@ -907,7 +907,7 @@
     "poster": "https://www.themoviedb.org/movie/9799-the-sandlot/images/posters",
     "vibes": "nostalgic,childhood,funny",
     "tone": "wholesome",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Rudy",
@@ -917,7 +917,7 @@
     "poster": "https://www.themoviedb.org/movie/11566-rudy/images/posters",
     "vibes": "emotional,inspirational,underdog",
     "tone": "heartfelt",
-    "category": NaN
+    "category": null
   },
   {
     "title": "White Men Can't Jump",
@@ -927,7 +927,7 @@
     "poster": "https://www.themoviedb.org/movie/10767-white-men-can-t-jump/images/posters",
     "vibes": "funny,urban,sports",
     "tone": "fast-talking",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Cool Runnings",
@@ -937,7 +937,7 @@
     "poster": "https://www.themoviedb.org/movie/8856-cool-runnings/images/posters",
     "vibes": "funny,inspirational,true-story",
     "tone": "feel-good",
-    "category": NaN
+    "category": null
   },
   {
     "title": "A League of Their Own",
@@ -947,7 +947,7 @@
     "poster": "https://www.themoviedb.org/movie/2105-a-league-of-their-own/images/posters",
     "vibes": "funny,emotional,feminist",
     "tone": "uplifting",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Above the Rim",
@@ -957,7 +957,7 @@
     "poster": "https://www.themoviedb.org/movie/10791-above-the-rim/images/posters",
     "vibes": "gritty,urban,emotional",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Blue Chips",
@@ -967,7 +967,7 @@
     "poster": "https://www.themoviedb.org/movie/10083-blue-chips/images/posters",
     "vibes": "sports,drama,realistic",
     "tone": "gritty",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Little Giants",
@@ -977,7 +977,7 @@
     "poster": "https://www.themoviedb.org/movie/10151-little-giants/images/posters",
     "vibes": "childhood,funny,underdog",
     "tone": "silly",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Varsity Blues",
@@ -987,7 +987,7 @@
     "poster": "https://www.themoviedb.org/movie/9425-varsity-blues/images/posters",
     "vibes": "teen,emotional,sports",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Angus",
@@ -997,7 +997,7 @@
     "poster": "https://www.themoviedb.org/movie/26860-angus/images/posters",
     "vibes": "emotional,teen,underdog",
     "tone": "uplifting",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Mighty Ducks",
@@ -1007,7 +1007,7 @@
     "poster": "https://www.themoviedb.org/movie/10774-the-mighty-ducks/images/posters",
     "vibes": "funny,childhood,underdog",
     "tone": "feel-good",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Program",
@@ -1017,7 +1017,7 @@
     "poster": "https://www.themoviedb.org/movie/8672-the-program/images/posters",
     "vibes": "gritty,emotional,realistic",
     "tone": "dark",
-    "category": NaN
+    "category": null
   },
   {
     "title": "He Got Game",
@@ -1027,7 +1027,7 @@
     "poster": "https://www.themoviedb.org/movie/10132-he-got-game/images/posters",
     "vibes": "sports,father-son,emotional",
     "tone": "serious",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Air Up There",
@@ -1037,7 +1037,7 @@
     "poster": "https://www.themoviedb.org/movie/20818-the-air-up-there/images/posters",
     "vibes": "comedy,culture,sports",
     "tone": "light",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Scout",
@@ -1047,7 +1047,7 @@
     "poster": "https://www.themoviedb.org/movie/21094-the-scout/images/posters",
     "vibes": "sports,comedy,drama",
     "tone": "quirky",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Major League II",
@@ -1057,7 +1057,7 @@
     "poster": "https://www.themoviedb.org/movie/11089-major-league-ii/images/posters",
     "vibes": "funny,sports,sequel",
     "tone": "silly",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Sixth Man",
@@ -1067,7 +1067,7 @@
     "poster": "https://www.themoviedb.org/movie/11238-the-sixth-man/images/posters",
     "vibes": "funny,supernatural,heartfelt",
     "tone": "campy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Sunset Park",
@@ -1077,7 +1077,7 @@
     "poster": "https://www.themoviedb.org/movie/11599-sunset-park/images/posters",
     "vibes": "gritty,inspirational,urban",
     "tone": "real",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Mystery, Alaska",
@@ -1087,7 +1087,7 @@
     "poster": "https://www.themoviedb.org/movie/10330-mystery-alaska/images/posters",
     "vibes": "community,underdog,sports",
     "tone": "earnest",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Legend of Bagger Vance",
@@ -1097,7 +1097,7 @@
     "poster": "https://www.themoviedb.org/movie/10445-the-legend-of-bagger-vance/images/posters",
     "vibes": "philosophical,sports,feel-good",
     "tone": "sentimental",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Cutting Edge",
@@ -1107,7 +1107,7 @@
     "poster": "https://www.themoviedb.org/movie/10403-the-cutting-edge/images/posters",
     "vibes": "romantic,sports,opposites-attract",
     "tone": "fun",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Cool as Ice",
@@ -1117,7 +1117,7 @@
     "poster": "https://www.themoviedb.org/movie/10295-cool-as-ice/images/posters",
     "vibes": "campy,stylized,teen",
     "tone": "weird",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Prefontaine",
@@ -1127,7 +1127,7 @@
     "poster": "https://www.themoviedb.org/movie/9603-prefontaine/images/posters",
     "vibes": "biopic,emotional,sports",
     "tone": "driven",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Hurricane",
@@ -1137,7 +1137,7 @@
     "poster": "https://www.themoviedb.org/movie/10316-the-hurricane/images/posters",
     "vibes": "inspirational,true-story,civil-rights",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Basketball Diaries",
@@ -1147,7 +1147,7 @@
     "poster": "https://www.themoviedb.org/movie/10428-the-basketball-diaries/images/posters",
     "vibes": "gritty,emotional,true-story",
     "tone": "dark",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Jerry Maguire",
@@ -1157,7 +1157,7 @@
     "poster": "https://www.themoviedb.org/movie/9394-jerry-maguire/images/posters",
     "vibes": "romantic,sports,feel-good",
     "tone": "heartfelt",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Angels in the Outfield",
@@ -1167,7 +1167,7 @@
     "poster": "https://www.themoviedb.org/movie/11087-angels-in-the-outfield/images/posters",
     "vibes": "emotional,magical,kids",
     "tone": "hopeful",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Happy Gilmore",
@@ -1177,7 +1177,7 @@
     "poster": "https://www.themoviedb.org/movie/9614-happy-gilmore/images/posters",
     "vibes": "comedy,absurd,sports",
     "tone": "silly",
-    "category": NaN
+    "category": null
   },
   {
     "title": "BASEketball",
@@ -1187,7 +1187,7 @@
     "poster": "https://www.themoviedb.org/movie/10310-baseketball/images/posters",
     "vibes": "satirical,absurd,funny",
     "tone": "juvenile",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Big Green",
@@ -1197,7 +1197,7 @@
     "poster": "https://www.themoviedb.org/movie/10021-the-big-green/images/posters",
     "vibes": "childhood,underdog,sports",
     "tone": "fun",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ed",
@@ -1207,7 +1207,7 @@
     "poster": "https://www.themoviedb.org/movie/10662-ed/images/posters",
     "vibes": "animal,silly,sports",
     "tone": "ridiculous",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ladybugs",
@@ -1217,7 +1217,7 @@
     "poster": "https://www.themoviedb.org/movie/18847-ladybugs/images/posters",
     "vibes": "funny,kids,absurd",
     "tone": "campy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Space Jam",
@@ -1227,7 +1227,7 @@
     "poster": "https://www.themoviedb.org/movie/2300-space-jam/images/posters",
     "vibes": "animated,funny,sports",
     "tone": "cartoonish",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Air Bud",
@@ -1237,7 +1237,7 @@
     "poster": "https://www.themoviedb.org/movie/10880-air-bud/images/posters",
     "vibes": "family,animal,sports",
     "tone": "sweet",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Babe",
@@ -1247,7 +1247,7 @@
     "poster": "https://www.themoviedb.org/movie/10378-the-babe/images/posters",
     "vibes": "biopic,baseball,emotional",
     "tone": "dramatic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Jerky Boys",
@@ -1257,7 +1257,7 @@
     "poster": "https://www.themoviedb.org/movie/20048-the-jerky-boys/images/posters",
     "vibes": "absurd,comedy,cult",
     "tone": "silly",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Little Big League",
@@ -1267,7 +1267,7 @@
     "poster": "https://www.themoviedb.org/movie/10672-little-big-league/images/posters",
     "vibes": "childhood,sports,feel-good",
     "tone": "light",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Sandlot 2",
@@ -1277,7 +1277,7 @@
     "poster": "https://www.themoviedb.org/movie/20123-the-sandlot-2/images/posters",
     "vibes": "nostalgic,kids,sequel",
     "tone": "derivative",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Braveheart",
@@ -1413,7 +1413,7 @@
     "title": "Dante\u2019s Peak",
     "year": "1997",
     "genre": "Action",
-    "blurb": "A volcano erupts. Pierce Brosnan yells a lot.",
+    "blurb": "A volcano erupts. Pierce Brosnull yells a lot.",
     "poster": "https://www.themoviedb.org/movie/8650-dante-s-peak/images/posters",
     "vibes": "disaster,tense,cult",
     "tone": "suspenseful",
@@ -1813,7 +1813,7 @@
     "title": "Mrs. Doubtfire",
     "year": "1993",
     "genre": "Comedy",
-    "blurb": "A dad disguises himself as a Scottish nanny to stay close to his kids.",
+    "blurb": "A dad disguises himself as a Scottish nullny to stay close to his kids.",
     "poster": "https://image.tmdb.org/t/p/original/vybQQpAwaF2vWf0gE8lOLfWxbWn.jpg",
     "vibes": "family,funny,heartfelt",
     "tone": "wholesome",
@@ -2846,7 +2846,7 @@
     "blurb": "After her son\u2019s tragic death, a mother searches for the boy\u2019s transgender father in Barcelona.",
     "poster": "https://www.themoviedb.org/movie/103-all-about-my-mother/images/posters",
     "vibes": "emotional,lgbt,foreign",
-    "tone": "poignant",
+    "tone": "poignullt",
     "category": "cult"
   },
   {
@@ -3396,7 +3396,7 @@
     "blurb": "A charming Brit finds love\u2014and tragedy\u2014amid wedding season.",
     "poster": "https://www.themoviedb.org/movie/712-four-weddings-and-a-funeral/images/posters",
     "vibes": "romantic,dry-humor,British",
-    "tone": "poignant",
+    "tone": "poignullt",
     "category": "blockbuster"
   },
   {
@@ -3847,7 +3847,7 @@
     "poster": "https://www.themoviedb.org/movie/10216-joe-versus-the-volcano/images/posters",
     "vibes": "romantic, offbeat, cult",
     "tone": "whimsical",
-    "category": NaN
+    "category": null
   },
   {
     "title": "To Die For",
@@ -3857,7 +3857,7 @@
     "poster": "https://www.themoviedb.org/movie/10453-to-die-for/images/posters",
     "vibes": "dark, satire, cult",
     "tone": "icy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Practical Magic",
@@ -3867,7 +3867,7 @@
     "poster": "https://www.themoviedb.org/movie/10314-practical-magic/images/posters",
     "vibes": "romance, supernatural, cult",
     "tone": "whimsical",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Days of Thunder",
@@ -3877,7 +3877,7 @@
     "poster": "https://www.themoviedb.org/movie/9031-days-of-thunder/images/posters",
     "vibes": "racing, romantic, flashy",
     "tone": "high-octane",
-    "category": NaN
+    "category": null
   },
   {
     "title": "City of Angels",
@@ -3887,7 +3887,7 @@
     "poster": "https://www.themoviedb.org/movie/795-city-of-angels/images/posters",
     "vibes": "romantic, emotional, philosophical",
     "tone": "bittersweet",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Snake Eyes",
@@ -3897,7 +3897,7 @@
     "poster": "https://www.themoviedb.org/movie/9691-snake-eyes/images/posters",
     "vibes": "twisty, flashy, cult",
     "tone": "stylized",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Bringing Out the Dead",
@@ -3907,7 +3907,7 @@
     "poster": "https://www.themoviedb.org/movie/9745-bringing-out-the-dead/images/posters",
     "vibes": "psychological, gritty, cult",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Leaving Las Vegas",
@@ -3917,7 +3917,7 @@
     "poster": "https://www.themoviedb.org/movie/451-leaving-las-vegas/images/posters",
     "vibes": "tragic, romantic, award-winning",
     "tone": "raw",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Mo' Better Blues",
@@ -3927,7 +3927,7 @@
     "poster": "https://www.themoviedb.org/movie/11242-mo-better-blues/images/posters",
     "vibes": "jazz,artistic,romantic",
     "tone": "moody",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Mississippi Masala",
@@ -3937,7 +3937,7 @@
     "poster": "https://www.themoviedb.org/movie/12191-mississippi-masala/images/posters",
     "vibes": "cross-cultural,romantic,indie",
     "tone": "heartfelt",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ricochet",
@@ -3947,7 +3947,7 @@
     "poster": "https://www.themoviedb.org/movie/11130-ricochet/images/posters",
     "vibes": "revenge,psychological,action",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Much Ado About Nothing",
@@ -3957,7 +3957,7 @@
     "poster": "https://www.themoviedb.org/movie/12100-much-ado-about-nothing/images/posters",
     "vibes": "Shakespearean,romantic,ensemble",
     "tone": "light-hearted",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Crimson Tide",
@@ -3967,7 +3967,7 @@
     "poster": "https://www.themoviedb.org/movie/884-crimson-tide/images/posters",
     "vibes": "military,suspenseful,drama",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Devil in a Blue Dress",
@@ -3977,7 +3977,7 @@
     "poster": "https://www.themoviedb.org/movie/11690-devil-in-a-blue-dress/images/posters",
     "vibes": "noir,detective,period",
     "tone": "atmospheric",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Courage Under Fire",
@@ -3987,7 +3987,7 @@
     "poster": "https://www.themoviedb.org/movie/10483-courage-under-fire/images/posters",
     "vibes": "military,investigative,emotional",
     "tone": "serious",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Preacher's Wife",
@@ -3997,7 +3997,7 @@
     "poster": "https://www.themoviedb.org/movie/10484-the-preacher-s-wife/images/posters",
     "vibes": "inspirational,romantic,holiday",
     "tone": "uplifting",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Fallen",
@@ -4007,7 +4007,7 @@
     "poster": "https://www.themoviedb.org/movie/10321-fallen/images/posters",
     "vibes": "supernatural,mystery,dark",
     "tone": "eerie",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Bone Collector",
@@ -4017,7 +4017,7 @@
     "poster": "https://www.themoviedb.org/movie/10324-the-bone-collector/images/posters",
     "vibes": "crime,mystery,thriller",
     "tone": "suspenseful",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Dick Tracy",
@@ -4027,7 +4027,7 @@
     "poster": "https://www.themoviedb.org/movie/2108-dick-tracy/images/posters",
     "vibes": "comic-book,stylized,retro",
     "tone": "colorful",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ghost",
@@ -4037,7 +4037,7 @@
     "poster": "https://www.themoviedb.org/movie/251-ghost/images/posters",
     "vibes": "romantic,supernatural,emotional",
     "tone": "melancholy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Kindergarten Cop",
@@ -4047,7 +4047,7 @@
     "poster": "https://www.themoviedb.org/movie/8855-kindergarten-cop/images/posters",
     "vibes": "funny,fish-out-of-water,classic",
     "tone": "light",
-    "category": NaN
+    "category": null
   },
   {
     "title": "City Slickers",
@@ -4057,7 +4057,7 @@
     "poster": "https://www.themoviedb.org/movie/10714-city-slickers/images/posters",
     "vibes": "buddy,adventure,midlife",
     "tone": "uplifting",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Hook",
@@ -4067,7 +4067,7 @@
     "poster": "https://www.themoviedb.org/movie/879-hook/images/posters",
     "vibes": "fantasy,nostalgic,adventure",
     "tone": "whimsical",
-    "category": NaN
+    "category": null
   },
   {
     "title": "JFK",
@@ -4077,7 +4077,7 @@
     "poster": "https://www.themoviedb.org/movie/820-jfk/images/posters",
     "vibes": "conspiracy,political,historical",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "My Cousin Vinny",
@@ -4087,7 +4087,7 @@
     "poster": "https://www.themoviedb.org/movie/10315-my-cousin-vinny/images/posters",
     "vibes": "courtroom,fish-out-of-water,funny",
     "tone": "light",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Candyman",
@@ -4097,7 +4097,7 @@
     "poster": "https://www.themoviedb.org/movie/9485-candyman/images/posters",
     "vibes": "slasher,supernatural,cult",
     "tone": "creepy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Last of the Mohicans",
@@ -4107,7 +4107,7 @@
     "poster": "https://www.themoviedb.org/movie/9366-the-last-of-the-mohicans/images/posters",
     "vibes": "romantic,historical,epic",
     "tone": "dramatic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Army of Darkness",
@@ -4117,7 +4117,7 @@
     "poster": "https://www.themoviedb.org/movie/766-army-of-darkness/images/posters",
     "vibes": "campy,horror,action",
     "tone": "absurd",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Get Shorty",
@@ -4127,7 +4127,7 @@
     "poster": "https://www.themoviedb.org/movie/1620-get-shorty/images/posters",
     "vibes": "funny,crime,cult",
     "tone": "satirical",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Phenomenon",
@@ -4137,7 +4137,7 @@
     "poster": "https://www.themoviedb.org/movie/9309-phenomenon/images/posters",
     "vibes": "emotional,philosophical,romantic",
     "tone": "gentle",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Payback",
@@ -4147,7 +4147,7 @@
     "poster": "https://www.themoviedb.org/movie/606-payback/images/posters",
     "vibes": "revenge,gritty,noir",
     "tone": "dark",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Iron Man",
@@ -4157,7 +4157,7 @@
     "poster": "https://www.themoviedb.org/movie/1726-iron-man/images/posters",
     "vibes": "superhero,tech,blockbuster",
     "tone": "charismatic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Spider-Man",
@@ -4167,7 +4167,7 @@
     "poster": "https://www.themoviedb.org/movie/557-spider-man/images/posters",
     "vibes": "superhero,romantic,blockbuster",
     "tone": "earnest",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Superman IV: The Quest for Peace",
@@ -4177,7 +4177,7 @@
     "poster": "https://www.themoviedb.org/movie/11410-superman-iv-the-quest-for-peace/images/posters",
     "vibes": "superhero,campy",
     "tone": "idealistic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Donnie Darko",
@@ -4187,7 +4187,7 @@
     "poster": "https://www.themoviedb.org/movie/141-donnie-darko/images/posters",
     "vibes": "weird,psychological,cult",
     "tone": "dreamlike",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Moon",
@@ -4197,7 +4197,7 @@
     "poster": "https://www.themoviedb.org/movie/17431-moon/images/posters",
     "vibes": "sci-fi,philosophical,psychological",
     "tone": "lonely",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Confessions of a Dangerous Mind",
@@ -4207,7 +4207,7 @@
     "poster": "https://www.themoviedb.org/movie/111-confessions-of-a-dangerous-mind/images/posters",
     "vibes": "weird,stylized,biopic",
     "tone": "quirky",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Frost/Nixon",
@@ -4217,7 +4217,7 @@
     "poster": "https://www.themoviedb.org/movie/10315-frost-nixon/images/posters",
     "vibes": "political,intense,historical",
     "tone": "tense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Zodiac",
@@ -4227,17 +4227,17 @@
     "poster": "https://www.themoviedb.org/movie/1949-zodiac/images/posters",
     "vibes": "true-crime,slow-burn,psychological",
     "tone": "moody",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Addams Family Values",
     "year": "1993",
     "genre": "Comedy",
-    "blurb": "A new nanny plots to steal Uncle Fester's fortune.",
+    "blurb": "A new nullny plots to steal Uncle Fester's fortune.",
     "poster": "https://www.themoviedb.org/movie/2758-addams-family-values/images/posters",
     "vibes": "gothic,funny,sequel",
     "tone": "deadpan",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Maverick",
@@ -4247,7 +4247,7 @@
     "poster": "https://www.themoviedb.org/movie/9352-maverick/images/posters",
     "vibes": "western,funny,adventure",
     "tone": "light",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Quiz Show",
@@ -4257,7 +4257,7 @@
     "poster": "https://www.themoviedb.org/movie/9945-quiz-show/images/posters",
     "vibes": "historical,drama,political",
     "tone": "intellectual",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Little Women",
@@ -4267,7 +4267,7 @@
     "poster": "https://www.themoviedb.org/movie/10693-little-women/images/posters",
     "vibes": "family,romantic,historical",
     "tone": "warm",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Birdcage",
@@ -4277,7 +4277,7 @@
     "poster": "https://www.themoviedb.org/movie/869-the-birdcage/images/posters",
     "vibes": "lgbt,funny,heartwarming",
     "tone": "campy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Primal Fear",
@@ -4287,7 +4287,7 @@
     "poster": "https://www.themoviedb.org/movie/10058-primal-fear/images/posters",
     "vibes": "courtroom,twist,dark",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ransom",
@@ -4297,7 +4297,7 @@
     "poster": "https://www.themoviedb.org/movie/9602-ransom/images/posters",
     "vibes": "thriller,suspense,revenge",
     "tone": "gritty",
-    "category": NaN
+    "category": null
   },
   {
     "title": "From Dusk Till Dawn",
@@ -4307,7 +4307,7 @@
     "poster": "https://www.themoviedb.org/movie/755-from-dusk-till-dawn/images/posters",
     "vibes": "vampire,tarantino,action",
     "tone": "wild",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Shakespeare in Love",
@@ -4317,7 +4317,7 @@
     "poster": "https://www.themoviedb.org/movie/1933-shakespeare-in-love/images/posters",
     "vibes": "romantic,clever,period",
     "tone": "charming",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Out of Sight",
@@ -4327,7 +4327,7 @@
     "poster": "https://www.themoviedb.org/movie/138-out-of-sight/images/posters",
     "vibes": "romantic,crime,stylized",
     "tone": "cool",
-    "category": NaN
+    "category": null
   },
   {
     "title": "American Beauty",
@@ -4337,7 +4337,7 @@
     "poster": "https://www.themoviedb.org/movie/14-american-beauty/images/posters",
     "vibes": "dark,satirical,oscar",
     "tone": "moody",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Star Wars: Episode I - The Phantom Menace",
@@ -4347,7 +4347,7 @@
     "poster": "https://www.themoviedb.org/movie/1893-star-wars-episode-i-the-phantom-menace/images/posters",
     "vibes": "sci-fi,epic,prequel",
     "tone": "flashy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Notting Hill",
@@ -4357,7 +4357,7 @@
     "poster": "https://www.themoviedb.org/movie/509-notting-hill/images/posters",
     "vibes": "romantic,witty,feel-good",
     "tone": "sweet",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Dances with Wolves",
@@ -4367,7 +4367,7 @@
     "poster": "https://www.themoviedb.org/movie/581-dances-with-wolves/images/posters",
     "vibes": "epic,western,oscar",
     "tone": "majestic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Wyatt Earp",
@@ -4377,7 +4377,7 @@
     "poster": "https://www.themoviedb.org/movie/8696-wyatt-earp/images/posters",
     "vibes": "biopic,western,historical",
     "tone": "serious",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Tin Cup",
@@ -4387,7 +4387,7 @@
     "poster": "https://www.themoviedb.org/movie/8846-tin-cup/images/posters",
     "vibes": "sports,romantic,funny",
     "tone": "laid-back",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The War",
@@ -4397,7 +4397,7 @@
     "poster": "https://www.themoviedb.org/movie/17437-the-war/images/posters",
     "vibes": "emotional,family,coming-of-age",
     "tone": "heartfelt",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Message in a Bottle",
@@ -4407,7 +4407,7 @@
     "poster": "https://www.themoviedb.org/movie/10898-message-in-a-bottle/images/posters",
     "vibes": "romantic,tearjerker,drama",
     "tone": "melancholy",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Postman",
@@ -4417,7 +4417,7 @@
     "poster": "https://www.themoviedb.org/movie/9799-the-postman/images/posters",
     "vibes": "dystopian,hopeful,cult",
     "tone": "earnest",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Birdcage",
@@ -4427,7 +4427,7 @@
     "poster": "https://www.themoviedb.org/movie/869-the-birdcage/images/posters",
     "vibes": "funny,lgbt,feel-good",
     "tone": "vibrant",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Spanish Prisoner",
@@ -4437,7 +4437,7 @@
     "poster": "https://www.themoviedb.org/movie/13703-the-spanish-prisoner/images/posters",
     "vibes": "twisty,smart,indie",
     "tone": "cerebral",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Living in Oblivion",
@@ -4447,7 +4447,7 @@
     "poster": "https://www.themoviedb.org/movie/21747-living-in-oblivion/images/posters",
     "vibes": "meta,funny,indie",
     "tone": "chaotic",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Welcome to the Dollhouse",
@@ -4457,7 +4457,7 @@
     "poster": "https://www.themoviedb.org/movie/15740-welcome-to-the-dollhouse/images/posters",
     "vibes": "dark,coming-of-age,indie",
     "tone": "uncomfortable",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Frighteners",
@@ -4467,7 +4467,7 @@
     "poster": "https://www.themoviedb.org/movie/8834-the-frighteners/images/posters",
     "vibes": "funny,horror,supernatural",
     "tone": "spooky",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Audition",
@@ -4477,7 +4477,7 @@
     "poster": "https://www.themoviedb.org/movie/16166-audition/images/posters",
     "vibes": "disturbing,slow-burn,japanese",
     "tone": "unsettling",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Prince of Egypt",
@@ -4487,7 +4487,7 @@
     "poster": "https://www.themoviedb.org/movie/9837-the-prince-of-egypt/images/posters",
     "vibes": "biblical,epic,musical",
     "tone": "inspirational",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Anastasia",
@@ -4497,7 +4497,7 @@
     "poster": "https://www.themoviedb.org/movie/10020-anastasia/images/posters",
     "vibes": "romantic,adventure,musical",
     "tone": "uplifting",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Babe: Pig in the City",
@@ -4507,7 +4507,7 @@
     "poster": "https://www.themoviedb.org/movie/9459-babe-pig-in-the-city/images/posters",
     "vibes": "surreal,wholesome,adventure",
     "tone": "quirky",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Affliction",
@@ -4517,7 +4517,7 @@
     "poster": "https://www.themoviedb.org/movie/9334-affliction/images/posters",
     "vibes": "gritty,bleak,psychological",
     "tone": "intense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Sweet Hereafter",
@@ -4527,7 +4527,7 @@
     "poster": "https://www.themoviedb.org/movie/10349-the-sweet-hereafter/images/posters",
     "vibes": "emotional,slow-burn,haunting",
     "tone": "somber",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Last Boy Scout",
@@ -4537,7 +4537,7 @@
     "poster": "https://www.themoviedb.org/movie/973-the-last-boy-scout/images/posters",
     "vibes": "buddy-cop,violent,witty",
     "tone": "gritty",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Hard Boiled",
@@ -4547,7 +4547,7 @@
     "poster": "https://www.themoviedb.org/movie/9263-hard-boiled/images/posters",
     "vibes": "gun-fu,stylized,legendary",
     "tone": "relentless",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Ronin",
@@ -4557,7 +4557,7 @@
     "poster": "https://www.themoviedb.org/movie/805-ronin/images/posters",
     "vibes": "thriller,heist,euro",
     "tone": "gritty",
-    "category": NaN
+    "category": null
   },
   {
     "title": "The Quick and the Dead",
@@ -4567,7 +4567,7 @@
     "poster": "https://www.themoviedb.org/movie/606-the-quick-and-the-dead/images/posters",
     "vibes": "stylized,revenge,western",
     "tone": "tense",
-    "category": NaN
+    "category": null
   },
   {
     "title": "Lock Stock and Two Smoking Barrels",
@@ -4587,7 +4587,7 @@
     "poster": "https://www.themoviedb.org/movie/2154-the-rainmaker/images/posters",
     "vibes": "legal,underdog,courtroom",
     "tone": "compelling",
-    "category": NaN
+    "category": null
   },
   {
     "title": "L\u00e9on: The Professional",
@@ -4597,6 +4597,6 @@
     "poster": "https://www.themoviedb.org/movie/101-the-professional/images/posters",
     "vibes": "assassin,emotional,cult",
     "tone": "gritty",
-    "category": NaN
+    "category": null
   }
 ]
