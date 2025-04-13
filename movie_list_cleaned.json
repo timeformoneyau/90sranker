@@ -114,7 +114,7 @@
     "year": "1992",
     "genre": "Horror",
     "blurb": "A man must contain a zombie outbreak\u2014starting with his undead mother.",
-    "poster": "https://www.themoviedb.org/movie/10331-dead-alive/images/posters",
+    "poster": "https://image.tmdb.org/t/p/w500/b3B1rMCNzOxriQvWUXdEoQUA4fz.jpg",
     "vibes": "gory,absurd,cult",
     "tone": "grotesque",
     "category": "cult"
@@ -504,7 +504,7 @@
     "year": "1999",
     "genre": "Action",
     "blurb": "Reformed criminals go undercover as cops.",
-    "poster": "https://www.themoviedb.org/movie/10668-the-mod-squad/images/posters",
+    "poster": "https://image.tmdb.org/t/p/w500/pP7S3w7Dnk3a1JpN96rDOR8wEya.jpg",
     "vibes": "crime,teen,cult",
     "tone": "stylized",
     "category": "cult"
@@ -584,7 +584,7 @@
     "year": "1998",
     "genre": "Horror",
     "blurb": "A killer reenacts terrifying urban myths on a college campus.",
-    "poster": "https://www.themoviedb.org/movie/10068-urban-legend/images/posters",
+    "poster": "https://image.tmdb.org/t/p/w500/jrYqKqRR3YKHyCuXapnwMaijvse.jpg",
     "vibes": "slasher,teen,cult",
     "tone": "dark",
     "category": "cult"
@@ -888,16 +888,6 @@
     "vibes": "martial-arts,cult,sci-fi",
     "tone": "fast-paced",
     "category": "cult"
-  },
-  {
-    "title": null,
-    "year": null,
-    "genre": null,
-    "blurb": null,
-    "poster": null,
-    "vibes": null,
-    "tone": null,
-    "category": null
   },
   {
     "title": "The Sandlot",
@@ -2424,7 +2414,7 @@
     "year": "1993",
     "genre": "Drama",
     "blurb": "An English butler sacrifices personal happiness for duty.",
-    "poster": "https://image.tmdb.org/t/p/original/fWxWdiYr9S71JtCtdtdL7AI1FXa.jpg",
+    "poster": "https://image.tmdb.org/t/p/w500/vYzFx1e2y5KkG0A3nMxjZbNfPQE.jpg",
     "vibes": "repressed,love,oscar",
     "tone": "subtle",
     "category": "cult"
