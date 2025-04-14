@@ -9,9 +9,13 @@
   <h1>🎬 Movie Ranker</h1>
 
   <div id="compare-section">
-    <button id="movieA" onclick="vote('A')">Movie A</button>
+    <div class="movie-box">
+      <button id="movieA" onclick="vote('A')">Movie A</button>
+    </div>
     <span style="margin: 0 1em;">vs</span>
-    <button id="movieB" onclick="vote('B')">Movie B</button>
+    <div class="movie-box">
+      <button id="movieB" onclick="vote('B')">Movie B</button>
+    </div>
     <button onclick="markUnseen()">Haven’t Seen One</button>
   </div>
 
@@ -20,6 +24,9 @@
 
   <h2>Haven’t Seen List</h2>
   <ul id="unseen-list"></ul>
+
+  <h2>Tagged Movies</h2>
+  <ul id="tagged-list"></ul>
 
   <script src="ranker.js"></script>
 </body>
