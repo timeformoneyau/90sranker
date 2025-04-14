@@ -10,6 +10,13 @@ body {
   align-items: center;
   gap: 1em;
   margin-bottom: 2em;
+  flex-wrap: wrap;
+}
+
+.movie-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 button {
@@ -20,10 +27,19 @@ button {
   color: #fff;
   border: none;
   border-radius: 5px;
+  margin-bottom: 0.5em;
 }
 
 button:hover {
   background: #555;
+}
+
+.tag-button {
+  margin: 0.2em;
+  font-size: 0.8em;
+  background: #555;
+  padding: 0.3em 0.6em;
+  border-radius: 4px;
 }
 
 h2 {
