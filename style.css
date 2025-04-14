@@ -1,8 +1,7 @@
 body {
   margin: 0;
   font-family: 'Trebuchet MS', sans-serif;
-  background: url('https://i.imgur.com/FOfEUmG.jpeg') no-repeat center center fixed;
-  background-size: cover;
+  background: #1c1c1c;
   color: #fff;
   display: flex;
   justify-content: center;
@@ -12,18 +11,18 @@ body {
 
 .container {
   text-align: center;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   padding: 2em;
   border-radius: 1em;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
   max-width: 900px;
   width: 90%;
 }
 
 h1 {
   font-size: 3em;
-  color: #FFD700;
-  text-shadow: 0 0 10px #FF69B4;
+  color: #f2f2f2;
+  text-shadow: 0 0 5px #0099ff;
   margin-bottom: 1em;
 }
 
@@ -49,7 +48,7 @@ button {
   font-weight: bold;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(145deg, #1e90ff, #4169e1);
+  background: linear-gradient(145deg, #4a90e2, #2c3e50);
   color: #fff;
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
   cursor: pointer;
@@ -58,21 +57,21 @@ button {
 
 button:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 15px #FFD700;
+  box-shadow: 0 0 12px #4a90e2;
 }
 
 button.secondary {
-  background: linear-gradient(145deg, #888, #555);
+  background: linear-gradient(145deg, #666, #444);
 }
 
 .vs {
   font-size: 2em;
   font-weight: bold;
-  color: #ccc;
+  color: #aaa;
 }
 
 h2 {
-  color: #00FFFF;
+  color: #66ccff;
   margin-top: 2em;
   text-shadow: 0 0 5px #000;
 }
@@ -88,7 +87,7 @@ ol, ul {
 li {
   margin-bottom: 0.75em;
   padding: 0.5em;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
   border-radius: 5px;
 }
 
@@ -97,7 +96,7 @@ li {
   padding: 0.3em 0.6em;
   font-size: 0.9em;
   border-radius: 4px;
-  background: #ff69b4;
+  background: #6666cc;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -105,5 +104,5 @@ li {
 }
 
 .tag-button:hover {
-  background: #ff1493;
+  background: #4a4abf;
 }
