@@ -1,11 +1,13 @@
 let movies = [];
-let scores = JSON.parse(localStorage.getItem("movieScores")) || {};
+let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
-let tags = JSON.parse(localStorage.getItem("movieTags")) || {}; // { "Movie Title": ["Nostalgic Favorite"] }
+let tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 
 let movieA, movieB;
 const TAG_OPTIONS = ["Nostalgic Favorite", "Dumb Awesome", "Top 50"];
+const DEFAULT_RATING = 1000;
+const K = 32;
 
 async function loadMovies() {
   const response = await fetch("movie_list_cleaned.json");
@@ -50,17 +52,30 @@ function vote(winner) {
   const winnerTitle = winner === 'A' ? movieA.title : movieB.title;
   const loserTitle = winner === 'A' ? movieB.title : movieA.title;
 
-  scores[winnerTitle] = (scores[winnerTitle] || 0) + 1;
-  scores[loserTitle] = scores[loserTitle] || 0;
+  updateElo(winnerTitle, loserTitle);
 
   const pairKey = [movieA.title, movieB.title].sort().join("|");
   seenMatchups.push(pairKey);
 
-  localStorage.setItem("movieScores", JSON.stringify(scores));
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
+  localStorage.setItem("movieRatings", JSON.stringify(ratings));
 
   updateRanking();
   chooseTwoMovies();
+}
+
+function updateElo(winnerTitle, loserTitle) {
+  const Ra = ratings[winnerTitle] || DEFAULT_RATING;
+  const Rb = ratings[loserTitle] || DEFAULT_RATING;
+
+  const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
+  const Eb = 1 - Ea;
+
+  const newRa = Ra + K * (1 - Ea);
+  const newRb = Rb + K * (0 - Eb);
+
+  ratings[winnerTitle] = Math.round(newRa);
+  ratings[loserTitle] = Math.round(newRb);
 }
 
 function markUnseen() {
@@ -82,12 +97,13 @@ function updateRanking() {
   listEl.innerHTML = "";
 
   const ranked = [...movies]
-    .filter(m => scores[m.title] !== undefined && !unseen.includes(m.title))
-    .sort((a, b) => (scores[b.title] || 0) - (scores[a.title] || 0));
+    .filter(m => ratings[m.title] !== undefined && !unseen.includes(m.title))
+    .sort((a, b) => (ratings[b.title] || DEFAULT_RATING) - (ratings[a.title] || DEFAULT_RATING));
 
   ranked.forEach(movie => {
+    const rating = ratings[movie.title] || DEFAULT_RATING;
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${scores[movie.title]} pts ${renderTags(movie.title)}`;
+    li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${rating} pts ${renderTags(movie.title)}`;
     li.appendChild(buildTagUI(movie.title));
     listEl.appendChild(li);
   });
