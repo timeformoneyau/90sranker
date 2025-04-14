@@ -12,9 +12,11 @@ const K = 32;
 async function loadMovies() {
   const response = await fetch("movie_list_cleaned.json");
   movies = await response.json();
-  updateRanking();
-  updateUnseenList();
-  updateTaggedList();
+
+  if (document.getElementById("ranking-list")) updateRanking();
+  if (document.getElementById("unseen-list")) updateUnseenList();
+  if (document.getElementById("tagged-list")) updateTaggedList();
+
   chooseTwoMovies();
 }
 
@@ -49,8 +51,12 @@ function chooseTwoMovies(preserveSide = null) {
 }
 
 function displayMovies() {
-  document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
-  document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
+  if (document.getElementById("movieA")) {
+    document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
+  }
+  if (document.getElementById("movieB")) {
+    document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
+  }
 }
 
 function vote(winner) {
@@ -65,7 +71,8 @@ function vote(winner) {
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
   localStorage.setItem("movieRatings", JSON.stringify(ratings));
 
-  updateRanking();
+  if (document.getElementById("ranking-list")) updateRanking();
+
   chooseTwoMovies();
 }
 
@@ -87,7 +94,7 @@ function markUnseen(side) {
   if (!unseen.includes(skippedTitle)) {
     unseen.push(skippedTitle);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-    updateUnseenList();
+    if (document.getElementById("unseen-list")) updateUnseenList();
   }
 
   const replacementOptions = getAvailableMovies([preservedTitle]);
