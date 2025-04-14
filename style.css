@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Trebuchet MS', sans-serif;
-  background: url('https://i.imgur.com/0L8Y9ZK.jpg') no-repeat center center fixed;
+  background: url('https://i.imgur.com/FOfEUmG.jpeg') no-repeat center center fixed;
   background-size: cover;
   color: #fff;
   display: flex;
@@ -12,11 +12,11 @@ body {
 
 .container {
   text-align: center;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   padding: 2em;
   border-radius: 1em;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-  max-width: 800px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  max-width: 900px;
   width: 90%;
 }
 
