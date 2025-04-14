@@ -19,43 +19,43 @@ async function loadMovies() {
 }
 
 function getAvailableMovies(exclude = []) {
-  return movies.filter(m => m.title && !unseen.includes(m.title) && !exclude.includes(m.title));
+  return movies.filter(
+    m => m.title && !unseen.includes(m.title) && !exclude.includes(m.title)
+  );
 }
 
 function chooseTwoMovies(preserveSide = null) {
   const available = getAvailableMovies();
 
-  let newA = movieA;
-  let newB = movieB;
-
-  if (preserveSide === 'B') {
-    const candidates = available.filter(m => m.title !== movieB?.title);
-    newA = candidates[Math.floor(Math.random() * candidates.length)];
-    newB = movieB;
-  } else if (preserveSide === 'A') {
-    const candidates = available.filter(m => m.title !== movieA?.title);
-    newA = movieA;
-    newB = candidates[Math.floor(Math.random() * candidates.length)];
-  } else {
-    const shuffled = available.sort(() => 0.5 - Math.random());
-    [newA, newB] = shuffled.slice(0, 2);
-  }
-
-  if (!newA || !newB) {
+  if (available.length < 2) {
     alert("Not enough unseen movies to compare.");
     return;
   }
 
-  movieA = newA;
-  movieB = newB;
+  if (preserveSide === "A" && movieA) {
+    const newBOptions = available.filter(m => m.title !== movieA.title);
+    if (!newBOptions.length) return;
+    movieB = newBOptions[Math.floor(Math.random() * newBOptions.length)];
+  } else if (preserveSide === "B" && movieB) {
+    const newAOptions = available.filter(m => m.title !== movieB.title);
+    if (!newAOptions.length) return;
+    movieA = newAOptions[Math.floor(Math.random() * newAOptions.length)];
+  } else {
+    const shuffled = available.sort(() => 0.5 - Math.random());
+    [movieA, movieB] = shuffled.slice(0, 2);
+  }
 
+  displayMovies();
+}
+
+function displayMovies() {
   document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
   document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
 }
 
 function vote(winner) {
-  const winnerTitle = winner === 'A' ? movieA.title : movieB.title;
-  const loserTitle = winner === 'A' ? movieB.title : movieA.title;
+  const winnerTitle = winner === "A" ? movieA.title : movieB.title;
+  const loserTitle = winner === "A" ? movieB.title : movieA.title;
 
   updateElo(winnerTitle, loserTitle);
 
@@ -76,28 +76,34 @@ function updateElo(winnerTitle, loserTitle) {
   const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
   const Eb = 1 - Ea;
 
-  const newRa = Ra + K * (1 - Ea);
-  const newRb = Rb + K * (0 - Eb);
-
-  ratings[winnerTitle] = Math.round(newRa);
-  ratings[loserTitle] = Math.round(newRb);
+  ratings[winnerTitle] = Math.round(Ra + K * (1 - Ea));
+  ratings[loserTitle] = Math.round(Rb + K * (0 - Eb));
 }
 
 function markUnseen(side) {
-  const unseenTitle = side === 'A' ? movieA.title : movieB.title;
+  const skippedTitle = side === "A" ? movieA.title : movieB.title;
+  const preservedTitle = side === "A" ? movieB.title : movieA.title;
 
-  if (!unseen.includes(unseenTitle)) {
-    unseen.push(unseenTitle);
+  if (!unseen.includes(skippedTitle)) {
+    unseen.push(skippedTitle);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+    updateUnseenList();
   }
 
-  updateUnseenList();
+  const replacementOptions = getAvailableMovies([preservedTitle]);
+  if (!replacementOptions.length) {
+    alert("No movies left to compare against.");
+    return;
+  }
 
-  if (side === 'A') {
-    chooseTwoMovies('B');
+  const replacement = replacementOptions[Math.floor(Math.random() * replacementOptions.length)];
+  if (side === "A") {
+    movieA = replacement;
   } else {
-    chooseTwoMovies('A');
+    movieB = replacement;
   }
+
+  displayMovies();
 }
 
 function updateRanking() {
