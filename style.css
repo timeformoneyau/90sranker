@@ -1,16 +1,39 @@
 body {
-  font-family: sans-serif;
+  margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
+  background: url('https://i.imgur.com/0L8Y9ZK.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  text-align: center;
+  background: rgba(0, 0, 0, 0.8);
   padding: 2em;
-  background: #111;
-  color: #f0f0f0;
+  border-radius: 1em;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  max-width: 800px;
+  width: 90%;
+}
+
+h1 {
+  font-size: 3em;
+  color: #FFD700;
+  text-shadow: 0 0 10px #FF69B4;
+  margin-bottom: 1em;
 }
 
 #compare-section {
   display: flex;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 2em;
   flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2em;
+  margin-bottom: 2em;
 }
 
 .movie-box {
@@ -20,28 +43,67 @@ body {
 }
 
 button {
-  padding: 1em;
+  padding: 1em 1.5em;
+  margin: 0.25em;
   font-size: 1em;
-  cursor: pointer;
-  background: #333;
-  color: #fff;
+  font-weight: bold;
   border: none;
-  border-radius: 5px;
-  margin-bottom: 0.5em;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #1e90ff, #4169e1);
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
 button:hover {
-  background: #555;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #FFD700;
+}
+
+button.secondary {
+  background: linear-gradient(145deg, #888, #555);
+}
+
+.vs {
+  font-size: 2em;
+  font-weight: bold;
+  color: #ccc;
+}
+
+h2 {
+  color: #00FFFF;
+  margin-top: 2em;
+  text-shadow: 0 0 5px #000;
+}
+
+ol, ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 600px;
+  text-align: left;
+}
+
+li {
+  margin-bottom: 0.75em;
+  padding: 0.5em;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
 }
 
 .tag-button {
   margin: 0.2em;
-  font-size: 0.8em;
-  background: #555;
   padding: 0.3em 0.6em;
+  font-size: 0.9em;
   border-radius: 4px;
+  background: #ff69b4;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
-h2 {
-  margin-top: 2em;
+.tag-button:hover {
+  background: #ff1493;
 }
