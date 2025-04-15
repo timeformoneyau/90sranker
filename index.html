@@ -13,21 +13,20 @@
 <body>
   <div class="container">
     <h1>🍿 Personal 1990s Movie Ranking Tool</h1>
-
     <div id="compare-section">
-      <div class="movie-block">
-        <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
-        <div id="movieA" class="primary">Movie A</div>
-        <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
-      </div>
+<div class="movie-block">
+  <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
+  <button id="movieA" class="primary" onclick="vote('A')">Movie A</button>
+  <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
+</div>
 
-      <div class="vs">vs</div>
+<div class="vs">vs</div>
 
-      <div class="movie-block">
-        <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
-        <div id="movieB" class="primary">Movie B</div>
-        <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
-      </div>
+<div class="movie-block">
+  <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
+  <button id="movieB" class="primary" onclick="vote('B')">Movie B</button>
+  <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
+</div>
     </div>
 
     <a href="list.html">🍿 View Your Lists</a>
