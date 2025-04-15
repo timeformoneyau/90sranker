@@ -273,33 +273,33 @@ a {
 /* === Popcorn Burst === */
 #popcorn-burst {
   position: absolute;
-  top: 0;
-  left: 0;
+  width: 100px;
+  height: 100px;
   pointer-events: none;
   z-index: 10;
-  font-size: 2em;
-  opacity: 0;
-  animation: none;
 }
 
-@keyframes burst {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
-}
-#popcorn-burst {
+.pop {
   position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 10;
-  font-size: 2em;
+  font-size: 2.5em;
   opacity: 0;
   animation: none;
 }
 
-@keyframes burst {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
+@keyframes pop1 {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(-40px, -120px) rotate(-720deg); opacity: 0; }
 }
+
+@keyframes pop2 {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(30px, -100px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes pop3 {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(-10px, -150px) rotate(1080deg); opacity: 0; }
+}
+
 
 
