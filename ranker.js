@@ -10,6 +10,9 @@ const TAG_OPTIONS = ["Nostalgic Favorite", "Dumb Awesome", "Top 50"];
 const DEFAULT_RATING = 1000;
 const K = 32;
 
+const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+
 async function loadMovies() {
   const response = await fetch("movie_list_cleaned.json");
   movies = await response.json();
@@ -74,18 +77,46 @@ function chooseTwoMovies() {
   displayMovies();
 }
 
-function displayMovies() {
-  if (document.getElementById("movieA")) {
-    document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
+async function fetchPosterUrl(title, year) {
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.results && data.results[0] && data.results[0].poster_path) {
+      return TMDB_IMAGE_BASE + data.results[0].poster_path;
+    }
+  } catch (err) {
+    console.error(`Failed to fetch poster for ${title}`, err);
   }
-  if (document.getElementById("movieB")) {
-    document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
-  }
+  return "fallback.jpg"; // Optional local placeholder
+}
+
+async function displayMovies() {
+  document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
+  document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
+
+  const posterA = await fetchPosterUrl(movieA.title, movieA.year);
+  const posterB = await fetchPosterUrl(movieB.title, movieB.year);
+
+  const imgA = document.getElementById("posterA");
+  const imgB = document.getElementById("posterB");
+
+  if (imgA) imgA.src = posterA;
+  if (imgB) imgB.src = posterB;
 }
 
 function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
+
+  // 🍿 Add shake effect
+  const votedPoster = document.getElementById(`poster${winner}`);
+  if (votedPoster) {
+    votedPoster.classList.add("popcorn-shake");
+    setTimeout(() => {
+      votedPoster.classList.remove("popcorn-shake");
+    }, 400);
+  }
 
   updateElo(winnerTitle, loserTitle);
   updateStats(winnerTitle, loserTitle);
