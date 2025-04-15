@@ -9,6 +9,8 @@
   <div class="container">
     <h1>📋 Your Lists</h1>
 
+    <button onclick="exportToCSV()" style="margin-bottom: 2em;">⬇️ Export Rankings to CSV</button>
+
     <h2>Ranked Movies</h2>
     <ol id="ranking-list"></ol>
 
@@ -24,6 +26,7 @@
   <script>
     let movies = [];
     let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+    let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
     let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
     let tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 
@@ -35,31 +38,32 @@
       updateTaggedList();
     }
 
-   function updateRanking() {
-  const listEl = document.getElementById("ranking-list");
-  listEl.innerHTML = "";
+    function updateRanking() {
+      const listEl = document.getElementById("ranking-list");
+      listEl.innerHTML = "";
 
-  const ranked = [...movies]
-    .filter(m => ratings[m.title] !== undefined && !unseen.includes(m.title))
-    .sort((a, b) => (ratings[b.title] || 1000) - (ratings[a.title] || 1000));
+      const ranked = [...movies]
+        .filter(m => ratings[m.title] !== undefined && !unseen.includes(m.title))
+        .sort((a, b) => (ratings[b.title] || 1000) - (ratings[a.title] || 1000));
 
-  ranked.forEach(movie => {
-    const rating = ratings[movie.title] || 1000;
-    const record = stats[movie.title] || { wins: 0, losses: 0 };
-    const total = record.wins + record.losses;
-    const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
+      ranked.forEach(movie => {
+        const title = movie.title;
+        const rating = ratings[title] || 1000;
+        const record = stats[title] || { wins: 0, losses: 0 };
+        const total = record.wins + record.losses;
+        const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
 
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${movie.title}</strong> (${movie.year}) — 
-      <span>${rating} pts</span> | 
-      <span>W: ${record.wins}</span>, 
-      <span>L: ${record.losses}</span>, 
-      <span>Win%: ${winRate}</span>
-    `;
-    listEl.appendChild(li);
-  });
-}
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <strong>${title}</strong> (${movie.year}) —
+          <span>${rating} pts</span> |
+          <span>W: ${record.wins}</span>,
+          <span>L: ${record.losses}</span>,
+          <span>Win%: ${winRate}</span>
+        `;
+        listEl.appendChild(li);
+      });
+    }
 
     function updateUnseenList() {
       const unseenList = document.getElementById("unseen-list");
@@ -95,7 +99,36 @@
       });
     }
 
-    window.onload = loadLists;
-  </script>
-</body>
-</html>
+    function exportToCSV() {
+      const rows = [
+        ["Title", "Year", "Rating", "Wins", "Losses", "Win %", "Tags"]
+      ];
+
+      movies.forEach(movie => {
+        const title = movie.title;
+        if (ratings[title] === undefined || unseen.includes(title)) return;
+
+        const rating = ratings[title] || 1000;
+        const record = stats[title] || { wins: 0, losses: 0 };
+        const total = record.wins + record.losses;
+        const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
+        const tagList = tags[title] ? tags[title].join("; ") : "";
+
+        rows.push([
+          title,
+          movie.year,
+          rating,
+          record.wins,
+          record.losses,
+          winRate,
+          tagList
+        ]);
+      });
+
+      const csvContent = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "movie_rank_
