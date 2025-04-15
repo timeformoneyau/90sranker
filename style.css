@@ -43,32 +43,36 @@ button:hover {
   background-color: #4697e2;
 }
 
-/* ===== Tables ===== */
-table {
+/* ===== List Page Tables ===== */
+.ranking-table,
+.unseen-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1em;
 }
 
-th, td {
+.ranking-table th,
+.ranking-table td,
+.unseen-table td {
   padding: 0.6em 1em;
   border-bottom: 1px solid #333;
-  color: #fff;
+}
+
+.ranking-table th {
+  color: #66ccff;
+  font-weight: bold;
   text-align: center;
 }
 
-th {
-  color: #66ccff;
-  font-weight: bold;
+.ranking-table td {
+  text-align: center;
 }
 
-/* List page: left-align movie title column only */
 .ranking-table td.movie-title-cell {
   text-align: left;
   font-weight: bold;
 }
 
-/* Striping + hover for tables */
 .ranking-table tr:nth-child(even),
 .unseen-table tr:nth-child(even) {
   background-color: #1a1a1a;
@@ -79,7 +83,6 @@ th {
   background-color: #222;
 }
 
-/* ===== Unseen Movies Table ===== */
 .unseen-table td:first-child {
   width: 75%;
   text-align: left;
@@ -90,7 +93,6 @@ th {
   text-align: right;
 }
 
-/* ===== Tag List ===== */
 #tagged-list {
   list-style-type: none;
   padding-left: 0;
@@ -100,3 +102,10 @@ th {
   margin-bottom: 0.5em;
   color: #ddd;
 }
+
+/* ===== Ranker Page Layout ===== */
+#ranking {
+  text-align: center;
+}
+
+#ranking .movie-box {
