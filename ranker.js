@@ -46,7 +46,6 @@ function chooseTwoMovies() {
     return;
   }
 
-  // Shuffle and pick anchor movie
   const shuffled = available.sort(() => 0.5 - Math.random());
   const anchor = shuffled.find(m => true);
   const anchorTier = getTier(anchor);
@@ -154,11 +153,15 @@ function updateRanking() {
     .sort((a, b) => (ratings[b.title] || DEFAULT_RATING) - (ratings[a.title] || DEFAULT_RATING));
 
   ranked.forEach(movie => {
-    const rating = ratings[movie.title] || DEFAULT_RATING;
-    const record = stats[movie.title] || { wins: 0, losses: 0 };
+    const title = movie.title;
+    const rating = ratings[title] || DEFAULT_RATING;
+    const record = stats[title] || { wins: 0, losses: 0 };
+    const total = record.wins + record.losses;
+    const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
+
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${rating} pts (W:${record.wins}, L:${record.losses}) ${renderTags(movie.title)}`;
-    li.appendChild(buildTagUI(movie.title));
+    li.innerHTML = `<strong>${title}</strong> (${movie.year}) — ${rating} pts (W:${record.wins}, L:${record.losses}, Win%: ${winRate}) ${renderTags(title)}`;
+    li.appendChild(buildTagUI(title));
     listEl.appendChild(li);
   });
 }
