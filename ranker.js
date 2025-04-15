@@ -115,19 +115,24 @@ function vote(winner) {
     votedPoster.classList.add("popcorn-shake");
 
     // Popcorn burst
-    const popcorn = document.getElementById("popcorn-burst");
-    const rect = votedPoster.getBoundingClientRect();
+const popcorn = document.getElementById("popcorn-burst");
+const pops = popcorn.querySelectorAll(".pop");
 
-    popcorn.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
-    popcorn.style.top = `${rect.top + window.scrollY - 30}px`;
-    popcorn.innerText = "🍿";
-    popcorn.style.animation = "burst 0.7s ease forwards";
+const rect = votedPoster.getBoundingClientRect();
+popcorn.style.left = `${rect.left + window.scrollX + rect.width / 2 - 50}px`;
+popcorn.style.top = `${rect.top + window.scrollY - 30}px`;
 
-    setTimeout(() => {
-      votedPoster.classList.remove("popcorn-shake");
-      popcorn.style.animation = "none";
-      popcorn.innerText = "";
-    }, 700);
+pops.forEach((pop, i) => {
+  pop.style.animation = `pop${i + 1} 0.8s ease-out forwards`;
+});
+
+setTimeout(() => {
+  votedPoster.classList.remove("popcorn-shake");
+  pops.forEach(pop => {
+    pop.style.animation = "none";
+  });
+}, 800);
+
   }
 
   updateElo(winnerTitle, loserTitle);
