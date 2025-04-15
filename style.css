@@ -1,3 +1,29 @@
+/* ===== Base Layout ===== */
+body {
+  background-color: #111;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 2em;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.2em;
+  color: #66ccff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  justify-content: center;
+}
+
+/* ===== Ranker Layout ===== */
 #compare-section {
   display: flex;
   justify-content: center;
@@ -18,10 +44,10 @@
   align-items: center;
 }
 
-.movie-block .primary {
-  font-size: 1.1em;
+.primary {
+  font-size: 1em;
   font-weight: bold;
-  padding: 0.7em 1.5em;
+  padding: 0.6em 1.2em;
   border-radius: 10px;
   background: linear-gradient(to bottom, #4fa3ff, #1c6dd0);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
@@ -29,15 +55,16 @@
   color: white;
   cursor: pointer;
   transition: transform 0.1s ease-in-out;
-  min-width: 200px;
-  margin-bottom: 0.5em;
+  margin-bottom: 0.4em;
+  max-width: 300px;
+  width: auto;
 }
 
-.movie-block .primary:hover {
+.primary:hover {
   transform: scale(1.05);
 }
 
-.movie-block .secondary {
+.secondary {
   background: #555;
   color: #eee;
   border-radius: 6px;
@@ -48,6 +75,22 @@
   transition: background-color 0.2s ease;
 }
 
-.movie-block .secondary:hover {
+.secondary:hover {
   background-color: #777;
+}
+
+.vs {
+  font-weight: bold;
+  color: #ccc;
+  font-size: 1.1em;
+  margin-top: 1.5em;
+}
+
+/* ===== Link Styling ===== */
+a {
+  display: inline-block;
+  margin-top: 2.5em;
+  text-decoration: underline;
+  color: #66ccff;
+  font-size: 1em;
 }
