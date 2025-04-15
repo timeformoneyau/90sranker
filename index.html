@@ -2,32 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Personal 1990s Movie Ranking Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>90s Movie Ranker</title>
+
+  <!-- Orbitron or fallback font -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container" id="ranking">
+  <div class="container">
     <h1>🍿 Personal 1990s Movie Ranking Tool</h1>
 
     <div id="compare-section">
       <div class="movie-block">
-        <div class="button-stack">
-          <button id="movieA" onclick="vote('A')" class="primary">Movie A</button>
-          <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
-        </div>
+        <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
+        <div id="movieA" class="primary">Movie A</div>
+        <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
       </div>
 
       <div class="vs">vs</div>
 
       <div class="movie-block">
-        <div class="button-stack">
-          <button id="movieB" onclick="vote('B')" class="primary">Movie B</button>
-          <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
-        </div>
+        <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
+        <div id="movieB" class="primary">Movie B</div>
+        <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
       </div>
     </div>
 
-    <a href="list.html">📋 View Your Lists</a>
+    <a href="list.html">🍿 View Your Lists</a>
   </div>
 
   <script src="ranker.js"></script>
