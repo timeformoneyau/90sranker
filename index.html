@@ -2,23 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>90s Ranker</title>
+  <title>Personal 1990s Movie Ranking Tool</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container" id="ranking">
-    <h1>🎬 90s Ranker</h1>
+    <h1>🍿 Personal 1990s Movie Ranking Tool</h1>
 
     <div id="compare-section">
-      <div class="movie-box">
-        <button id="movieA" onclick="vote('A')">Movie A</button>
+      <div class="movie-block">
+        <button id="movieA" onclick="vote('A')" class="primary">Movie A</button>
         <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
       </div>
 
-      <span class="vs">vs</span>
+      <div class="vs">vs</div>
 
-      <div class="movie-box">
-        <button id="movieB" onclick="vote('B')">Movie B</button>
+      <div class="movie-block">
+        <button id="movieB" onclick="vote('B')" class="primary">Movie B</button>
         <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
       </div>
     </div>
