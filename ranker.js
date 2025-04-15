@@ -121,13 +121,16 @@ function createPopcornBurst(element) {
   container.className = 'popcorn-container';
   
   // Create 30 popcorn kernels with different variations
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 50; i++) {
     const kernel = document.createElement('div');
     kernel.className = 'popcorn-kernel k' + (Math.floor(Math.random() * 3) + 1);
     
     // Random position for burst direction
     const angle = Math.random() * Math.PI * 2;
-    const distance = 50 + Math.random() * 150;
+    const distance = 80 + Math.random() * 180;
+    const scale = 0.8 + Math.random() * 0.7; // 0.8 to 1.5
+    kernel.style.transform = `scale(${scale})`;
+    kernel.style.zIndex = `${Math.floor(Math.random() * 3) + 1}`;
     const xPos = Math.cos(angle) * distance;
     const yPos = Math.sin(angle) * distance;
     const rotation = Math.random() * 720 - 360; // Random rotation -360 to 360
@@ -147,9 +150,9 @@ function createPopcornBurst(element) {
   element.appendChild(container);
   
   // Trigger animation after a small delay to ensure DOM is updated
-  setTimeout(() => {
-    container.classList.add('popcorn-burst-active');
-  }, 10);
+setTimeout(() => {
+  chooseTwoMovies();
+}, 1500);
   
   // Remove animation class after completion
   setTimeout(() => {
