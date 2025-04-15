@@ -4,6 +4,43 @@
   <meta charset="UTF-8">
   <title>Your Movie Lists</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2em;
+    }
+    .ranking-table th, .ranking-table td {
+      padding: 0.5em 1em;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    .ranking-table th {
+      color: #66ccff;
+      font-weight: bold;
+    }
+    .ranking-table td {
+      color: #fff;
+    }
+    .ranking-title {
+      font-weight: bold;
+      color: #fff;
+    }
+    .unseen-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    .unseen-table td {
+      padding: 0.5em 1em;
+      border-bottom: 1px solid #444;
+      color: #fff;
+    }
+    .unseen-table button {
+      padding: 0.3em 0.8em;
+      font-size: 0.9em;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -12,10 +49,23 @@
     <button onclick="exportToCSV()" style="margin-bottom: 2em;">⬇️ Export Rankings to CSV</button>
 
     <h2>Ranked Movies</h2>
-    <ol id="ranking-list"></ol>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Rating</th>
+          <th>Wins</th>
+          <th>Losses</th>
+          <th>Win%</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-list"></tbody>
+    </table>
 
     <h2>Haven’t Seen List</h2>
-    <ul id="unseen-list"></ul>
+    <table class="unseen-table">
+      <tbody id="unseen-list"></tbody>
+    </table>
 
     <h2>Tagged Movies</h2>
     <ul id="tagged-list"></ul>
