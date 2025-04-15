@@ -219,3 +219,24 @@ a {
   z-index: 1;
 }
 
+.marquee-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #66ccff;
+  background: #111;
+  border: 4px solid #ffcc00;
+  padding: 0.4em 1em;
+  margin: 0 auto 1.5em auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8em;
+  box-shadow: 0 0 15px #ffcc00;
+  border-radius: 12px;
+}
+
+.marquee-title .bulbs {
+  font-size: 1.2em;
+  color: #ffcc00;
+  text-shadow: 0 0 5px #ffcc00;
+}
