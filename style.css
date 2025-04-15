@@ -1,3 +1,4 @@
+/* ===== General Layout ===== */
 body {
   background-color: #111;
   color: #fff;
@@ -26,6 +27,7 @@ h2 {
   margin-bottom: 0.5em;
 }
 
+/* ===== Buttons ===== */
 button {
   background-color: #337ab7;
   color: #fff;
@@ -41,6 +43,7 @@ button:hover {
   background-color: #4697e2;
 }
 
+/* ===== Tables ===== */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -50,24 +53,22 @@ table {
 th, td {
   padding: 0.6em 1em;
   border-bottom: 1px solid #333;
+  color: #fff;
+  text-align: center;
 }
 
 th {
   color: #66ccff;
   font-weight: bold;
-  text-align: center;
 }
 
-td {
-  color: #fff;
-  text-align: center;
-}
-
+/* List page: left-align movie title column only */
 .ranking-table td.movie-title-cell {
   text-align: left;
   font-weight: bold;
 }
 
+/* Striping + hover for tables */
 .ranking-table tr:nth-child(even),
 .unseen-table tr:nth-child(even) {
   background-color: #1a1a1a;
@@ -78,6 +79,7 @@ td {
   background-color: #222;
 }
 
+/* ===== Unseen Movies Table ===== */
 .unseen-table td:first-child {
   width: 75%;
   text-align: left;
@@ -88,6 +90,7 @@ td {
   text-align: right;
 }
 
+/* ===== Tag List ===== */
 #tagged-list {
   list-style-type: none;
   padding-left: 0;
