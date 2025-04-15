@@ -1,41 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Your Movie Lists</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Personal 1990s Movie Ranking Tool</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container" id="list">
-    <h1>📋 Your Lists</h1>
+  <div class="container" id="ranking">
+    <h1>🎬 Personal 1990’s Movie Ranking Tool</h1>
 
-    <button onclick="exportToCSV()" style="margin-bottom: 2em;">⬇️ Export Rankings to CSV</button>
+    <div id="compare-section">
+      <div class="movie-column">
+        <button id="movieA" onclick="vote('A')">Movie A</button>
+        <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
+      </div>
 
-    <h2>Ranked Movies</h2>
-    <table class="ranking-table">
-      <thead>
-        <tr>
-          <th>Movie</th>
-          <th>Rating</th>
-          <th>Wins</th>
-          <th>Losses</th>
-          <th>Win%</th>
-        </tr>
-      </thead>
-      <tbody id="ranking-list"></tbody>
-    </table>
+      <div class="vs">vs</div>
 
-    <h2>Haven’t Seen List</h2>
-    <table class="unseen-table">
-      <tbody id="unseen-list"></tbody>
-    </table>
+      <div class="movie-column">
+        <button id="movieB" onclick="vote('B')">Movie B</button>
+        <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
+      </div>
+    </div>
 
-    <h2>Tagged Movies</h2>
-    <ul id="tagged-list"></ul>
-
-    <a href="index.html" style="color: #66ccff; text-decoration: underline; font-size: 1.1em; display: block; margin-top: 2em;">⬅️ Back to Voting</a>
+    <a href="list.html">📋 View Your Lists</a>
   </div>
 
-  <script src="list.js" defer></script>
+  <script src="ranker.js"></script>
 </body>
 </html>
