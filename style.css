@@ -98,15 +98,21 @@ button {
 button:hover {
   background-color: #4697e2;
 }
-
 .secondary {
-  background-color: #555;
-  color: #eee;
-  margin-left: 0.5em;
+  background-color: #eeeeee;
+  color: #222;
+  font-weight: bold;
+  padding: 0.4em 1em;
+  border: 2px solid #bbb;
+  border-radius: 8px;
+  margin-top: 0.5em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-
 .secondary:hover {
-  background-color: #777;
+  background-color: #ffcc00;
+  color: #000;
+  border-color: #ffcc00;
 }
 
 /* 🎟️ Primary Ticket Buttons */
@@ -240,3 +246,44 @@ a {
   color: #ffcc00;
   text-shadow: 0 0 5px #ffcc00;
 }
+
+/* === Marquee Title === */
+.marquee-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #66ccff;
+  background: #111;
+  border: 4px solid #ffcc00;
+  padding: 0.4em 1em;
+  margin: 0 auto 1.5em auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8em;
+  box-shadow: 0 0 15px #ffcc00;
+  border-radius: 12px;
+}
+
+.marquee-title .bulbs {
+  font-size: 1.2em;
+  color: #ffcc00;
+  text-shadow: 0 0 5px #ffcc00;
+}
+
+/* === Popcorn Burst === */
+#popcorn-burst {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+  font-size: 2em;
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes burst {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
+}
+
