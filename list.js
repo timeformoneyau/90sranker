@@ -27,9 +27,31 @@ function updateRanking() {
     const total = record.wins + record.losses;
     const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
 
-    const li = document.createElement("li");
-    li.innerHTML = `<strong>${title}</strong> (${movie.year}) — ${rating} pts (W:${record.wins}, L:${record.losses}, Win%: ${winRate})`;
-    listEl.appendChild(li);
+    const row = document.createElement("tr");
+
+    const titleCell = document.createElement("td");
+    titleCell.textContent = `${title} (${movie.year})`;
+    titleCell.className = "movie-title-cell";
+
+    const ratingCell = document.createElement("td");
+    ratingCell.textContent = `${rating}`;
+
+    const winsCell = document.createElement("td");
+    winsCell.textContent = record.wins;
+
+    const lossesCell = document.createElement("td");
+    lossesCell.textContent = record.losses;
+
+    const winRateCell = document.createElement("td");
+    winRateCell.textContent = winRate;
+
+    row.appendChild(titleCell);
+    row.appendChild(ratingCell);
+    row.appendChild(winsCell);
+    row.appendChild(lossesCell);
+    row.appendChild(winRateCell);
+
+    listEl.appendChild(row);
   });
 }
 
@@ -38,8 +60,12 @@ function updateUnseenList() {
   unseenList.innerHTML = "";
 
   unseen.forEach(title => {
-    const li = document.createElement("li");
-    li.textContent = title + " ";
+    const row = document.createElement("tr");
+
+    const titleCell = document.createElement("td");
+    titleCell.textContent = title;
+
+    const buttonCell = document.createElement("td");
     const button = document.createElement("button");
     button.textContent = "Put Back";
     button.onclick = () => {
@@ -48,8 +74,11 @@ function updateUnseenList() {
       updateUnseenList();
       updateRanking();
     };
-    li.appendChild(button);
-    unseenList.appendChild(li);
+    buttonCell.appendChild(button);
+
+    row.appendChild(titleCell);
+    row.appendChild(buttonCell);
+    unseenList.appendChild(row);
   });
 }
 
@@ -68,9 +97,7 @@ function updateTaggedList() {
 }
 
 function exportToCSV() {
-  const rows = [
-    ["Title", "Year", "Rating", "Wins", "Losses", "Win %", "Tags"]
-  ];
+  const rows = [["Title", "Year", "Rating", "Wins", "Losses", "Win %", "Tags"]];
 
   movies.forEach(movie => {
     const title = movie.title;
