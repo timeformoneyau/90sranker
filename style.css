@@ -285,14 +285,20 @@ a {
 
 .popcorn-kernel {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  background-color: #FFFDEC;
-  border-radius: 50% 50% 50% 50%;
-  box-shadow: 0 0 2px rgba(0,0,0,0.5);
-  transform-origin: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fffbe6 40%, #ffe399 80%, #f4d442 100%);
+  box-shadow: 0 0 6px rgba(255, 255, 200, 0.5);
   opacity: 0;
+  transform-origin: center;
   z-index: 999;
+}
+.popcorn-kernel.k2 {
+  transform: scale(0.8) rotate(15deg);
+}
+.popcorn-kernel.k3 {
+  transform: scale(1.2) rotate(-30deg);
 }
 
 /* Popcorn kernel variations */
@@ -319,8 +325,8 @@ a {
   10% {
     opacity: 1;
   }
-  80% {
-    opacity: 1;
+  50% {
+    transform: translate(calc(var(--x) * 0.7), calc(var(--y) * 0.7)) scale(1.2) rotate(calc(var(--r) * 0.5));
   }
   100% {
     opacity: 0;
