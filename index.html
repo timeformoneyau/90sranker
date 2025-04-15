@@ -11,45 +11,28 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="popcorn-burst">
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-  <span class="pop">🍿</span>
-</div>
-
   <div class="bg-overlay"></div>
   <div class="container">
-  <div class="marquee-title">
-  <span class="bulbs left">🔸🔸🔸</span>
-  <span class="text">90s Movie Ranker</span>
-  <span class="bulbs right">🔸🔸🔸</span>
-  </div>
+    <div class="marquee-title">
+      <span class="bulbs left">🔸🔸🔸</span>
+      <span class="text">90s Movie Ranker</span>
+      <span class="bulbs right">🔸🔸🔸</span>
+    </div>
+
     <div id="compare-section">
-<div class="movie-block">
-  <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
-  <button id="movieA" class="primary" onclick="vote('A')">Movie A</button>
-  <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
-</div>
+      <div class="movie-block">
+        <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
+        <button id="movieA" class="primary" onclick="vote('A')">Movie A</button>
+        <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
+      </div>
 
-<div class="vs">vs</div>
+      <div class="vs">vs</div>
 
-<div class="movie-block">
-  <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
-  <button id="movieB" class="primary" onclick="vote('B')">Movie B</button>
-  <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
-</div>
+      <div class="movie-block">
+        <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
+        <button id="movieB" class="primary" onclick="vote('B')">Movie B</button>
+        <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
+      </div>
     </div>
 
     <a href="list.html">🍿 View Your Lists</a>
