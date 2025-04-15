@@ -109,13 +109,25 @@ function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
 
-  // 🍿 Add shake effect
   const votedPoster = document.getElementById(`poster${winner}`);
   if (votedPoster) {
+    // Shake effect
     votedPoster.classList.add("popcorn-shake");
+
+    // Popcorn burst
+    const popcorn = document.getElementById("popcorn-burst");
+    const rect = votedPoster.getBoundingClientRect();
+
+    popcorn.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+    popcorn.style.top = `${rect.top + window.scrollY - 30}px`;
+    popcorn.innerText = "🍿";
+    popcorn.style.animation = "burst 0.7s ease forwards";
+
     setTimeout(() => {
       votedPoster.classList.remove("popcorn-shake");
-    }, 400);
+      popcorn.style.animation = "none";
+      popcorn.innerText = "";
+    }, 700);
   }
 
   updateElo(winnerTitle, loserTitle);
@@ -131,6 +143,7 @@ function vote(winner) {
   if (document.getElementById("ranking-list")) updateRanking();
   chooseTwoMovies();
 }
+
 
 function updateElo(winnerTitle, loserTitle) {
   const Ra = ratings[winnerTitle] || DEFAULT_RATING;
