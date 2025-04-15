@@ -77,6 +77,7 @@ h2 {
   border-radius: 8px;
   transition: transform 0.2s ease;
   cursor: pointer;
+  position: relative; /* Important for popcorn positioning */
 }
 
 .poster:hover {
@@ -173,6 +174,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative; /* Important for popcorn positioning */
 }
 
 .button-stack {
@@ -271,6 +273,67 @@ a {
 }
 
 /* === Popcorn Burst === */
+.popcorn-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.popcorn-kernel {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #FFFDEC;
+  border-radius: 50% 50% 50% 50%;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+  transform-origin: center;
+  opacity: 0;
+  z-index: 999;
+}
+
+/* Popcorn kernel variations */
+.popcorn-kernel.k1 {
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  background-color: #FFFFF0;
+}
+
+.popcorn-kernel.k2 {
+  clip-path: polygon(50% 0%, 80% 20%, 100% 50%, 80% 80%, 50% 100%, 20% 80%, 0% 50%, 20% 20%);
+  background-color: #FFF8DC;
+}
+
+.popcorn-kernel.k3 {
+  border-radius: 60% 40% 70% 30%;
+  background-color: #FFFAF0;
+}
+
+@keyframes kernelBurst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
+  }
+}
+
+/* Popcorn container animation trigger class */
+.popcorn-burst-active .popcorn-kernel {
+  animation: kernelBurst 1.2s ease-out forwards;
+}
+
+/* Existing pop animations */
 #popcorn-burst {
   position: absolute;
   width: 100px;
@@ -300,6 +363,3 @@ a {
   0%   { transform: translate(0, 0); opacity: 1; }
   100% { transform: translate(-10px, -150px) rotate(1080deg); opacity: 0; }
 }
-
-
-
