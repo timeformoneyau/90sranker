@@ -1,6 +1,6 @@
 /* ===== Base Layout ===== */
 body {
-  background: url('video_store_bg.png') center center / cover no-repeat;
+  background: url('background.png') center center / cover no-repeat;
   background-color: #000;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
