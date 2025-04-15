@@ -1,8 +1,7 @@
 /* ===== Base Layout ===== */
 body {
-  background: url('your-background.jpg') center center / cover no-repeat;
+  background: url('video_store_bg.png') center center / cover no-repeat;
   background-color: #000;
-  filter: grayscale(80%) brightness(0.6);
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
