@@ -1,6 +1,8 @@
 /* ===== Base Layout ===== */
 body {
-  background-color: #111;
+  background: url('your-background.jpg') center center / cover no-repeat;
+  background-color: #000;
+  filter: grayscale(80%) brightness(0.6);
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
@@ -95,6 +97,47 @@ button:hover {
   background-color: #777;
 }
 
+/* 🎟️ Ticket-Shaped Matchup Buttons (Primary) */
+.primary {
+  font-size: 1em;
+  font-weight: bold;
+  padding: 0.6em 1.2em;
+  background-color: #0033a0;
+  color: #fff;
+  border: 3px solid #ffcc00;
+  border-radius: 10px;
+  clip-path: polygon(
+    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
+    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
+  );
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease-in-out;
+  margin-bottom: 0.4em;
+  max-width: 300px;
+  width: auto;
+}
+
+.primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #ffcc00;
+}
+
+/* 🍿 Celebration Shake Animation */
+.popcorn-shake {
+  animation: shake 0.3s ease;
+  position: relative;
+}
+
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 0); }
+  40% { transform: translate(3px, 0); }
+  60% { transform: translate(-2px, 0); }
+  80% { transform: translate(2px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
 /* ===== Ranker Layout ===== */
 #ranking {
   text-align: center;
@@ -118,26 +161,6 @@ button:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.primary {
-  font-size: 1em;
-  font-weight: bold;
-  padding: 0.6em 1.2em;
-  border-radius: 10px;
-  background: linear-gradient(to bottom, #4fa3ff, #1c6dd0);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  border: none;
-  color: white;
-  cursor: pointer;
-  transition: transform 0.1s ease-in-out;
-  margin-bottom: 0.4em;
-  max-width: 300px;
-  width: auto;
-}
-
-.primary:hover {
-  transform: scale(1.05);
 }
 
 .vs {
