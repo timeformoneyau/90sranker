@@ -286,4 +286,20 @@ a {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
 }
+#popcorn-burst {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+  font-size: 2em;
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes burst {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
+}
+
 
