@@ -202,3 +202,20 @@ a {
   color: #66ccff;
   font-size: 1em;
 }
+
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55); /* You can tweak 0.55 for lighter/darker */
+  z-index: 0;
+  pointer-events: none;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+}
+
