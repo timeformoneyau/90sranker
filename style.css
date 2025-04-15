@@ -677,9 +677,9 @@ a {
 }
 
 .marquee-image {
-  width: 100%;
-  max-width: 800px;
+  max-width: 90%;
+  width: 600px; /* Adjust this as needed */
   height: auto;
   display: block;
-  margin: 0 auto;
+  margin: 0 auto 1em auto;
 }
