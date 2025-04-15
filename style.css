@@ -70,6 +70,19 @@ h2 {
   text-align: left;
 }
 
+/* ===== Poster Images ===== */
+.poster {
+  width: 220px;
+  height: auto;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.poster:hover {
+  transform: scale(1.05);
+}
+
 /* ===== Buttons ===== */
 button {
   background-color: #337ab7;
@@ -96,7 +109,7 @@ button:hover {
   background-color: #777;
 }
 
-/* 🎟️ Ticket-Shaped Matchup Buttons (Primary) */
+/* 🎟️ Primary Ticket Buttons */
 .primary {
   font-size: 1em;
   font-weight: bold;
@@ -122,10 +135,9 @@ button:hover {
   box-shadow: 0 0 10px #ffcc00;
 }
 
-/* 🍿 Celebration Shake Animation */
+/* 🍿 Popcorn Shake Animation */
 .popcorn-shake {
   animation: shake 0.3s ease;
-  position: relative;
 }
 
 @keyframes shake {
@@ -148,6 +160,7 @@ button:hover {
   align-items: flex-start;
   gap: 4em;
   margin-top: 2em;
+  flex-wrap: wrap;
 }
 
 .movie-block {
