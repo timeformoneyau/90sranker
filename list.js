@@ -67,4 +67,44 @@ function updateTaggedList() {
   });
 }
 
+function exportToCSV() {
+  const rows = [
+    ["Title", "Year", "Rating", "Wins", "Losses", "Win %", "Tags"]
+  ];
+
+  movies.forEach(movie => {
+    const title = movie.title;
+    if (ratings[title] === undefined || unseen.includes(title)) return;
+
+    const rating = ratings[title] || 1000;
+    const record = stats[title] || { wins: 0, losses: 0 };
+    const total = record.wins + record.losses;
+    const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
+    const tagList = tags[title] ? tags[title].join("; ") : "";
+
+    rows.push([
+      title,
+      movie.year,
+      rating,
+      record.wins,
+      record.losses,
+      winRate,
+      tagList
+    ]);
+  });
+
+  const csvContent = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "movie_rankings.csv");
+  link.style.display = "none";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 window.onload = loadLists;
