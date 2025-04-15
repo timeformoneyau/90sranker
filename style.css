@@ -670,3 +670,16 @@ a {
   0%   { transform: translate(0, 0); opacity: 1; }
   100% { transform: translate(-10px, -150px) rotate(1080deg); opacity: 0; }
 }
+
+.marquee-image-container {
+  text-align: center;
+  margin-bottom: 2em;
+}
+
+.marquee-image {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
