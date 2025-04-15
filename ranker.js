@@ -103,6 +103,60 @@ async function displayMovies() {
 
   if (imgA) imgA.src = posterA;
   if (imgB) imgB.src = posterB;
+
+  // Ensure popcorn containers are removed from previous movies
+  const existingContainers = document.querySelectorAll('.popcorn-container');
+  existingContainers.forEach(container => container.remove());
+}
+
+function createPopcornBurst(element) {
+  // Clean up any existing popcorn containers first
+  const existingContainer = element.querySelector('.popcorn-container');
+  if (existingContainer) {
+    existingContainer.remove();
+  }
+  
+  // Create popcorn container
+  const container = document.createElement('div');
+  container.className = 'popcorn-container';
+  
+  // Create 30 popcorn kernels with different variations
+  for (let i = 0; i < 30; i++) {
+    const kernel = document.createElement('div');
+    kernel.className = 'popcorn-kernel k' + (Math.floor(Math.random() * 3) + 1);
+    
+    // Random position for burst direction
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 50 + Math.random() * 150;
+    const xPos = Math.cos(angle) * distance;
+    const yPos = Math.sin(angle) * distance;
+    const rotation = Math.random() * 720 - 360; // Random rotation -360 to 360
+    
+    // Random delay for more natural effect
+    const delay = Math.random() * 0.3;
+    
+    kernel.style.setProperty('--x', `${xPos}px`);
+    kernel.style.setProperty('--y', `${yPos}px`);
+    kernel.style.setProperty('--r', `${rotation}deg`);
+    kernel.style.animationDelay = `${delay}s`;
+    
+    container.appendChild(kernel);
+  }
+  
+  // Add container to the element
+  element.appendChild(container);
+  
+  // Trigger animation after a small delay to ensure DOM is updated
+  setTimeout(() => {
+    container.classList.add('popcorn-burst-active');
+  }, 10);
+  
+  // Remove animation class after completion
+  setTimeout(() => {
+    if (container && container.parentNode) {
+      container.classList.remove('popcorn-burst-active');
+    }
+  }, 1500);
 }
 
 function vote(winner) {
@@ -111,28 +165,36 @@ function vote(winner) {
 
   const votedPoster = document.getElementById(`poster${winner}`);
   if (votedPoster) {
-    // Shake effect
+    // Add shake effect
     votedPoster.classList.add("popcorn-shake");
+    
+    // Create new popcorn burst animation
+    createPopcornBurst(votedPoster.parentElement);
+    
+    // Keep the old popcorn animation for compatibility
+    const popcorn = document.getElementById("popcorn-burst");
+    if (popcorn) {
+      const pops = popcorn.querySelectorAll(".pop");
+      
+      const rect = votedPoster.getBoundingClientRect();
+      popcorn.style.left = `${rect.left + window.scrollX + rect.width / 2 - 50}px`;
+      popcorn.style.top = `${rect.top + window.scrollY - 30}px`;
+      
+      pops.forEach((pop, i) => {
+        pop.style.animation = `pop${i + 1} 0.8s ease-out forwards`;
+      });
+    }
 
-    // Popcorn burst
-const popcorn = document.getElementById("popcorn-burst");
-const pops = popcorn.querySelectorAll(".pop");
-
-const rect = votedPoster.getBoundingClientRect();
-popcorn.style.left = `${rect.left + window.scrollX + rect.width / 2 - 50}px`;
-popcorn.style.top = `${rect.top + window.scrollY - 30}px`;
-
-pops.forEach((pop, i) => {
-  pop.style.animation = `pop${i + 1} 0.8s ease-out forwards`;
-});
-
-setTimeout(() => {
-  votedPoster.classList.remove("popcorn-shake");
-  pops.forEach(pop => {
-    pop.style.animation = "none";
-  });
-}, 800);
-
+    // Remove shake class after animation completes
+    setTimeout(() => {
+      votedPoster.classList.remove("popcorn-shake");
+      if (popcorn) {
+        const pops = popcorn.querySelectorAll(".pop");
+        pops.forEach(pop => {
+          pop.style.animation = "none";
+        });
+      }
+    }, 800);
   }
 
   updateElo(winnerTitle, loserTitle);
@@ -146,9 +208,12 @@ setTimeout(() => {
   localStorage.setItem("movieStats", JSON.stringify(stats));
 
   if (document.getElementById("ranking-list")) updateRanking();
-  chooseTwoMovies();
+  
+  // Delay choosing new movies to allow animation to complete
+  setTimeout(() => {
+    chooseTwoMovies();
+  }, 1200);
 }
-
 
 function updateElo(winnerTitle, loserTitle) {
   const Ra = ratings[winnerTitle] || DEFAULT_RATING;
