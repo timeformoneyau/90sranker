@@ -1,5 +1,6 @@
 let movies = [];
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
 let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 let tags = JSON.parse(localStorage.getItem("movieTags")) || {};
@@ -26,26 +27,50 @@ function getAvailableMovies(exclude = []) {
   );
 }
 
-function chooseTwoMovies(preserveSide = null) {
-  const available = getAvailableMovies();
+function getTier(movie) {
+  const title = movie.title;
+  const rating = ratings[title] || DEFAULT_RATING;
+  const record = stats[title] || { wins: 0, losses: 0 };
+  const total = record.wins + record.losses;
 
+  if (total < 3) return "uncertain";
+  if (rating >= 1100 && record.wins >= 3) return "high";
+  if (rating <= 950 && record.losses >= 3) return "low";
+  return "mid";
+}
+
+function chooseTwoMovies() {
+  const available = getAvailableMovies();
   if (available.length < 2) {
     alert("Not enough unseen movies to compare.");
     return;
   }
 
-  if (preserveSide === "A" && movieA) {
-    const newBOptions = available.filter(m => m.title !== movieA.title);
-    if (!newBOptions.length) return;
-    movieB = newBOptions[Math.floor(Math.random() * newBOptions.length)];
-  } else if (preserveSide === "B" && movieB) {
-    const newAOptions = available.filter(m => m.title !== movieB.title);
-    if (!newAOptions.length) return;
-    movieA = newAOptions[Math.floor(Math.random() * newAOptions.length)];
-  } else {
-    const shuffled = available.sort(() => 0.5 - Math.random());
-    [movieA, movieB] = shuffled.slice(0, 2);
+  // Shuffle and pick anchor movie
+  const shuffled = available.sort(() => 0.5 - Math.random());
+  const anchor = shuffled.find(m => true);
+  const anchorTier = getTier(anchor);
+
+  const pairOptions = available.filter(m => {
+    const pairKey = [anchor.title, m.title].sort().join("|");
+    if (anchor.title === m.title) return false;
+    if (seenMatchups.includes(pairKey)) return false;
+
+    const tier = getTier(m);
+    if (anchorTier === "uncertain" || tier === "uncertain") return true;
+    if (anchorTier === tier) return true;
+    return false;
+  });
+
+  if (!pairOptions.length) {
+    alert("No fresh pairings available. Try resetting.");
+    return;
   }
+
+  const opponent = pairOptions[Math.floor(Math.random() * pairOptions.length)];
+
+  movieA = Math.random() < 0.5 ? anchor : opponent;
+  movieB = movieA === anchor ? opponent : anchor;
 
   displayMovies();
 }
@@ -64,15 +89,16 @@ function vote(winner) {
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
 
   updateElo(winnerTitle, loserTitle);
+  updateStats(winnerTitle, loserTitle);
 
   const pairKey = [movieA.title, movieB.title].sort().join("|");
   seenMatchups.push(pairKey);
 
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
   localStorage.setItem("movieRatings", JSON.stringify(ratings));
+  localStorage.setItem("movieStats", JSON.stringify(stats));
 
   if (document.getElementById("ranking-list")) updateRanking();
-
   chooseTwoMovies();
 }
 
@@ -81,10 +107,16 @@ function updateElo(winnerTitle, loserTitle) {
   const Rb = ratings[loserTitle] || DEFAULT_RATING;
 
   const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
-  const Eb = 1 - Ea;
 
   ratings[winnerTitle] = Math.round(Ra + K * (1 - Ea));
-  ratings[loserTitle] = Math.round(Rb + K * (0 - Eb));
+  ratings[loserTitle] = Math.round(Rb + K * (0 - (1 - Ea)));
+}
+
+function updateStats(winnerTitle, loserTitle) {
+  stats[winnerTitle] = stats[winnerTitle] || { wins: 0, losses: 0 };
+  stats[loserTitle] = stats[loserTitle] || { wins: 0, losses: 0 };
+  stats[winnerTitle].wins += 1;
+  stats[loserTitle].losses += 1;
 }
 
 function markUnseen(side) {
@@ -123,8 +155,9 @@ function updateRanking() {
 
   ranked.forEach(movie => {
     const rating = ratings[movie.title] || DEFAULT_RATING;
+    const record = stats[movie.title] || { wins: 0, losses: 0 };
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${rating} pts ${renderTags(movie.title)}`;
+    li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${rating} pts (W:${record.wins}, L:${record.losses}) ${renderTags(movie.title)}`;
     li.appendChild(buildTagUI(movie.title));
     listEl.appendChild(li);
   });
