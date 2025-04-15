@@ -35,21 +35,31 @@
       updateTaggedList();
     }
 
-    function updateRanking() {
-      const listEl = document.getElementById("ranking-list");
-      listEl.innerHTML = "";
+   function updateRanking() {
+  const listEl = document.getElementById("ranking-list");
+  listEl.innerHTML = "";
 
-      const ranked = [...movies]
-        .filter(m => ratings[m.title] !== undefined && !unseen.includes(m.title))
-        .sort((a, b) => (ratings[b.title] || 1000) - (ratings[a.title] || 1000));
+  const ranked = [...movies]
+    .filter(m => ratings[m.title] !== undefined && !unseen.includes(m.title))
+    .sort((a, b) => (ratings[b.title] || 1000) - (ratings[a.title] || 1000));
 
-      ranked.forEach(movie => {
-        const rating = ratings[movie.title] || 1000;
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>${movie.title}</strong> (${movie.year}) — ${rating} pts`;
-        listEl.appendChild(li);
-      });
-    }
+  ranked.forEach(movie => {
+    const rating = ratings[movie.title] || 1000;
+    const record = stats[movie.title] || { wins: 0, losses: 0 };
+    const total = record.wins + record.losses;
+    const winRate = total > 0 ? ((record.wins / total) * 100).toFixed(1) + "%" : "–";
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${movie.title}</strong> (${movie.year}) — 
+      <span>${rating} pts</span> | 
+      <span>W: ${record.wins}</span>, 
+      <span>L: ${record.losses}</span>, 
+      <span>Win%: ${winRate}</span>
+    `;
+    listEl.appendChild(li);
+  });
+}
 
     function updateUnseenList() {
       const unseenList = document.getElementById("unseen-list");
