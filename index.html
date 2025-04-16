@@ -4,26 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>90s Movie Ranker</title>
-
-  <!-- Orbitron font -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Optional legacy popcorn burst emoji support -->
-  <div id="popcorn-burst">
-    <span class="pop">🍿</span>
-    <span class="pop">🍿</span>
-    <span class="pop">🍿</span>
-  </div>
-
   <div class="bg-overlay"></div>
   <div class="container">
-<div class="banner">
-  <img src="banner.png" alt="Nineties Movie Ranker" class="marquee-image" />
-</div>
-
+    <div class="marquee-title">
+      <span class="bulbs left">🔸🔸🔸</span>
+      <span class="text">90s Movie Ranker</span>
+      <span class="bulbs right">🔸🔸🔸</span>
+    </div>
 
     <div id="compare-section">
       <div class="movie-block">
@@ -32,7 +23,7 @@
         <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
       </div>
 
-      <div class="vs">vs</div>
+      <div class="vs">VS</div>
 
       <div class="movie-block">
         <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
