@@ -671,3 +671,42 @@ a {
   display: block;
   margin: 0 auto 1em auto;
 }
+
+/* === Confetti Burst === */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  transform-origin: center;
+}
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) rotate(var(--r));
+  }
+}
+
+.confetti-burst-active .confetti-piece {
+  animation: confettiBurst 1s ease-out forwards;
+}
+
