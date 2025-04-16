@@ -48,13 +48,32 @@ body {
   margin-bottom: 2em;
 }
 
-.banner-image {
-  width: 100%;
-  max-width: 700px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-  object-fit: contain;
+.banner-marquee {
+  display: inline-block;
+  padding: 1em 2em;
+  border: 6px double #ff99ff;
+  border-radius: 20px;
+  background: linear-gradient(to bottom, #2a002a 0%, #7c007c 100%);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(255, 102, 204, 0.6);
+  text-align: center;
+}
+
+.banner-era {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ff66cc;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px #ff99ff;
+}
+
+.banner-title {
+  font-size: 2.4em;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px #ffffff, 0 0 12px #ff66cc;
+  margin-top: 0.3em;
 }
 
 /* ===== Compare Section ===== */
