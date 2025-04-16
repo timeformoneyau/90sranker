@@ -196,7 +196,7 @@ function updateStats(winner, loser) {
 }
 
 async function updateTopTenDisplay() {
-  const topTenContainer = document.getElementById("top-ten-grid");
+  const topTenContainer = document.getElementById("top-ten-sidebar-list") || document.getElementById("top-ten-grid");
   if (!topTenContainer || !movies.length) return;
 
   const ratedMovies = movies
