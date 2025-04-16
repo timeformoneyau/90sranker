@@ -191,3 +191,65 @@ a {
   margin: 0 auto;
   object-fit: contain;
 }
+
+/* ===== Top 10 Winners Section ===== */
+#top-ten {
+  margin-top: 4em;
+  text-align: center;
+}
+
+#top-ten h2 {
+  font-size: 1.6em;
+  color: #ff99ff;
+  text-shadow: 0 0 6px #ff66cc;
+  margin-bottom: 1em;
+}
+
+.top-ten-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1.2em;
+  justify-items: center;
+  margin-bottom: 2em;
+}
+
+.top-ten-card {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.6em;
+  border-radius: 10px;
+  width: 100px;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 153, 255, 0.2);
+  transition: transform 0.2s ease-in-out;
+}
+
+.top-ten-card:hover {
+  transform: scale(1.05);
+}
+
+.top-ten-card img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 0.4em;
+}
+
+.rank-number {
+  display: block;
+  font-weight: bold;
+  color: #ffd1f7;
+  font-size: 1.1em;
+  margin-bottom: 0.2em;
+}
+
+.movie-title {
+  font-size: 0.9em;
+  color: #eee;
+}
+
+.view-full-link {
+  color: #66ccff;
+  text-decoration: underline;
+  font-size: 1em;
+}
+
