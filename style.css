@@ -278,46 +278,31 @@ a {
   z-index: 100;
 }
 
-.popcorn-kernel {
+.confetti-piece {
   position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fffbe6 40%, #ffe399 80%, #f4d442 100%);
-  box-shadow: 0 0 6px rgba(255, 255, 200, 0.5);
+  width: 10px;
+  height: 14px;
+  background-color: red; /* Will be overridden inline */
   opacity: 0;
+  border-radius: 2px;
   transform-origin: center;
-  z-index: 999;
-  will-change: transform, opacity;
 }
 
-.popcorn-kernel.k2 {
-  transform: scale(0.8) rotate(15deg);
-}
-.popcorn-kernel.k3 {
-  transform: scale(1.2) rotate(-30deg);
-}
-
-@keyframes kernelBurst {
+@keyframes confettiBurst {
   0% {
-    opacity: 0;
-    transform: translate(0, 0) scale(0.2) rotate(0deg);
-  }
-  10% {
+    transform: translate(0, 0) rotate(0deg);
     opacity: 1;
   }
-  50% {
-    transform: translate(calc(var(--x) * 0.7), calc(var(--y) * 0.7)) scale(1.2) rotate(calc(var(--r) * 0.5));
-  }
   100% {
+    transform: translate(var(--x), var(--y)) rotate(var(--r));
     opacity: 0;
-    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
   }
 }
 
-.popcorn-burst-active .popcorn-kernel {
-  animation: kernelBurst 1.2s ease-out forwards;
+.confetti-burst-active .confetti-piece {
+  animation: confettiBurst 1s ease-out forwards;
 }
+
 
   font-size: 2.2em;
   color: #66ccff;
