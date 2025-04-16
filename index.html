@@ -11,37 +11,41 @@
 
     <!-- 🎬 Marquee Banner -->
     <div class="banner-wrapper">
-      <img src="marquee.png" alt="90s Movie Ranker" class="banner-image">
+      <img src="banner-marquee.png" alt="90s Movie Ranker" class="banner-image">
     </div>
 
-    <!-- 🎥 VS Compare Section -->
-    <section id="compare-section">
-      <div class="movie-block" id="movieA-block">
-        <img src="" alt="Movie Poster 1" class="poster" id="posterA">
-        <div id="movieA" class="movie-title">Movie A</div>
-        <button class="primary" onclick="vote('A')">Pick This Movie</button>
-      </div>
+    <div class="main-layout">
 
-      <div class="vs">VS</div>
+      <!-- 🎥 Matchup Section -->
+      <section id="compare-section">
+        <div class="movie-block" id="movieA-block">
+          <img src="" alt="Movie Poster 1" class="poster" id="posterA">
+          <div id="movieA" class="movie-title">Movie A</div>
+          <button class="primary" onclick="vote('A')">Pick This Movie</button>
+        </div>
 
-      <div class="movie-block" id="movieB-block">
-        <img src="" alt="Movie Poster 2" class="poster" id="posterB">
-        <div id="movieB" class="movie-title">Movie B</div>
-        <button class="secondary" onclick="vote('B')">Pick This Movie</button>
-      </div>
-    </section>
+        <div class="vs-badge">VS</div>
+
+        <div class="movie-block" id="movieB-block">
+          <img src="" alt="Movie Poster 2" class="poster" id="posterB">
+          <div id="movieB" class="movie-title">Movie B</div>
+          <button class="secondary" onclick="vote('B')">Pick This Movie</button>
+        </div>
+      </section>
+
+      <!-- 🏆 Sidebar: Top 10 Winners -->
+      <aside id="top-ten-sidebar">
+        <h2>🔥 Top 10 Movies</h2>
+        <div id="top-ten-sidebar-list">
+          <!-- Cards injected dynamically -->
+        </div>
+        <a href="list.html" class="view-full-link">View Full List ➡️</a>
+      </aside>
+
+    </div>
 
     <!-- 🎉 Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
-
-    <!-- 🏆 Top 10 Winners Section -->
-    <section id="top-ten">
-      <h2>🔥 Your Top 10 Movies</h2>
-      <div class="top-ten-grid" id="top-ten-grid">
-        <!-- Top 10 posters get injected here -->
-      </div>
-      <a href="list.html" class="view-full-link">View Full List ➡️</a>
-    </section>
 
   </div>
 
