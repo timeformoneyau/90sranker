@@ -14,14 +14,25 @@ const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
 async function loadMovies() {
-  const response = await fetch("movie_list_cleaned.json");
-  movies = await response.json();
+  try {
+    const response = await fetch("movie_list_cleaned.json");
+    if (!response.ok) throw new Error("Failed to fetch movie_list_cleaned.json");
+    movies = await response.json();
 
-  if (document.getElementById("ranking-list")) updateRanking();
-  if (document.getElementById("unseen-list")) updateUnseenList();
-  if (document.getElementById("tagged-list")) updateTaggedList();
+    if (!movies.length) {
+      alert("Movie list is empty or not loaded correctly.");
+      return;
+    }
 
-  chooseTwoMovies();
+    if (document.getElementById("ranking-list")) updateRanking();
+    if (document.getElementById("unseen-list")) updateUnseenList();
+    if (document.getElementById("tagged-list")) updateTaggedList();
+
+    chooseTwoMovies();
+  } catch (err) {
+    console.error("Error loading movies:", err);
+    alert("Failed to load movie list. Please check the console and file path.");
+  }
 }
 
 function getAvailableMovies(exclude = []) {
@@ -31,6 +42,11 @@ function getAvailableMovies(exclude = []) {
 }
 
 function chooseTwoMovies() {
+  if (!movies.length) {
+    console.warn("No movies loaded.");
+    return;
+  }
+
   const available = getAvailableMovies();
   if (available.length < 2) {
     alert("Not enough unseen movies to compare.");
@@ -176,4 +192,6 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-// rest of the code (markUnseen, updateRanking, etc.) remains the same
+// Add your markUnseen, updateRanking, updateUnseenList, updateTaggedList, etc. functions here as needed
+
+window.onload = loadMovies;
