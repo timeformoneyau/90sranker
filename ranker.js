@@ -27,6 +27,7 @@ async function loadMovies() {
     if (document.getElementById("ranking-list")) updateRanking();
     if (document.getElementById("unseen-list")) updateUnseenList();
     if (document.getElementById("tagged-list")) updateTaggedList();
+    if (document.getElementById("top-ten-grid")) updateTopTenDisplay();
 
     chooseTwoMovies();
   } catch (err) {
@@ -135,7 +136,9 @@ function vote(winner) {
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
   localStorage.setItem("movieRatings", JSON.stringify(ratings));
   localStorage.setItem("movieStats", JSON.stringify(stats));
+
   if (document.getElementById("ranking-list")) updateRanking();
+  if (document.getElementById("top-ten-grid")) updateTopTenDisplay();
 
   setTimeout(() => chooseTwoMovies(), 1500);
 }
@@ -192,6 +195,38 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-// Add your markUnseen, updateRanking, updateUnseenList, updateTaggedList, etc. functions here as needed
+async function updateTopTenDisplay() {
+  const topTenContainer = document.getElementById("top-ten-grid");
+  if (!topTenContainer || !movies.length) return;
+
+  const ratedMovies = movies
+    .filter(m => stats[m.title] && (stats[m.title].wins + stats[m.title].losses > 0))
+    .map(m => ({
+      ...m,
+      rating: ratings[m.title] || DEFAULT_RATING,
+      posterUrl: m.posterUrl || '',
+    }));
+
+  ratedMovies.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  const topTen = ratedMovies.slice(0, 10);
+
+  topTenContainer.innerHTML = '';
+
+  for (let i = 0; i < topTen.length; i++) {
+    const movie = topTen[i];
+    if (!movie.posterUrl) {
+      movie.posterUrl = await fetchPosterUrl(movie.title, movie.year);
+    }
+
+    const card = document.createElement("div");
+    card.className = "top-ten-card";
+    card.innerHTML = `
+      <span class="rank-number">#${i + 1}</span>
+      <img src="${movie.posterUrl}" alt="${movie.title}">
+      <div class="movie-title">${movie.title}</div>
+    `;
+    topTenContainer.appendChild(card);
+  }
+}
 
 window.onload = loadMovies;
