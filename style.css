@@ -1,4 +1,147 @@
-/* 🎉 Confetti Animation Styles */
+/* ===== Base Layout ===== */
+body {
+  background: url('background2.png') center center / cover no-repeat;
+  background-color: #000;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 2em;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Marquee Title ===== */
+.marquee-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #ffccff;
+  background: #111;
+  border: 4px solid #ff99ff;
+  padding: 0.4em 1em;
+  margin: 0 auto 1.5em auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8em;
+  box-shadow: 0 0 15px #ffccff;
+  border-radius: 12px;
+}
+
+.marquee-title .bulbs {
+  font-size: 1.2em;
+  color: #ff99ff;
+  text-shadow: 0 0 5px #ff99ff;
+}
+
+/* ===== Compare Section (Responsive) ===== */
+#compare-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2em;
+  margin-top: 2em;
+}
+
+@media (min-width: 768px) {
+  #compare-section {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 4em;
+  }
+}
+
+.movie-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* ===== VS Styling ===== */
+.vs {
+  font-size: 2em;
+  font-weight: bold;
+  color: #ff66cc;
+  text-shadow: 0 0 8px #ff66cc, 0 0 12px #ffffff;
+  padding: 0.3em 1em;
+  border: 3px solid #ffccff;
+  background: linear-gradient(145deg, #400040, #800080);
+  border-radius: 1em;
+  box-shadow: 0 0 12px rgba(255, 102, 204, 0.6);
+  margin: 0.5em 0;
+}
+
+/* ===== Poster Styling ===== */
+.poster {
+  width: 220px;
+  height: auto;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.poster:hover {
+  transform: scale(1.05);
+}
+
+/* ===== Primary Button (Ticket Style Purple) ===== */
+.primary {
+  font-size: 1em;
+  font-weight: bold;
+  padding: 0.6em 1.2em;
+  background: linear-gradient(145deg, #6c1e91, #a645d1);
+  color: #fff;
+  border: 3px solid #d99bff;
+  border-radius: 10px;
+  clip-path: polygon(
+    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
+    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
+  );
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease-in-out;
+  margin-bottom: 0.5em;
+  max-width: 300px;
+}
+
+.primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px #d99bff;
+}
+
+/* ===== Secondary Button (Haven’t Seen) ===== */
+.secondary {
+  font-size: 1em;
+  font-weight: 600;
+  padding: 0.5em 1em;
+  background: linear-gradient(145deg, #444, #666);
+  color: #ffebfb;
+  border: 2px solid #bbb;
+  border-radius: 10px;
+  clip-path: polygon(
+    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
+    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
+  );
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.secondary:hover {
+  background: #cc66cc;
+  color: #fff;
+  border-color: #ff99ff;
+  box-shadow: 0 0 10px #ff99ff;
+}
+
+/* ===== Confetti Styling ===== */
 .confetti-container {
   position: absolute;
   top: 50%;
@@ -11,42 +154,66 @@
 
 .confetti-piece {
   position: absolute;
-  width: 12px;
-  height: 16px;
-  opacity: 0;
+  width: 14px;
+  height: 18px;
   border-radius: 2px;
+  opacity: 0;
   transform-origin: center;
   animation: confettiBurst 1.2s ease-out forwards;
 }
 
-/* Optional: Confetti movement with pop */
 @keyframes confettiBurst {
   0% {
-    opacity: 1;
-    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5) rotate(0deg);
   }
-  40% {
+  10% {
     opacity: 1;
-    transform: translate(calc(var(--x) * 0.6), calc(var(--y) * 0.6)) rotate(calc(var(--r) * 0.5)) scale(1.2);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1);
+    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
   }
 }
 
-/* Optional: Subtle background confetti if desired */
-body.confetti-bg::after {
-  content: '';
+/* ===== Popcorn Shake Animation (Still Used) ===== */
+.popcorn-shake {
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 0); }
+  40% { transform: translate(3px, 0); }
+  60% { transform: translate(-2px, 0); }
+  80% { transform: translate(2px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ===== Utility ===== */
+.bg-overlay {
   position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.01) 0,
-    rgba(255, 255, 255, 0.01) 1px,
-    transparent 1px,
-    transparent 20px
-  );
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
   z-index: 0;
+  pointer-events: none;
+}
+
+a {
+  display: inline-block;
+  margin-top: 2em;
+  text-decoration: underline;
+  color: #ff99ff;
+  font-size: 1em;
+}
+
+/* ===== Tag List ===== */
+#tagged-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 1em;
+  color: #ddd;
 }
