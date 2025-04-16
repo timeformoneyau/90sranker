@@ -195,3 +195,14 @@ a {
   margin-top: 1em;
   color: #ddd;
 }
+.banner-wrapper {
+  text-align: center;
+  margin-bottom: 2em;
+}
+
+.banner-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
