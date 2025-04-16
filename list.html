@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Your Movie Lists</title>
+  <title>Your 90s Movie Rankings</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container" id="list">
-    <h1>📋 Your Lists</h1>
+    <h1>🍿 Your 90s Movie Rankings</h1>
 
-    <button onclick="exportToCSV()" style="margin-bottom: 2em;">⬇️ Export Rankings to CSV</button>
+    <button onclick="exportToCSV()" class="export-btn">📤 Export Rankings to CSV</button>
 
-    <h2>Ranked Movies</h2>
+    <h2>🎯 Top 20 Ranked Movies</h2>
     <table class="ranking-table">
       <thead>
         <tr>
@@ -25,15 +25,23 @@
       <tbody id="ranking-list"></tbody>
     </table>
 
-    <h2>Haven’t Seen List</h2>
+    <h2>🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
     <table class="unseen-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Year</th>
+          <th>TMDB Rating</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="unseen-list"></tbody>
     </table>
 
-    <h2>Tagged Movies</h2>
+    <h2>🏷️ Tagged Movies</h2>
     <ul id="tagged-list"></ul>
 
-    <a href="index.html" style="color: #66ccff; text-decoration: underline; font-size: 1.1em; display: block; margin-top: 2em;">⬅️ Back to Voting</a>
+    <a href="index.html" class="view-full-link">⬅️ Back to Voting</a>
   </div>
 
   <script src="list.js" defer></script>
