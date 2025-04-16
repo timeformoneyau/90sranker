@@ -124,28 +124,28 @@ function createConfettiBurst(element) {
 
   const colors = ['#ff3b3b', '#ffc107', '#4caf50', '#03a9f4', '#e91e63', '#9c27b0'];
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 120; i++) {
     const piece = document.createElement('div');
     piece.className = 'confetti-piece';
     piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.width = '10px';
-    piece.style.height = '14px';
+    piece.style.width = '12px';
+    piece.style.height = '16px';
     piece.style.opacity = '0';
     piece.style.position = 'absolute';
     piece.style.borderRadius = '2px';
     piece.style.transformOrigin = 'center';
 
     const angle = Math.random() * Math.PI * 2;
-    const distance = 60 + Math.random() * 80;
+    const distance = 200 + Math.random() * 200;
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
-    const rotation = Math.random() * 720 - 360;
-    const delay = Math.random() * 0.2;
+    const rotation = Math.random() * 1440 - 720;
+    const delay = Math.random() * 0.3;
 
     piece.style.setProperty('--x', `${x}px`);
     piece.style.setProperty('--y', `${y}px`);
     piece.style.setProperty('--r', `${rotation}deg`);
-    piece.style.animation = `confettiBurst 1s ease-out forwards`;
+    piece.style.animation = `confettiBurst 1.2s ease-out forwards`;
     piece.style.animationDelay = `${delay}s`;
 
     container.appendChild(piece);
@@ -161,7 +161,7 @@ function createConfettiBurst(element) {
     if (container && container.parentNode) {
       container.remove();
     }
-  }, 1500);
+  }, 1600);
 }
 
 function vote(winner) {
