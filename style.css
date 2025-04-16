@@ -281,19 +281,21 @@ a {
 }
 
 /* ===== Tables (Rankings & Unseen) ===== */
+/* ===== Enhanced Table Styling ===== */
 table {
   width: 100%;
   border-collapse: collapse;
   margin: 2em 0;
   font-size: 0.95em;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
+  background: rgba(20, 0, 30, 0.88); /* less transparent, richer tone */
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(255, 153, 255, 0.1);
+  box-shadow: 0 0 25px rgba(255, 153, 255, 0.25);
+  backdrop-filter: blur(6px);
 }
 
 table thead {
-  background: rgba(255, 153, 255, 0.15);
+  background: rgba(255, 153, 255, 0.18);
   color: #fff;
   font-weight: bold;
   text-align: center;
@@ -301,10 +303,10 @@ table thead {
 }
 
 table th, table td {
-  padding: 0.8em 1em;
+  padding: 0.9em 1em;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #f5f5f5;
 }
 
 table tr:last-child td {
@@ -312,7 +314,7 @@ table tr:last-child td {
 }
 
 table td button {
-  padding: 0.4em 1em;
+  padding: 0.45em 1em;
   border: none;
   background: #ff99ff;
   color: #1a001a;
@@ -321,73 +323,11 @@ table td button {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85em;
-  box-shadow: 0 0 4px #ff99ff88;
+  box-shadow: 0 0 6px #ff99ff88;
 }
 
 table td button:hover {
   background: #ff66cc;
   color: white;
-  box-shadow: 0 0 8px #ff99ffcc;
-}
-
-/* Section Headings (Themed) */
-h1 {
-  font-size: 2em;
-  color: #fff;
-  text-align: center;
-  margin-top: 0.5em;
-  margin-bottom: 1em;
-  text-shadow: 0 0 10px #ff66cc;
-}
-
-h2 {
-  font-size: 1.4em;
-  color: #ff99ff;
-  margin-top: 2em;
-  margin-bottom: 0.6em;
-  text-align: center;
-  text-shadow: 0 0 6px #ff66cc;
-}
-
-/* Export Button */
-.export-btn {
-  display: block;
-  margin: 0 auto 2em auto;
-  font-size: 0.9em;
-  padding: 0.6em 1.2em;
-  background: #00ccff;
-  color: #000;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  box-shadow: 0 0 10px #00ccff88;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.export-btn:hover {
-  background: #00aacc;
-}
-
-/* Back Link */
-.view-full-link {
-  color: #66ccff;
-  text-decoration: underline;
-  font-size: 1em;
-  display: block;
-  margin: 3em auto 2em;
-  text-align: center;
-}
-
-/* Tag List Cleanup */
-#tagged-list {
-  padding-left: 0;
-  margin-top: 1em;
-  text-align: center;
-  list-style: none;
-}
-
-#tagged-list li {
-  margin: 0.3em 0;
-  color: #ddd;
+  box-shadow: 0 0 10px #ff99ffcc;
 }
