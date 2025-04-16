@@ -9,14 +9,55 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   text-align: center;
   position: relative;
   z-index: 1;
 }
 
-/* ===== Compare Section (Responsive) ===== */
+/* ===== Layout Adjustments ===== */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2em;
+}
+
+@media (min-width: 1000px) {
+  .main-layout {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  #compare-section {
+    flex: 2;
+  }
+
+  #top-ten-sidebar {
+    flex: 1;
+    padding-left: 2em;
+    max-width: 280px;
+    text-align: left;
+  }
+}
+
+/* ===== Banner Styling ===== */
+.banner-wrapper {
+  text-align: center;
+  margin-bottom: 2em;
+}
+
+.banner-image {
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* ===== Compare Section ===== */
 #compare-section {
   display: flex;
   flex-direction: column;
@@ -42,19 +83,18 @@ body {
   gap: 0.8em;
 }
 
-/* ===== VS Styling ===== */
-.vs {
-  font-size: 2.4em;
+/* ===== VS Badge (New Style) ===== */
+.vs-badge {
+  font-size: 2.2em;
   font-weight: 900;
   color: #ff66cc;
-  text-shadow: 0 0 8px #ff66cc, 0 0 12px #ffffff;
-  padding: 0.3em 1em;
-  background: radial-gradient(circle, #7c007c, #2a002a);
-  border: 4px groove #ff99ff;
-  border-radius: 1em;
-  box-shadow: 0 0 16px rgba(255, 102, 204, 0.8);
-  transform: rotate(-5deg);
-  margin: 0.5em 0;
+  text-shadow: 0 0 5px #ff66cc, 0 0 10px #fff;
+  background: #2a002a;
+  padding: 0.4em 1em;
+  border: 3px solid #ff99ff;
+  border-radius: 2em;
+  margin: 1em 0;
+  box-shadow: 0 0 8px #ff99ff;
 }
 
 /* ===== Poster Styling ===== */
@@ -85,171 +125,9 @@ body {
   transition: transform 0.2s ease-in-out;
 }
 
-/* Primary = Richer gold */
 .primary {
   background: linear-gradient(145deg, #FFD700, #FFC300);
 }
 
-/* Secondary = Paler gold */
 .secondary {
-  background: linear-gradient(145deg, #f5c542, #f7d774);
-}
-
-.primary:hover, .secondary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 12px #FFD700, 0 0 0 3px #800080 inset;
-}
-
-/* ===== Confetti Styling ===== */
-.confetti-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 200;
-}
-
-.confetti-piece {
-  position: absolute;
-  width: 14px;
-  height: 18px;
-  border-radius: 2px;
-  opacity: 0;
-  transform-origin: center;
-  animation: confettiBurst 1.4s ease-out forwards;
-}
-
-@keyframes confettiBurst {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0) scale(0.5) rotate(0deg);
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
-  }
-}
-
-/* ===== Popcorn Shake Animation (Still Used) ===== */
-.popcorn-shake {
-  animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-3px, 0); }
-  40% { transform: translate(3px, 0); }
-  60% { transform: translate(-2px, 0); }
-  80% { transform: translate(2px, 0); }
-  100% { transform: translate(0, 0); }
-}
-
-/* ===== Utility ===== */
-.bg-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 0;
-  pointer-events: none;
-}
-
-a {
-  display: inline-block;
-  margin-top: 2em;
-  text-decoration: underline;
-  color: #ff99ff;
-  font-size: 1em;
-}
-
-/* ===== Tag List ===== */
-#tagged-list {
-  list-style-type: none;
-  padding-left: 0;
-  margin-top: 1em;
-  color: #ddd;
-}
-
-/* ===== Banner Styling ===== */
-.banner-wrapper {
-  text-align: center;
-  margin-bottom: 1.5em;
-}
-
-.banner-image {
-  width: 100%;
-  max-width: 700px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-  object-fit: contain;
-}
-
-/* ===== Top 10 Winners Section ===== */
-#top-ten {
-  margin-top: 4em;
-  text-align: center;
-}
-
-#top-ten h2 {
-  font-size: 1.6em;
-  color: #ff99ff;
-  text-shadow: 0 0 6px #ff66cc;
-  margin-bottom: 1em;
-}
-
-.top-ten-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1.2em;
-  justify-items: center;
-  margin-bottom: 2em;
-}
-
-.top-ten-card {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.6em;
-  border-radius: 10px;
-  width: 100px;
-  text-align: center;
-  color: #fff;
-  box-shadow: 0 0 10px rgba(255, 153, 255, 0.2);
-  transition: transform 0.2s ease-in-out;
-}
-
-.top-ten-card:hover {
-  transform: scale(1.05);
-}
-
-.top-ten-card img {
-  width: 100%;
-  border-radius: 6px;
-  margin-bottom: 0.4em;
-}
-
-.rank-number {
-  display: block;
-  font-weight: bold;
-  color: #ffd1f7;
-  font-size: 1.1em;
-  margin-bottom: 0.2em;
-}
-
-.movie-title {
-  font-size: 0.9em;
-  color: #eee;
-}
-
-.view-full-link {
-  color: #66ccff;
-  text-decoration: underline;
-  font-size: 1em;
-}
-
+  background: linear-gradient(145deg, #f5c542, #
