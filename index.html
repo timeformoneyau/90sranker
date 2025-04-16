@@ -11,24 +11,24 @@
   <div class="bg-overlay"></div>
   <div class="container">
 
-    <!-- Banner Image Replacing Text Title -->
+    <!-- Banner Image -->
     <div class="banner-wrapper">
-      <img src="banner.png" alt="90s Movie Ranker Banner" class="banner-image" />
+      <img src="banner.png" alt="90s Movie Ranker Banner" class="banner" />
     </div>
 
     <div id="compare-section">
       <div class="movie-block">
         <img id="posterA" class="poster" alt="Movie A Poster" onclick="vote('A')" />
-        <button id="movieA" class="primary" onclick="vote('A')">Movie A</button>
-        <button class="secondary" onclick="markUnseen('A')">Haven’t Seen</button>
+        <button id="movieA" class="primary ticket-button" onclick="vote('A')">Movie A</button>
+        <button class="secondary ticket-button" onclick="markUnseen('A')">Haven’t Seen</button>
       </div>
 
       <div class="vs">VS</div>
 
       <div class="movie-block">
         <img id="posterB" class="poster" alt="Movie B Poster" onclick="vote('B')" />
-        <button id="movieB" class="primary" onclick="vote('B')">Movie B</button>
-        <button class="secondary" onclick="markUnseen('B')">Haven’t Seen</button>
+        <button id="movieB" class="primary ticket-button" onclick="vote('B')">Movie B</button>
+        <button class="secondary ticket-button" onclick="markUnseen('B')">Haven’t Seen</button>
       </div>
     </div>
 
