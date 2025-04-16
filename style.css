@@ -239,7 +239,7 @@ a {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6); /* dims the image */
-  backdrop-filter: brightness(0.6) saturate(1.2) blur(1px); /* surreal + softened */
+  backdrop-filter: brightness(0.6) saturate(0.8) blur(1px); /* surreal + softened */
   z-index: 0;
   pointer-events: none;
 }
