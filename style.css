@@ -39,6 +39,7 @@ body {
   flex-direction: column;
   align-items: center;
   position: relative;
+  gap: 0.8em;
 }
 
 /* ===== VS Styling ===== */
@@ -64,54 +65,41 @@ body {
   transition: transform 0.2s ease;
   cursor: pointer;
   position: relative;
-  margin-bottom: 1.2em; /* adds space below poster */
+  margin-bottom: 1.2em;
 }
 
-/* ===== Primary Button — Gold Cinema Ticket Style ===== */
-.primary {
+/* ===== Ticket Style Buttons ===== */
+.primary, .secondary {
   font-size: 1em;
   font-weight: bold;
-  padding: 0.5em 1.5em;
-  background: linear-gradient(145deg, #FFD700, #FFC300);
   color: #4B0082;
-  border: 3px solid #800080;
-  border-radius: 10px;
-  clip-path: polygon(
-    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
-    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
-  );
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-  transition: all 0.15s ease-in-out;
-}
-
-.primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px #FFD700;
-}
-
-/* ===== Secondary Button — Gold Ticket Variant ===== */
-.secondary {
-  font-size: 1em;
-  font-weight: bold;
-  padding: 0.45em 1.4em;
-  background: linear-gradient(145deg, #f5c542, #f7d774);
-  color: #4B0082;
-  border: 2px solid #800080;
-  border-radius: 10px;
-  clip-path: polygon(
-    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
-    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
-  );
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  padding: 0.5em 1.4em;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  clip-path: polygon(
+    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
+    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
+  );
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 0 3px #800080 inset;
+  transition: transform 0.2s ease-in-out;
 }
 
-.secondary:hover {
-  background: #ffe066;
-  color: #3a0066;
-  box-shadow: 0 0 10px #ffe066;
+/* Primary = Richer gold */
+.primary {
+  background: linear-gradient(145deg, #FFD700, #FFC300);
 }
+
+/* Secondary = Paler gold */
+.secondary {
+  background: linear-gradient(145deg, #f5c542, #f7d774);
+}
+
+.primary:hover, .secondary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px #FFD700, 0 0 0 3px #800080 inset;
+}
+
 /* ===== Confetti Styling ===== */
 .confetti-container {
   position: absolute;
@@ -188,20 +176,7 @@ a {
   margin-top: 1em;
   color: #ddd;
 }
-.banner-wrapper {
-  text-align: center;
-  margin-bottom: 2em;
-}
 
-.banner-image {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-.banner {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto 1.5em auto;
-}
+/* ===== Banner Styling ===== */
+.banner-wrapper {
+  text-align: center
