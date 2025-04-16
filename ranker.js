@@ -104,49 +104,62 @@ async function displayMovies() {
   if (imgA) imgA.src = posterA;
   if (imgB) imgB.src = posterB;
 
-  const existingContainers = document.querySelectorAll('.popcorn-container');
+  const existingContainers = document.querySelectorAll('.confetti-container');
   existingContainers.forEach(container => container.remove());
 }
 
-function createPopcornBurst(element) {
-  const existingContainer = element.querySelector('.popcorn-container');
-  if (existingContainer) existingContainer.remove();
+function createConfettiBurst(element) {
+  const existing = element.querySelector('.confetti-container');
+  if (existing) existing.remove();
 
   const container = document.createElement('div');
-  container.className = 'popcorn-container';
+  container.className = 'confetti-container';
+  container.style.position = 'absolute';
+  container.style.top = '50%';
+  container.style.left = '50%';
+  container.style.width = '0';
+  container.style.height = '0';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '200';
+
+  const colors = ['#ff3b3b', '#ffc107', '#4caf50', '#03a9f4', '#e91e63', '#9c27b0'];
 
   for (let i = 0; i < 50; i++) {
-    const kernel = document.createElement('div');
-    const type = Math.floor(Math.random() * 3) + 1;
-    kernel.className = `popcorn-kernel k${type}`;
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = '10px';
+    piece.style.height = '14px';
+    piece.style.opacity = '0';
+    piece.style.position = 'absolute';
+    piece.style.borderRadius = '2px';
+    piece.style.transformOrigin = 'center';
 
     const angle = Math.random() * Math.PI * 2;
-    const distance = 80 + Math.random() * 180;
-    const xPos = Math.cos(angle) * distance;
-    const yPos = Math.sin(angle) * distance;
-    const rotation = Math.random() * 1440 - 720;
-    const delay = Math.random() * 0.3;
-    const scale = 0.8 + Math.random() * 0.7;
+    const distance = 60 + Math.random() * 80;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+    const rotation = Math.random() * 720 - 360;
+    const delay = Math.random() * 0.2;
 
-    kernel.style.setProperty('--x', `${xPos}px`);
-    kernel.style.setProperty('--y', `${yPos}px`);
-    kernel.style.setProperty('--r', `${rotation}deg`);
-    kernel.style.animationDelay = `${delay}s`;
-    kernel.style.transform = `scale(${scale})`;
-    kernel.style.zIndex = `${Math.floor(Math.random() * 3) + 1}`;
+    piece.style.setProperty('--x', `${x}px`);
+    piece.style.setProperty('--y', `${y}px`);
+    piece.style.setProperty('--r', `${rotation}deg`);
+    piece.style.animation = `confettiBurst 1s ease-out forwards`;
+    piece.style.animationDelay = `${delay}s`;
 
-    container.appendChild(kernel);
+    container.appendChild(piece);
   }
 
   element.appendChild(container);
 
   setTimeout(() => {
-    container.classList.add('popcorn-burst-active');
+    container.classList.add('confetti-burst-active');
   }, 10);
 
   setTimeout(() => {
     if (container && container.parentNode) {
-      container.classList.remove('popcorn-burst-active');
+      container.remove();
     }
   }, 1500);
 }
@@ -159,10 +172,10 @@ function vote(winner) {
   if (votedPoster) {
     votedPoster.classList.add("popcorn-shake");
 
-    const existingContainer = votedPoster.parentElement.querySelector('.popcorn-container');
+    const existingContainer = votedPoster.parentElement.querySelector('.confetti-container');
     if (existingContainer) existingContainer.remove();
 
-    createPopcornBurst(votedPoster.parentElement);
+    createConfettiBurst(votedPoster.parentElement);
 
     setTimeout(() => {
       votedPoster.classList.remove("popcorn-shake");
