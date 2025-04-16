@@ -1,11 +1,12 @@
 /* ===== Base Layout ===== */
 body {
-  background: url('background.png') center center / cover no-repeat;
-  background-color: #000;
+  background: url('background2.png') center center / cover no-repeat;
+  background-color: #000; /* fallback if image doesn't load */
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 2em;
+  position: relative;
 }
 
 .container {
