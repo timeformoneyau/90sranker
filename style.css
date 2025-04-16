@@ -9,37 +9,11 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   text-align: center;
   position: relative;
   z-index: 1;
-}
-
-/* ===== Layout Adjustments ===== */
-.main-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 2em;
-}
-
-@media (min-width: 1000px) {
-  .main-layout {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  #compare-section {
-    flex: 2;
-  }
-
-  #top-ten-sidebar {
-    flex: 1;
-    padding-left: 2em;
-    max-width: 280px;
-    text-align: left;
-  }
 }
 
 /* ===== Banner Styling ===== */
@@ -102,18 +76,18 @@ body {
   gap: 0.8em;
 }
 
-/* ===== VS Badge (New Style) ===== */
+/* ===== VS Badge ===== */
 .vs-badge {
-  font-size: 2.2em;
+  font-size: 2.4em;
   font-weight: 900;
   color: #ff66cc;
-  text-shadow: 0 0 5px #ff66cc, 0 0 10px #fff;
-  background: #2a002a;
-  padding: 0.4em 1em;
+  background: #1a001a;
+  padding: 0.5em 1.4em;
   border: 3px solid #ff99ff;
-  border-radius: 2em;
+  border-radius: 999px;
+  box-shadow: 0 0 10px #ff99ff;
+  text-shadow: 0 0 4px #ff66cc;
   margin: 1em 0;
-  box-shadow: 0 0 8px #ff99ff;
 }
 
 /* ===== Poster Styling ===== */
@@ -124,87 +98,52 @@ body {
   transition: transform 0.2s ease;
   cursor: pointer;
   position: relative;
-  margin-bottom: 1.2em;
+  margin-bottom: 0.4em;
 }
 
-/* ===== Ticket Style Buttons ===== */
-.primary, .secondary {
-  font-size: 1em;
-  font-weight: bold;
-  color: #4B0082;
-  padding: 0.5em 1.4em;
-  border: none;
-  cursor: pointer;
-  clip-path: polygon(
-    0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
-    100% 100%, 90% 100%, 90% 90%, 10% 90%, 10% 100%, 0% 100%
-  );
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 0 3px #800080 inset;
-  transition: transform 0.2s ease-in-out;
+/* ===== Buttons ===== */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  margin-top: 0.6em;
 }
 
 .primary {
+  font-size: 1em;
+  font-weight: bold;
+  color: #4B0082;
   background: linear-gradient(145deg, #FFD700, #FFC300);
+  padding: 0.6em 1.4em;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px #800080 inset, 0 5px 12px rgba(0,0,0,0.5);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
 }
 
-.secondary {
-  background: linear-gradient(145deg, #f5c542, #f7d774);
-}
-
-.primary:hover, .secondary:hover {
-  transform: scale(1.05);
+.primary:hover {
+  transform: scale(1.06);
   box-shadow: 0 0 12px #FFD700, 0 0 0 3px #800080 inset;
 }
 
-/* ===== Sidebar Top 10 ===== */
-#top-ten-sidebar h2 {
-  font-size: 1.2em;
-  color: #ff99ff;
-  text-shadow: 0 0 6px #ff66cc;
-  margin-bottom: 1em;
-}
-
-#top-ten-sidebar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1em;
-}
-
-.top-ten-card {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.5em 0.7em;
-  border-radius: 8px;
-  box-shadow: 0 0 8px rgba(255, 153, 255, 0.2);
-}
-
-.top-ten-card img {
-  width: 40px;
-  height: auto;
-  border-radius: 4px;
-  margin-right: 0.8em;
-}
-
-.top-ten-card .rank-number {
+.tertiary {
+  font-size: 0.95em;
   font-weight: bold;
-  color: #ffd1f7;
-  margin-right: 0.5em;
-  font-size: 1em;
+  background: #2a002a;
+  color: #ff99ff;
+  border: 2px dashed #ff99ff;
+  padding: 0.5em 1.2em;
+  border-radius: 6px;
+  box-shadow: 0 0 6px rgba(255, 153, 255, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.top-ten-card .movie-title {
-  font-size: 0.95em;
-  color: #eee;
-}
-
-.view-full-link {
-  display: inline-block;
-  margin-top: 1.5em;
-  color: #66ccff;
-  text-decoration: underline;
-  font-size: 0.95em;
+.tertiary:hover {
+  transform: scale(1.05);
+  background: #3c003c;
+  box-shadow: 0 0 10px rgba(255, 153, 255, 0.6);
 }
 
 /* ===== Confetti Styling ===== */
@@ -272,6 +211,8 @@ a {
   text-decoration: underline;
   color: #ff99ff;
   font-size: 1em;
+  margin-top: 2em;
+  display: inline-block;
 }
 
 /* ===== Tag List ===== */
