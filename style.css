@@ -16,29 +16,6 @@ body {
   z-index: 1;
 }
 
-/* ===== Marquee Title ===== */
-.marquee-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 2.2em;
-  font-weight: 700;
-  color: #ffccff;
-  background: #111;
-  border: 4px solid #ff99ff;
-  padding: 0.4em 1em;
-  margin: 0 auto 1.5em auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8em;
-  box-shadow: 0 0 15px #ffccff;
-  border-radius: 12px;
-}
-
-.marquee-title .bulbs {
-  font-size: 1.2em;
-  color: #ff99ff;
-  text-shadow: 0 0 5px #ff99ff;
-}
-
 /* ===== Compare Section (Responsive) ===== */
 #compare-section {
   display: flex;
@@ -66,15 +43,16 @@ body {
 
 /* ===== VS Styling ===== */
 .vs {
-  font-size: 2em;
-  font-weight: bold;
+  font-size: 2.4em;
+  font-weight: 900;
   color: #ff66cc;
   text-shadow: 0 0 8px #ff66cc, 0 0 12px #ffffff;
   padding: 0.3em 1em;
-  border: 3px solid #ffccff;
-  background: linear-gradient(145deg, #400040, #800080);
+  background: radial-gradient(circle, #7c007c, #2a002a);
+  border: 4px groove #ff99ff;
   border-radius: 1em;
-  box-shadow: 0 0 12px rgba(255, 102, 204, 0.6);
+  box-shadow: 0 0 16px rgba(255, 102, 204, 0.8);
+  transform: rotate(-5deg);
   margin: 0.5em 0;
 }
 
@@ -121,9 +99,9 @@ body {
   font-size: 1em;
   font-weight: 600;
   padding: 0.5em 1em;
-  background: linear-gradient(145deg, #444, #666);
+  background: linear-gradient(145deg, #554a5e, #6c2a8c);
   color: #ffebfb;
-  border: 2px solid #bbb;
+  border: 2px solid #bb99cc;
   border-radius: 10px;
   clip-path: polygon(
     0% 0%, 10% 0%, 10% 10%, 90% 10%, 90% 0%, 100% 0%,
@@ -159,7 +137,7 @@ body {
   border-radius: 2px;
   opacity: 0;
   transform-origin: center;
-  animation: confettiBurst 1.2s ease-out forwards;
+  animation: confettiBurst 1.4s ease-out forwards;
 }
 
 @keyframes confettiBurst {
