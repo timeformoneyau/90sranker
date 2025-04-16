@@ -16,16 +16,18 @@
 
     <!-- 🎥 VS Compare Section -->
     <section id="compare-section">
-      <div class="movie-block" id="movie1">
-        <img src="" alt="Movie Poster 1" class="poster" id="poster1">
-        <button class="primary" onclick="vote('left')">Pick This Movie</button>
+      <div class="movie-block" id="movieA-block">
+        <img src="" alt="Movie Poster 1" class="poster" id="posterA">
+        <div id="movieA" class="movie-title">Movie A</div>
+        <button class="primary" onclick="vote('A')">Pick This Movie</button>
       </div>
 
       <div class="vs">VS</div>
 
-      <div class="movie-block" id="movie2">
-        <img src="" alt="Movie Poster 2" class="poster" id="poster2">
-        <button class="secondary" onclick="vote('right')">Pick This Movie</button>
+      <div class="movie-block" id="movieB-block">
+        <img src="" alt="Movie Poster 2" class="poster" id="posterB">
+        <div id="movieB" class="movie-title">Movie B</div>
+        <button class="secondary" onclick="vote('B')">Pick This Movie</button>
       </div>
     </section>
 
@@ -36,21 +38,13 @@
     <section id="top-ten">
       <h2>🔥 Your Top 10 Movies</h2>
       <div class="top-ten-grid" id="top-ten-grid">
-        <!-- Dynamically populated -->
-        <!-- Example card structure below as placeholder -->
-        <!--
-        <div class="top-ten-card">
-          <span class="rank-number">#1</span>
-          <img src="poster-url.jpg" alt="Movie Title">
-          <div class="movie-title">Movie Title</div>
-        </div>
-        -->
+        <!-- Top 10 posters get injected here -->
       </div>
       <a href="list.html" class="view-full-link">View Full List ➡️</a>
     </section>
 
   </div>
 
-  <script src="main.js" defer></script>
+  <script src="ranker.js" defer></script>
 </body>
 </html>
