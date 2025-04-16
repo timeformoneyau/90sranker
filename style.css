@@ -130,4 +130,135 @@ body {
 }
 
 .secondary {
-  background: linear-gradient(145deg, #f5c542, #
+  background: linear-gradient(145deg, #f5c542, #f7d774);
+}
+
+.primary:hover, .secondary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px #FFD700, 0 0 0 3px #800080 inset;
+}
+
+/* ===== Sidebar Top 10 ===== */
+#top-ten-sidebar h2 {
+  font-size: 1.2em;
+  color: #ff99ff;
+  text-shadow: 0 0 6px #ff66cc;
+  margin-bottom: 1em;
+}
+
+#top-ten-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.top-ten-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5em 0.7em;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(255, 153, 255, 0.2);
+}
+
+.top-ten-card img {
+  width: 40px;
+  height: auto;
+  border-radius: 4px;
+  margin-right: 0.8em;
+}
+
+.top-ten-card .rank-number {
+  font-weight: bold;
+  color: #ffd1f7;
+  margin-right: 0.5em;
+  font-size: 1em;
+}
+
+.top-ten-card .movie-title {
+  font-size: 0.95em;
+  color: #eee;
+}
+
+.view-full-link {
+  display: inline-block;
+  margin-top: 1.5em;
+  color: #66ccff;
+  text-decoration: underline;
+  font-size: 0.95em;
+}
+
+/* ===== Confetti Styling ===== */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 14px;
+  height: 18px;
+  border-radius: 2px;
+  opacity: 0;
+  transform-origin: center;
+  animation: confettiBurst 1.4s ease-out forwards;
+}
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
+  }
+}
+
+/* ===== Popcorn Shake Animation ===== */
+.popcorn-shake {
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 0); }
+  40% { transform: translate(3px, 0); }
+  60% { transform: translate(-2px, 0); }
+  80% { transform: translate(2px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ===== Utility ===== */
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+  pointer-events: none;
+}
+
+a {
+  text-decoration: underline;
+  color: #ff99ff;
+  font-size: 1em;
+}
+
+/* ===== Tag List ===== */
+#tagged-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 1em;
+  color: #ddd;
+}
