@@ -9,48 +9,44 @@
   <div class="bg-overlay"></div>
   <div class="container">
 
-    <!-- 🎬 Marquee Banner -->
-<div class="banner-wrapper">
-  <div class="banner-marquee">
-    <div class="banner-top">
-      <span class="banner-era">🎬 NINETIES</span>
+    <!-- 🎬 Neon Banner -->
+    <div class="banner-wrapper">
+      <div class="banner-marquee">
+        <div class="banner-top">
+          <span class="banner-era">🎬 NINETIES</span>
+        </div>
+        <div class="banner-title">MOVIE RANKER</div>
+      </div>
     </div>
-    <div class="banner-title">MOVIE RANKER</div>
-  </div>
-</div>
 
-    <div class="main-layout">
-
-      <!-- 🎥 Matchup Section -->
-      <section id="compare-section">
-        <div class="movie-block" id="movieA-block">
-          <img src="" alt="Movie Poster 1" class="poster" id="posterA">
-          <div id="movieA" class="movie-title">Movie A</div>
-         <div class="button-group">
-  <button class="primary" onclick="vote('A')">🎬 Pick This Movie</button>
-  <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
-</div>
+    <!-- 🎥 Compare Section -->
+    <section id="compare-section">
+      <!-- Movie A -->
+      <div class="movie-block" id="movieA-block">
+        <img src="" alt="Movie Poster 1" class="poster" id="posterA">
+        <div id="movieA" class="movie-title">Movie A</div>
+        <div class="button-group">
+          <button class="primary" onclick="vote('A')">🎬 Pick This Movie</button>
+          <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
         </div>
+      </div>
 
-        <div class="vs-badge">VS</div>
+      <!-- VS Badge -->
+      <div class="vs-badge">VS</div>
 
-        <div class="movie-block" id="movieB-block">
-          <img src="" alt="Movie Poster 2" class="poster" id="posterB">
-          <div id="movieB" class="movie-title">Movie B</div>
-          <button class="secondary" onclick="vote('B')">Pick This Movie</button>
+      <!-- Movie B -->
+      <div class="movie-block" id="movieB-block">
+        <img src="" alt="Movie Poster 2" class="poster" id="posterB">
+        <div id="movieB" class="movie-title">Movie B</div>
+        <div class="button-group">
+          <button class="primary" onclick="vote('B')">🎬 Pick This Movie</button>
+          <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 🏆 Sidebar: Top 10 Winners -->
-      <aside id="top-ten-sidebar">
-        <h2>🔥 Top 10 Movies</h2>
-        <div id="top-ten-sidebar-list">
-          <!-- Cards injected dynamically -->
-        </div>
-        <a href="list.html" class="view-full-link">View Full List ➡️</a>
-      </aside>
-
-    </div>
+    <!-- 📋 Link to List Page -->
+    <a href="list.html" class="view-full-link">📋 View Full List</a>
 
     <!-- 🎉 Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
