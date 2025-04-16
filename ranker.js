@@ -193,15 +193,33 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-/* ===== Haven’t Seen Function ===== */
+/* ===== Haven’t Seen Logic ===== */
 function markUnseen(movie) {
   if (!movie || !movie.title) return;
+
   if (!unseen.includes(movie.title)) {
     unseen.push(movie.title);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-    alert(`Marked "${movie.title}" as unseen.`);
-    chooseTwoMovies();
+    replaceMovie(movie);
   }
+}
+
+async function replaceMovie(movieToReplace) {
+  const available = getAvailableMovies([movieA.title, movieB.title]);
+  if (!available.length) {
+    alert("No more movies available to replace with.");
+    return;
+  }
+
+  const replacement = available[Math.floor(Math.random() * available.length)];
+
+  if (movieToReplace.title === movieA.title) {
+    movieA = replacement;
+  } else {
+    movieB = replacement;
+  }
+
+  await displayMovies();
 }
 
 window.onload = loadMovies;
