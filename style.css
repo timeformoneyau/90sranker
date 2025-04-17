@@ -1,3 +1,52 @@
+/* 90s Neon Header */
+.hdr {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  padding: 1.2rem 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  text-align: center;
+  z-index: 1000;
+}
+
+.hdr h1 {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 2.5rem;
+  color: #FF66CC;
+  text-shadow:
+    0 0 4px #FF66CC,
+    0 0 8px #FF66CC,
+    0 0 16px #FF66CC,
+    0 0 24px rgba(255, 102, 204, 0.6);
+  animation: neon-flicker 3s infinite alternate ease-in-out;
+}
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  5%, 20%, 50% { opacity: 0.85; }
+  10%, 30%, 40% { opacity: 0.95; }
+}
+
+.hdr-nav {
+  margin-top: 0.8rem;
+}
+
+.hdr-nav a {
+  margin: 0 0.8rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
+  color: #FFFFFF;
+  text-decoration: none;
+  text-shadow: 0 0 4px rgba(255,255,255,0.6);
+  transition: color 0.2s;
+}
+
+.hdr-nav a:hover {
+  color: #FF66CC;
+}
+
 /* ===== Base Layout ===== */
 body {
   background: url('background2.png') center center / cover no-repeat;
@@ -62,7 +111,6 @@ body::before {
   margin-top: 0.3em;
 }
 
-/* Neon Glow Animation */
 @keyframes neonPulse {
   0%, 100% {
     box-shadow: 0 0 25px rgba(255, 102, 204, 0.6);
@@ -137,12 +185,18 @@ body::before {
   margin-top: 0.6em;
 }
 
+.button-group button {
+  padding: 0.3em 1em;
+  line-height: 1.2;
+}
+
 /* ===== Buttons ===== */
 .primary {
   background: none;
   border: none;
-  padding: 0;
+  padding: 0.3em 1em;
   cursor: pointer;
+  line-height: 1;
 }
 
 .primary img {
@@ -166,7 +220,7 @@ body::before {
   background: #2a002a;
   color: #ff99ff;
   border: 2px dashed #ff99ff;
-  padding: 0.5em 1.2em;
+  padding: 0.3em 1.2em;
   border-radius: 6px;
   box-shadow: 0 0 6px rgba(255, 153, 255, 0.3);
   transition: all 0.2s ease;
@@ -180,7 +234,6 @@ body::before {
   box-shadow: 0 0 10px rgba(255, 153, 255, 0.6);
 }
 
-/* Tooltip */
 .tertiary::after {
   content: "Removes this movie from future rankings.";
   position: absolute;
@@ -281,13 +334,12 @@ a {
 }
 
 /* ===== Tables (Rankings & Unseen) ===== */
-/* ===== Enhanced Table Styling ===== */
 table {
   width: 100%;
   border-collapse: collapse;
   margin: 2em 0;
   font-size: 0.95em;
-  background: rgba(20, 0, 30, 0.88); /* less transparent, richer tone */
+  background: rgba(20, 0, 30, 0.88);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 0 25px rgba(255, 153, 255, 0.25);
