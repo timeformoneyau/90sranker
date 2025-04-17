@@ -140,40 +140,33 @@ body::before {
 /* ===== Buttons ===== */
 .primary {
   width: 220px;
-  height: 70px;
+  height: 80px;
   background: url('https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png') center center / cover no-repeat;
   border: none;
   cursor: pointer;
   display: inline-block;
-  transition: transform 0.2s ease;
-  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 6px;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+    0 0 12px rgba(255, 215, 0, 0.3);
+  filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.1));
 }
 
 .primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.3),
+    0 0 18px rgba(255, 215, 0, 0.5);
 }
 
 .primary:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.primary::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  bottom: 50%;
-  left: 0;
-  background: repeating-linear-gradient(
-    to right,
-    transparent,
-    transparent 6px,
-    #800080 6px,
-    #800080 8px
-  );
-  opacity: 0.5;
-}
 
 
 .tertiary {
