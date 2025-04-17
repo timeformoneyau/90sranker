@@ -1,3 +1,20 @@
+// ===== Firebase Setup =====
+const firebaseConfig = {
+  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+  authDomain: "sranker-f2642.firebaseapp.com",
+  projectId: "sranker-f2642",
+  storageBucket: "sranker-f2642.appspot.com",
+  messagingSenderId: "601665183803",
+  appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+  measurementId: "G-JTG8MVCW64"
+};
+
+// Initialize Firebase (must match script version in index.html)
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ===== App Logic (unchanged except vote function) =====
+
 let movies = [];
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
@@ -118,6 +135,15 @@ async function displayMovies() {
 function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
+
+  // 🧠 Firebase Vote Logging
+  db.collection("votes").add({
+    winner: winnerTitle,
+    loser: loserTitle,
+    timestamp: new Date().toISOString()
+  })
+  .then(() => console.log("Vote recorded in Firebase"))
+  .catch(err => console.error("Failed to record vote:", err));
 
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("popcorn-shake");
