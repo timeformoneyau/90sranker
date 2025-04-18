@@ -341,7 +341,7 @@ table td button:hover {
 .vr-theater{
   position:fixed;                 /* stays put on scroll */
   inset:0;
-  background:url("assets/theater-bg.jpg") center/cover no-repeat;
+  background:url("assets/theater-bg.png") center/cover no-repeat;
   z-index:-1;                     /* under everything else */
 }
 
