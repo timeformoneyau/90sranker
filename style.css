@@ -30,15 +30,35 @@ body::before{
 }
 
 /* ---------- Responsive “screen” ---------- */
-.vr-screen{
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%) perspective(1200px) rotateX(5deg);
-  width:75vw; max-width:1200px; aspect-ratio:16/9;
-  background:#f7f7f2;
-  border-radius:6px;
-  box-shadow:0 0 80px rgba(0,0,0,.9), 0 0 40px rgba(0,0,0,.75);
-  overflow:hidden;
+/* ---------- Responsive “screen” ---------- */
+.vr-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
+
+  width: 75vw;
+  max-width: 1200px;
+  aspect-ratio: 16/9;
+
+  background: #f7f7f2;
+  border-radius: 6px;
+  overflow: hidden;
+
+  /* combined outer glow + softer halo + inset matte bezel */
+  box-shadow:
+    0    0   80px   rgba(0, 0, 0, .9),   /* strong outer falloff */
+    0    0   40px   rgba(0, 0, 0, .75),  /* softer ambient halo */
+    inset 0   0    0    10px rgba(0, 0, 0, .85); /* inner bezel mask */
 }
+
+@media (max-width: 600px) {
+  .vr-screen {
+    transform: translate(-50%, -50%);  /* disable tilt on phones */
+    width: 88vw;
+  }
+}
+
 
 /* subtle inner bevel for physical frame */
 .vr-screen::before{
