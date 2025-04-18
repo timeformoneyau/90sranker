@@ -331,3 +331,64 @@ table td button:hover {
   color: white;
   box-shadow: 0 0 10px #ff99ffcc;
 }
+
+/* ──────────────────────────────────────────────────────────────
+   90s‑THEATER “VIRTUAL SCREEN” LAYER
+   ─ add this AFTER everything else in style.css ─
+   ──────────────────────────────────────────────────────────── */
+
+/* full‑bleed theater background ▸ sits behind your old .container */
+.vr-theater{
+  position:fixed;                 /* stays put on scroll */
+  inset:0;
+  background:url("assets/theater-bg.jpg") center/cover no-repeat;
+  z-index:-1;                     /* under everything else */
+}
+
+/* screen area you control */
+.vr-screen{
+  position:absolute;
+  /* tweak once so it lines up with the screen in your photo */
+  top:22%;
+  left:16%;
+  width:68%;
+  height:43%;
+
+  overflow:hidden;
+  box-shadow:0 0 40px rgba(0,0,0,.8);
+}
+
+/* grain + vignette on top of the screen */
+.vr-overlay{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:
+    url("assets/film-grain.png") repeat,
+    radial-gradient(ellipse at center,
+      rgba(255,255,255,0) 60%,
+      rgba(0,0,0,.25) 100%);
+  opacity:.12;
+  mix-blend-mode:overlay;
+}
+
+/* wrapper that receives the projection filter */
+.vr-ui{
+  position:relative;
+  width:100%; height:100%;
+  padding:2rem 3vw;
+  overflow:auto;
+
+  /* “projected” look */
+  filter:brightness(1.05) contrast(.9) saturate(.85);
+}
+
+/* optional subtle projector flicker */
+@keyframes vr-flicker{
+  0%,100%{opacity:1;}
+  50%    {opacity:.985;}
+  75%    {opacity:1.015;}
+}
+.vr-ui{ animation:vr-flicker 1.8s infinite; }
+
+/* make sure your existing .container stacks ABOVE vr-screen */
+.container{ position:relative; z-index:2; }
