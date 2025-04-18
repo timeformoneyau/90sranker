@@ -4,87 +4,72 @@
   <meta charset="UTF-8">
   <title>90s Movie Ranker</title>
 
-  <!-- Main stylesheet (now contains the VR‑patch at the bottom) -->
+  <!-- Main stylesheet -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase v8 (namespaced) SDKs -->
+  <!-- Firebase v8 SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 
 <body>
-  <!--──────────────────  NEW THEATER WRAPPER  ──────────────────-->
+  <!-- Theater backdrop -->
   <div class="vr-theater">
     <div class="vr-screen">
-      <div class="vr-overlay"></div><!-- grain & vignette -->
+      <div class="vr-overlay"></div>
+      <div class="vr-ui"><!-- everything inside is “projected” -->
 
-      <div class="vr-ui"><!-- everything inside gets projection filter -->
-  <!--────────────────────────────────────────────────────────────-->
-
-        <!-- (optional) dark veil – lower opacity or delete if too dim -->
-        <div class="bg-overlay"></div>
-
-        <!-- 🍿 ORIGINAL PAGE CONTENT (unchanged) -->
+        <!-- MAIN CONTENT -->
         <div class="container">
 
-          <!-- 🎬 Neon Banner -->
+          <!-- Neon banner -->
           <div class="banner-wrapper">
             <div class="banner-marquee">
-              <div class="banner-top">
-                <span class="banner-era">🎬 NINETIES</span>
-              </div>
+              <span class="banner-era">🎬 NINETIES</span>
               <div class="banner-title">MOVIE RANKER</div>
             </div>
           </div>
 
-          <!-- 🎥 Compare Section -->
+          <!-- Compare section -->
           <section id="compare-section">
             <!-- Movie A -->
             <div class="movie-block" id="movieA-block">
               <img src="" alt="Movie Poster 1" class="poster" id="posterA">
               <div id="movieA" class="movie-title">Movie A</div>
-
               <div class="button-group">
                 <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
-                  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
+                  <img src="winner.png" alt="Winner Ticket">
                 </button>
                 <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
               </div>
             </div>
 
-            <!-- VS Badge -->
             <div class="vs-badge">VS</div>
 
             <!-- Movie B -->
             <div class="movie-block" id="movieB-block">
               <img src="" alt="Movie Poster 2" class="poster" id="posterB">
               <div id="movieB" class="movie-title">Movie B</div>
-
               <div class="button-group">
                 <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
-                  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
+                  <img src="winner.png" alt="Winner Ticket">
                 </button>
                 <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
               </div>
             </div>
           </section>
 
-          <!-- 📋 Link to List Page -->
           <a href="list.html" class="view-full-link">📋 View Full List</a>
 
-          <!-- 🎉 Confetti Container -->
+          <!-- Confetti -->
           <div class="confetti-container" id="confetti-container"></div>
 
         </div><!-- /.container -->
-        <!-- 🍿 END ORIGINAL CONTENT -->
 
-  <!--────────────────── closing wrappers ──────────────────-->
       </div><!-- /.vr-ui -->
     </div><!-- /.vr-screen -->
   </div><!-- /.vr-theater -->
-  <!--────────────────────────────────────────────────────────-->
 
-  <!-- App logic -->
   <script src="ranker.js" defer></script>
 </body>
 </html>
