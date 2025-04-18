@@ -1,6 +1,6 @@
 /* ===== Base Layout ===== */
 body {
-  background: url('background2.png') center center / cover no-repeat;
+  /*background: url('background2.png') center center / cover no-repeat;*/
   background-color: #000;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
