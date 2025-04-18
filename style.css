@@ -20,7 +20,7 @@ body::before{
 /* ---------- Theater backdrop ---------- */
 .vr-theater{
   position:fixed; inset:0;
-  background:url("theater-bg1.png") center/contain no-repeat;
+  background:url("theater-bg.png") center/contain no-repeat;
   background-color:#000;
   z-index:0;
 }
@@ -29,7 +29,6 @@ body::before{
   .vr-theater{ background-size:cover; }
 }
 
-/* ---------- Responsive “screen” ---------- */
 /* ---------- Responsive “screen” ---------- */
 .vr-screen {
   position: absolute;
@@ -41,24 +40,9 @@ body::before{
   max-width: 1200px;
   aspect-ratio: 16/9;
 
-  background: #f7f7f2;
-  border-radius: 6px;
-  overflow: hidden;
-
-  /* combined outer glow + softer halo + inset matte bezel */
-  box-shadow:
-    0    0   80px   rgba(0, 0, 0, .9),   /* strong outer falloff */
-    0    0   40px   rgba(0, 0, 0, .75),  /* softer ambient halo */
-    inset 0   0    0    10px rgba(0, 0, 0, .85); /* inner bezel mask */
+  background: transparent;   /* no more background needed */
+  overflow: visible;         /* allow glow shadows to show */
 }
-
-@media (max-width: 600px) {
-  .vr-screen {
-    transform: translate(-50%, -50%);  /* disable tilt on phones */
-    width: 88vw;
-  }
-}
-
 
 /* subtle inner bevel for physical frame */
 .vr-screen::before{
