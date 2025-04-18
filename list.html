@@ -5,44 +5,55 @@
   <title>Your 90s Movie Rankings</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div class="container" id="list">
-    <h1>🍿 Your 90s Movie Rankings</h1>
+  <!--––––––––– new: full‑bleed theater background –––––––––-->
+  <div class="vr-theater">
 
-    <button onclick="exportToCSV()" class="export-btn">📤 Export Rankings to CSV</button>
+    <!--––––––––– new: virtual screen we control –––––––––-->
+    <div class="vr-screen">
+      <div class="vr-overlay"></div>     <!-- grain + vignette -->
+      <div class="vr-ui"><!-- everything inside gets projection filters -->
 
-    <h2>🎯 Top 20 Ranked Movies</h2>
-    <table class="ranking-table">
-      <thead>
-        <tr>
-          <th>Movie</th>
-          <th>Rating</th>
-          <th>Wins</th>
-          <th>Losses</th>
-          <th>Win%</th>
-        </tr>
-      </thead>
-      <tbody id="ranking-list"></tbody>
-    </table>
+        <!--–––– EXISTING MARKUP START ––––-->
+        <div class="container" id="list">
+          <h1>🍿 Your 90s Movie Rankings</h1>
 
-    <h2>🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
-    <table class="unseen-table">
-      <thead>
-        <tr>
-          <th>Movie</th>
-          <th>Year</th>
-          <th>TMDB Rating</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="unseen-list"></tbody>
-    </table>
+          <button onclick="exportToCSV()" class="export-btn">
+            📤 Export Rankings to CSV
+          </button>
 
-    <h2>🏷️ Tagged Movies</h2>
-    <ul id="tagged-list"></ul>
+          <h2>🎯 Top 20 Ranked Movies</h2>
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th>Movie</th><th>Rating</th><th>Wins</th>
+                <th>Losses</th><th>Win%</th>
+              </tr>
+            </thead>
+            <tbody id="ranking-list"></tbody>
+          </table>
 
-    <a href="index.html" class="view-full-link">⬅️ Back to Voting</a>
-  </div>
+          <h2>🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
+          <table class="unseen-table">
+            <thead>
+              <tr>
+                <th>Movie</th><th>Year</th><th>TMDB Rating</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="unseen-list"></tbody>
+          </table>
+
+          <h2>🏷️ Tagged Movies</h2>
+          <ul id="tagged-list"></ul>
+
+          <a href="index.html" class="view-full-link">⬅️ Back to Voting</a>
+        </div>
+        <!--–––– EXISTING MARKUP END ––––-->
+
+      </div><!--/.vr-ui-->
+    </div><!--/.vr-screen-->
+  </div><!--/.vr-theater-->
 
   <script src="list.js" defer></script>
 </body>
