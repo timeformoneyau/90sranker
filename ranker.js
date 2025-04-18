@@ -249,3 +249,60 @@ async function replaceMovie(movieToReplace) {
 }
 
 window.onload = loadMovies;
+
+// auto‑align .vr‑screen to the baked‑in hole
+function alignScreen() {
+  const img = new Image();
+  img.src = 'theater-bg1.png';
+  img.onload = () => {
+    // create a canvas matching viewport
+    const w = window.innerWidth, h = window.innerHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    // draw the image with CSS-cover logic
+    const scale = Math.max(w/img.width, h/img.height);
+    const sw = img.width * scale;
+    const sh = img.height * scale;
+    const sx = (w - sw)/2, sy = (h - sh)/2;
+    ctx.drawImage(img, sx, sy, sw, sh);
+
+    // sample the middle scanline for brightness
+    const y = Math.floor(h/2);
+    const row = ctx.getImageData(0, y, w, 1).data;
+    let left = null, right = null;
+    const THRESH = 100; // brightness threshold (0-255)
+    for (let x = 0; x < w; x++) {
+      const i = x*4;
+      const b = (row[i] + row[i+1] + row[i+2]) / 3;
+      if (b > THRESH) { left = x; break; }
+    }
+    for (let x = w-1; x >= 0; x--) {
+      const i = x*4;
+      const b = (row[i] + row[i+1] + row[i+2]) / 3;
+      if (b > THRESH) { right = x; break; }
+    }
+
+    if (left !== null && right !== null) {
+      const screen = document.querySelector('.vr-screen');
+      const widthPerc = ((right - left) / w) * 100;
+      const leftPerc =  (left / w) * 100;
+      Object.assign(screen.style, {
+        width:  widthPerc + 'vw',
+        left:   leftPerc  + 'vw',
+        // keep the tilt
+        transform: 'translate(-50%,-50%) perspective(1200px) rotateX(5deg)'
+      });
+    }
+  };
+}
+
+// run on load and on resize (debounced)
+window.addEventListener('load', alignScreen);
+let resizeTO;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTO);
+  resizeTO = setTimeout(alignScreen, 150);
+});
+
