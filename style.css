@@ -18,31 +18,38 @@ body::before{
 }
 
 /* ---------- Theater backdrop ---------- */
-.vr-theater{
-  position:fixed; inset:0;
-  background:url("theater-bg.png") center/contain no-repeat;
-  background-color:#000;
-  z-index:0;
+/* ─── Theater backdrop ─── */
+.vr-theater {
+  position: fixed;
+  inset: 0;
+  background: url("theater-bg1.png") center/contain no-repeat;
+  background-color: #000;
+  z-index: 0;
 }
-/* phones: keep edge‑to‑edge */
-@media(max-width:800px){
-  .vr-theater{ background-size:cover; }
+@media (max-width: 800px) {
+  .vr-theater {
+    background-size: cover;
+  }
 }
-
 /* ---------- Responsive “screen” ---------- */
 .vr-screen {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
-
-  width: 75vw;
+  width: 85vw;
   max-width: 1200px;
   aspect-ratio: 16/9;
-
-  background: transparent;   /* no more background needed */
-  overflow: visible;         /* allow glow shadows to show */
+  background: transparent;
+  overflow: visible;
 }
+@media (max-width: 600px) {
+  .vr-screen {
+    transform: translate(-50%, -50%);
+    width: 92vw;
+  }
+}
+
 
 /* subtle inner bevel for physical frame */
 .vr-screen::before{
