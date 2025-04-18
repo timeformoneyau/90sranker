@@ -26,13 +26,17 @@ body::before {
 .vr-theater {
   position: fixed;
   inset: 0;
-  background: url("theater-bg.png") center/cover no-repeat;
+
+  /* show the whole image, so the baked‑in hole stays centered */
+  background: url("theater-bg.png") center/contain no-repeat;
   background-color: #000;
+
   z-index: 0;
 }
 @media (max-width: 800px) {
   .vr-theater {
-    background-size: cover;
+    /* still contain to preserve center hole */
+    background-size: contain;
   }
 }
 
@@ -43,7 +47,7 @@ body::before {
   left: 50%;
   transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
 
-  /* JS will inject the exact width & left for perfect alignment */
+  /* JS will inject width & left for pixel‑perfect fit */
   width: auto;
   max-width: 1200px;
   aspect-ratio: 16/9;
@@ -51,13 +55,13 @@ body::before {
   background: transparent;
   overflow: visible;
 }
-/* disable tilt on small screens */
 @media (max-width: 600px) {
   .vr-screen {
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%); /* disable tilt on phones */
   }
 }
-/* subtle inner bevel for physical frame */
+
+/* subtle inner bevel for a physical frame */
 .vr-screen::before {
   content: "";
   position: absolute;
@@ -71,6 +75,7 @@ body::before {
   mix-blend-mode: multiply;
   pointer-events: none;
 }
+
 /* projector cone lighting */
 .vr-screen::after {
   content: "";
@@ -96,6 +101,8 @@ body::before {
   gap: 5vh;
   padding: 4vh 4vw;
   overflow: auto;
+
+  /* the projection “look” */
   filter: brightness(1.1) contrast(.9) saturate(.9);
   animation: vr-flicker 1.8s infinite;
 }
@@ -157,61 +164,3 @@ body::before {
   background: #d9c79a;
   border: 2px solid #bca97c;
   border-radius: 4px;
-  padding: .45em 1.2em;
-  width: max-content;
-  box-shadow: 0 1px 3px rgba(0,0,0,.25);
-  transition: .15s;
-}
-.tertiary:hover {
-  box-shadow: 0 3px 6px rgba(0,0,0,.35);
-  transform: translateY(-2px);
-}
-
-/* ---------- VS badge ---------- */
-.vs-badge {
-  width: 90px;
-  height: 90px;
-  line-height: 90px;
-  font-size: 1.2em;
-  font-weight: 800;
-  color: #fff;
-  background: #222;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  text-align: center;
-}
-
-/* ---------- View Full List link ---------- */
-.view-full-link {
-  color: #ff99ff;
-  text-decoration: underline;
-  font-size: .9em;
-}
-
-/* ---------- Confetti (unchanged) ---------- */
-.confetti-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 200;
-}
-
-/* ---------- Shake keyframes ---------- */
-@keyframes shake {
-  0%   { transform: translate(0,0); }
-  20%  { transform: translate(-3px,0); }
-  40%  { transform: translate(3px,0); }
-  60%  { transform: translate(-2px,0); }
-  80%  { transform: translate(2px,0); }
-  100% { transform: translate(0,0); }
-}
-
-/* ---------- Projection flicker ---------- */
-@keyframes vr-flicker {
-  0%,100% { opacity: 1; }
-  50%     { opacity: .985; }
-  75%     { opacity: 1.015; }
-}
