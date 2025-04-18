@@ -24,7 +24,7 @@ body::before{              /* faint vignette */
 /* ---------- Virtual theater layer ---------- */
 .vr-theater{
   position:fixed;inset:0;
-  background:url("theater-bg.png") center/cover no-repeat;
+  background:url("theater-bg1.png") center/cover no-repeat;
   z-index:0;                       /* above vignette */
 }
 
