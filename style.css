@@ -33,76 +33,57 @@ body::before{
   }
 }
 /* ---------- Responsive “screen” ---------- */
+/* ─── Transparent “screen” container (JS will size & position it) ─── */
 .vr-screen {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
-  /* width BELOW must match the hole’s width exactly */
-  width: 70vw;                /* ← adjust this */
+
+  /* width & left will be injected by JS to match the baked‑in hole */
+  width: auto;
   max-width: 1200px;
   aspect-ratio: 16/9;
+
   background: transparent;
   overflow: visible;
 }
-@media (max-width: 600px){
+
+/* disable tilt on phones */
+@media (max-width: 600px) {
   .vr-screen {
     transform: translate(-50%, -50%);
-    width: 90vw;
   }
 }
 
-/* subtle inner bevel for physical frame */
-.vr-screen::before{
-  content:""; position:absolute; inset:0;
-  background:linear-gradient(to bottom,
-      rgba(0,0,0,.10) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,.10) 100%);
-  mix-blend-mode:multiply;
-  pointer-events:none;
+/* subtle inner bevel for a physical frame */
+.vr-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.10) 0%,
+    rgba(0,0,0,0) 50%,
+    rgba(0,0,0,.10) 100%
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 /* projector cone lighting */
-.vr-screen::after{
-  content:""; position:absolute; inset:0;
-  background:radial-gradient(ellipse 60% 100% at center top,
-      rgba(255,255,255,.15) 0%,
-      rgba(255,255,255,0) 80%);
-  pointer-events:none;
-}
-@media(max-width:600px){
-  .vr-screen{
-    transform:translate(-50%,-50%);      /* disable tilt on phones */
-    width:88vw;
-  }
+.vr-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 100% at center top,
+    rgba(255,255,255,.15) 0%,
+    rgba(255,255,255,0) 80%
+  );
+  pointer-events: none;
 }
 
-/* gentle bevel to suggest a physical screen frame */
-.vr-screen::after{
-  content:""; position:absolute; inset:0;
-  background:linear-gradient(to bottom,
-      rgba(0,0,0,.09) 0%,
-      rgba(0,0,0,.0) 50%,
-      rgba(0,0,0,.09) 100%);
-  mix-blend-mode:multiply;
-  pointer-events:none;
-}
-
-/* optional subtle glow on curtains */
-.vr-screen::before{
-  content:""; position:absolute; inset:0;
-  box-shadow:0 0 80px rgba(255,255,255,.07);
-  pointer-events:none;
-}
-
-/* grain + vignette */
-.vr-overlay{
-  position:absolute; inset:0; pointer-events:none;
-  background:url("film-grain.png") repeat,
-             radial-gradient(ellipse at center,
-                rgba(255,255,255,0) 65%,
-                rgba(0,0,0,.22) 100%);
-  opacity:.12; mix-blend-mode:overlay;
-}
 
 /* ---------- UI inside the screen ---------- */
 .vr-ui{
