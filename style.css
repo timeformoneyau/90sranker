@@ -164,3 +164,9 @@ body::before {
   background: #d9c79a;
   border: 2px solid #bca97c;
   border-radius: 4px;
+
+  /* DEBUG: show vr-screen bounds */
+.vr-screen {
+  outline: 2px dashed lime !important;
+}
+
