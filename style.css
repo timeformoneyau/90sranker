@@ -22,7 +22,7 @@ body::before{
 .vr-theater {
   position: fixed;
   inset: 0;
-  background: url("theater-bg1.png") center/contain no-repeat;
+  background: url("theater-bg.png") center/contain no-repeat;
   background-color: #000;
   z-index: 0;
 }
