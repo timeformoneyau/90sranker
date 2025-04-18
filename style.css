@@ -240,7 +240,7 @@ table td button:hover{background:#ff66cc;color:#fff;box-shadow:0 0 10px #ff99ffc
 
 .vr-theater{
   position:fixed;inset:0;
-  background:url("assets/theater-bg.png") center/cover no-repeat;
+  background:url("theater-bg.png") center/cover no-repeat;
   z-index:0;                       /* now above the dimmed veils */
 }
 
