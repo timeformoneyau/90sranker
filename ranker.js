@@ -306,3 +306,44 @@ window.addEventListener('resize', () => {
   resizeTO = setTimeout(alignScreen, 150);
 });
 
+// ─── auto‑align the screen hole ───
+function alignScreen() {
+  const img    = new Image();
+  img.src      = 'theater-bg1.png';
+  img.onload   = () => {
+    const w     = window.innerWidth,
+          h     = window.innerHeight,
+          canvas = document.createElement('canvas'),
+          ctx    = canvas.getContext('2d');
+    canvas.width  = w;
+    canvas.height = h;
+    const scale = Math.max(w/img.width, h/img.height),
+          sw    = img.width * scale,
+          sh    = img.height * scale,
+          sx    = (w - sw)/2,
+          sy    = (h - sh)/2;
+    ctx.drawImage(img, sx, sy, sw, sh);
+
+    const row = ctx.getImageData(0, h/2, w, 1).data;
+    let left=0, right=w-1, TH=100;
+    for (; left<w; left++) {
+      if ((row[left*4]+row[left*4+1]+row[left*4+2])/3 > TH) break;
+    }
+    for (; right>0; right--) {
+      if ((row[right*4]+row[right*4+1]+row[right*4+2])/3 > TH) break;
+    }
+
+    const screen = document.querySelector('.vr-screen');
+    if (screen && left<right) {
+      screen.style.left  = (left/w*100)+'vw';
+      screen.style.width = ((right-left)/w*100)+'vw';
+      screen.style.transform = 'translate(-50%,-50%) perspective(1200px) rotateX(5deg)';
+    }
+  };
+}
+window.addEventListener('load',  alignScreen);
+window.addEventListener('resize', () => {
+  clearTimeout(window._alignTO);
+  window._alignTO = setTimeout(alignScreen, 150);
+});
+
