@@ -22,12 +22,13 @@ body::before{
 .vr-theater {
   position: fixed;
   inset: 0;
-  background: url("theater-bg.png") center/contain no-repeat;
+  background: url("theater-bg.png") center/cover no-repeat;
   background-color: #000;
   z-index: 0;
 }
 @media (max-width: 800px) {
   .vr-theater {
+    /* phones can keep cover or switch to contain as you prefer */
     background-size: cover;
   }
 }
@@ -37,19 +38,19 @@ body::before{
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
-  width: 85vw;
+  /* width BELOW must match the hole’s width exactly */
+  width: 70vw;                /* ← adjust this */
   max-width: 1200px;
   aspect-ratio: 16/9;
   background: transparent;
   overflow: visible;
 }
-@media (max-width: 600px) {
+@media (max-width: 600px){
   .vr-screen {
     transform: translate(-50%, -50%);
-    width: 92vw;
+    width: 90vw;
   }
 }
-
 
 /* subtle inner bevel for physical frame */
 .vr-screen::before{
