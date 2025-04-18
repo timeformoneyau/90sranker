@@ -21,11 +21,21 @@ body::before{              /* faint vignette */
   pointer-events:none;
 }
 
-/* ---------- Virtual theater layer ---------- */
+/* ---------- Theater backdrop ---------- */
 .vr-theater{
-  position:fixed;inset:0;
-  background:url("theater-bg1.png") center/cover no-repeat;
-  z-index:0;                       /* above vignette */
+  position:fixed;
+  inset:0;
+  /* show the entire image on desktop/laptop */
+  background:url("theater-bg.png") center/contain no-repeat;
+  background-color:#000;            /* any letter‑boxing stays black   */
+  z-index:0;                        /* keeps photo above the vignette  */
+}
+
+/* On phones/tablets fill the height instead (old “cover” behaviour) */
+@media (max-width: 800px){
+  .vr-theater{
+    background-size:cover;
+  }
 }
 
 .vr-screen{
