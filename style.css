@@ -152,3 +152,9 @@ footer {
     margin: 1.5rem 0;
   }
 }
+.poster-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
