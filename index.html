@@ -2,64 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>90s Movie Ranker</title>
-
-  <!-- Main stylesheet -->
+  <title>90s Movie Showdown</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Firebase v8 SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-
 <body>
-  <!-- Theater backdrop -->
-  <div class="vr-theater">
-    <!-- Responsive “screen” we control -->
-    <div class="vr-screen">
-      <div class="vr-overlay"></div>
-      <div class="vr-ui"><!-- everything inside is projected -->
+  <div class="app">
+    <header>
+      <h1>90s Movie Showdown</h1>
+      <p class="tagline">Pick Your Favorites!</p>
+    </header>
 
-        <!-- ✂︎ banner removed per new brief ✂︎ -->
+    <section class="compare">
+      <!-- Movie A -->
+      <div class="poster-card" id="movieA-block">
+        <!-- Confetti container for JS to target -->
+        <div class="confetti-container" id="confetti-A"></div>
+        <img id="posterA" class="poster" src="" alt="Movie A poster">
+        <div class="title" id="movieA">Movie A</div>
+        <button class="btn primary" onclick="vote('A')">Pick Winner</button>
+        <button class="btn tertiary" onclick="markUnseen('A')">🙈 Haven’t Seen</button>
+      </div>
 
-        <!-- Compare section -->
-        <section id="compare-section">
-          <!-- Movie A -->
-          <div class="movie-block" id="movieA-block">
-            <img src="" alt="Movie Poster 1" class="poster" id="posterA">
-            <div id="movieA" class="movie-title">Movie A</div>
-            <div class="button-group">
-              <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
-                <img src="winner.png" alt="Winner Ticket">
-              </button>
-              <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
-            </div>
-          </div>
+      <div class="vs-badge">VS</div>
 
-          <!-- VS badge -->
-          <div class="vs-badge">VS</div>
+      <!-- Movie B -->
+      <div class="poster-card" id="movieB-block">
+        <!-- Confetti container for JS to target -->
+        <div class="confetti-container" id="confetti-B"></div>
+        <img id="posterB" class="poster" src="" alt="Movie B poster">
+        <div class="title" id="movieB">Movie B</div>
+        <button class="btn primary" onclick="vote('B')">Pick Winner</button>
+        <button class="btn tertiary" onclick="markUnseen('B')">🙈 Haven’t Seen</button>
+      </div>
+    </section>
 
-          <!-- Movie B -->
-          <div class="movie-block" id="movieB-block">
-            <img src="" alt="Movie Poster 2" class="poster" id="posterB">
-            <div id="movieB" class="movie-title">Movie B</div>
-            <div class="button-group">
-              <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
-                <img src="winner.png" alt="Winner Ticket">
-              </button>
-              <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
-            </div>
-          </div>
-        </section>
+    <footer>
+      <a href="list.html" class="view-full">📋 View Full List</a>
+    </footer>
+  </div>
 
-        <a href="list.html" class="view-full-link">📋 View Full List</a>
-
-        <!-- Confetti -->
-        <div class="confetti-container" id="confetti-container"></div>
-
-      </div><!-- /.vr-ui -->
-    </div><!-- /.vr-screen -->
-  </div><!-- /.vr-theater -->
   <script src="ranker.js" defer></script>
 </body>
 </html>
