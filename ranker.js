@@ -34,31 +34,28 @@ const TMDB_MOVIE_URL    = 'https://www.themoviedb.org/movie/';
 // … loadMovies, getAvailableMovies, chooseTwoMovies, getTier, fetchPosterUrl stay the same …
 
 async function displayMovies() {
-  // set titles
+  // Update titles
   document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
   document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
 
-  // fetch & set poster images
+  // Fetch and set posters
   const imgA = document.getElementById("posterA");
   const imgB = document.getElementById("posterB");
   imgA.src = await fetchPosterUrl(movieA.title, movieA.year);
   imgB.src = await fetchPosterUrl(movieB.title, movieB.year);
 
-  // ── NEW: Populate the link hrefs ──
-  // Requires <a id="linkA"> and <a id="linkB"> wrapping each poster/title
+  // ── New: set the link hrefs to a TMDB search ──
   const linkA = document.getElementById("linkA");
   const linkB = document.getElementById("linkB");
-  if (linkA && movieA.id) {
-    linkA.href = `${TMDB_MOVIE_URL}${movieA.id}`;
-  }
-  if (linkB && movieB.id) {
-    linkB.href = `${TMDB_MOVIE_URL}${movieB.id}`;
-  }
-  // ────────────────────────────────────
+  const qA = encodeURIComponent(`${movieA.title} ${movieA.year}`);
+  const qB = encodeURIComponent(`${movieB.title} ${movieB.year}`);
+  linkA.href = `https://www.themoviedb.org/search?query=${qA}`;
+  linkB.href = `https://www.themoviedb.org/search?query=${qB}`;
 
-  // remove any old confetti containers
+  // Remove old confetti
   document.querySelectorAll('.confetti-container').forEach(e => e.remove());
 }
+
 
 // … vote, createConfettiBurst, updateElo, updateStats, markUnseen, replaceMovie stay the same …
 
