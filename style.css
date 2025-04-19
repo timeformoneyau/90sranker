@@ -8,7 +8,6 @@ body {
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 body::before {
   content: "";
   position: fixed;
@@ -23,82 +22,56 @@ body::before {
   pointer-events: none;
 }
 
-/* ---------- Theater backdrop without curtains ---------- */
-.vr-theater {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* your existing background settings */
-}
-
-@media (max-width: 800px) {
-  .vr-theater {
-    background-size: cover;
-  }
-}
-
-/* ---------- Transparent “screen” container (overlay onto the white area) ---------- */
-.vr-screen {
+/* ---------- Theater Stage & Backdrop ---------- */
+.theater-stage {
   position: relative;
+  width: 100%;
+  max-width: 1200px;  /* match your desired maximum */
+  margin: 0 auto;     /* center in viewport */
+  overflow: visible;
+}
+
+/* Responsive backdrop image */
+.theater-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Overlay container exactly atop the white area */
+.vr-screen {
+  position: absolute;
+  top:   7.9%;         /* from top of image to top of white screen */
+  left: 24.2%;         /* from left of image to left of white screen */
+  width: 65.8%;        /* width of white screen as % of image */
+  aspect-ratio: 16/9;  /* match your poster layout */
+
   transform: perspective(1200px) rotateX(5deg);
-  width: 60%;
-  aspect-ratio: 16/9;
-  /* no manual top/left/height needed */
+  pointer-events: none; /* let clicks fall through to .vr-ui */
+  z-index: 1;
 }
 
-@media (max-width: 600px) {
-  .vr-screen {
-    transform: translateX(-50%); /* no tilt on phones */
-    top: 20%;
-    width: 80%;
-    height: 50%;
-  }
-}
-
-/* subtle inner bevel for a physical frame */
-.vr-screen::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,.10) 0%,
-    rgba(0,0,0,0)    50%,
-    rgba(0,0,0,.10) 100%
-  );
-  mix-blend-mode: multiply;
-  pointer-events: none;
-}
-
-/* projector cone lighting */
-.vr-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 60% 100% at center top,
-    rgba(255,255,255,.15) 0%,
-    rgba(255,255,255,0)    80%
-  );
-  pointer-events: none;
-}
-
-/* ---------- UI inside the screen ---------- */
-.vr-ui {
+/* Re‑enable interactions and projection styling */
+.vr-screen .vr-ui {
   position: relative;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5vh;
-  padding: 4vh 4vw;
-  overflow: visible;
+  pointer-events: auto;
 
   /* the projection “look” */
   filter: brightness(1.1) contrast(.9) saturate(.9);
   animation: vr-flicker 1.8s infinite;
+}
+
+/* Mobile tweak: remove 3D tilt and adjust overlay */
+@media (max-width: 600px) {
+  .vr-screen {
+    transform: none;
+    top: 10%;      /* adjust as needed on mobile */
+    left: 10%;
+    width: 80%;
+    aspect-ratio: 16/9;
+  }
 }
 
 /* ---------- Compare section ---------- */
@@ -110,7 +83,6 @@ body::before {
   gap: 3vw;
   width: 100%;
 }
-
 @media (max-width: 768px) {
   #compare-section {
     grid-template-columns: 1fr;
@@ -127,7 +99,6 @@ body::before {
   box-shadow: 0 0 20px rgba(0,0,0,.4);
   transition: transform .15s;
 }
-
 @media (max-width: 600px) {
   .poster {
     width: 48vw;
@@ -141,13 +112,11 @@ body::before {
   padding: 0;
   cursor: pointer;
 }
-
 .primary img {
   width: 150px;
   height: auto;
   filter: grayscale(.15) brightness(1.05) contrast(1.1);
 }
-
 .button-group {
   display: flex;
   flex-direction: column;
@@ -155,8 +124,6 @@ body::before {
   gap: .6em;
   margin-top: 1em;
 }
-
-/* “Haven’t Seen” tertiary button */
 .tertiary {
   font-size: .9em;
   font-weight: bold;
