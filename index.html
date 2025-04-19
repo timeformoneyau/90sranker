@@ -11,37 +11,36 @@
       <h1>90s Movie Showdown</h1>
       <p class="tagline">Pick Your Favorites!</p>
     </header>
-
     <section class="compare">
- <!-- Movie A -->
-  <div class="poster-card" id="movieA-block">
-    <div class="confetti-container" id="confetti-A"></div>
-    <a id="linkA" href="#" target="_blank" class="poster-link">
-      <img id="posterA" class="poster" src="" alt="Movie A poster">
-      <div id="movieA" class="title">Movie A</div>
-    </a>
-    <button class="btn primary"  onclick="vote('A')">Pick Winner</button>
-    <button class="btn tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
-  </div>
-
-  <div class="vs-badge">VS</div>
-
-  <!-- Movie B -->
-  <div class="poster-card" id="movieB-block">
-    <div class="confetti-container" id="confetti-B"></div>
-    <a id="linkB" href="#" target="_blank" class="poster-link">
-      <img id="posterB" class="poster" src="" alt="Movie B poster">
-      <div id="movieB" class="title">Movie B</div>
-    </a>
-    <button class="btn primary"  onclick="vote('B')">Pick Winner</button>
-    <button class="btn tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
-  </div>
-</section>
+      <!-- Movie A -->
+      <div class="poster-card" id="movieA-block">
+        <div class="confetti-container" id="confetti-A"></div>
+        <a id="linkA" href="#" target="_blank" class="poster-link">
+          <img id="posterA" class="poster" src="" alt="Movie A poster">
+          <div id="movieA" class="title">Movie A</div>
+        </a>
+        <button class="btn primary" onclick="vote('A')">Pick Winner</button>
+        <button class="btn tertiary" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
+      </div>
+      <div class="vs-badge">VS</div>
+      <!-- Movie B -->
+      <div class="poster-card" id="movieB-block">
+        <div class="confetti-container" id="confetti-B"></div>
+        <a id="linkB" href="#" target="_blank" class="poster-link">
+          <img id="posterB" class="poster" src="" alt="Movie B poster">
+          <div id="movieB" class="title">Movie B</div>
+        </a>
+        <button class="btn primary" onclick="vote('B')">Pick Winner</button>
+        <button class="btn tertiary" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
+      </div>
+    </section>
     <footer>
-      <a href="list.html" class="view-full">📋 View Full List</a>
+      <a href="list.html" class="view-full">📋 View Full List</a>
     </footer>
   </div>
-
+  <!-- Firebase SDK imports -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="ranker.js" defer></script>
 </body>
 </html>
