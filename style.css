@@ -94,7 +94,7 @@ body::before {
   align-items: center;
   gap: 5vh;
   padding: 4vh 4vw;
-  overflow: auto;
+  overflow: visible;
 
   /* the projection “look” */
   filter: brightness(1.1) contrast(.9) saturate(.9);
