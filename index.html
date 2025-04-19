@@ -13,28 +13,33 @@
     </header>
 
     <section class="compare">
-      <!-- Movie A -->
-      <div class="poster-card" id="movieA-block">
-        <!-- Confetti container for JS to target -->
-        <div class="confetti-container" id="confetti-A"></div>
-        <img id="posterA" class="poster" src="" alt="Movie A poster">
-        <div class="title" id="movieA">Movie A</div>
-        <button class="btn primary" onclick="vote('A')">Pick Winner</button>
-        <button class="btn tertiary" onclick="markUnseen('A')">🙈 Haven’t Seen</button>
-      </div>
+<!-- Movie A -->
+<div class="poster-card" id="movieA-block">
+  <div class="confetti-container" id="confetti-A"></div>
+- <img id="posterA" class="poster" src="" alt="Movie A poster">
+- <div class="title" id="movieA">Movie A</div>
++ <a id="linkA" href="#" target="_blank" class="poster-link">
++   <img id="posterA" class="poster" src="" alt="Movie A poster">
++   <div class="title" id="movieA">Movie A</div>
++ </a>
+  <button class="btn primary" onclick="vote('A')">Pick Winner</button>
+  <button class="btn tertiary" onclick="markUnseen('A')">🙈 Haven’t Seen</button>
+</div>
 
       <div class="vs-badge">VS</div>
 
-      <!-- Movie B -->
-      <div class="poster-card" id="movieB-block">
-        <!-- Confetti container for JS to target -->
-        <div class="confetti-container" id="confetti-B"></div>
-        <img id="posterB" class="poster" src="" alt="Movie B poster">
-        <div class="title" id="movieB">Movie B</div>
-        <button class="btn primary" onclick="vote('B')">Pick Winner</button>
-        <button class="btn tertiary" onclick="markUnseen('B')">🙈 Haven’t Seen</button>
-      </div>
-    </section>
+<!-- Movie B -->
+<div class="poster-card" id="movieB-block">
+  <div class="confetti-container" id="confetti-B"></div>
+- <img id="posterB" class="poster" src="" alt="Movie B poster">
+- <div class="title" id="movieB">Movie B</div>
++ <a id="linkB" href="#" target="_blank" class="poster-link">
++   <img id="posterB" class="poster" src="" alt="Movie B poster">
++   <div class="title" id="movieB">Movie B</div>
++ </a>
+  <button class="btn primary" onclick="vote('B')">Pick Winner</button>
+  <button class="btn tertiary" onclick="markUnseen('B')">🙈 Haven’t Seen</button>
+</div>
 
     <footer>
       <a href="list.html" class="view-full">📋 View Full List</a>
