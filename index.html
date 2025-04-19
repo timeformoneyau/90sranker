@@ -2,45 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>90s Movie Showdown</title>
+  <title>90s Movie Ranker</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK imports - MOVED TO HEAD -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs -->
+<!-- ✅ Use Firebase v8 (Namespaced Version for firebase.* to work) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <h1>90s Movie Showdown</h1>
-      <p class="tagline">Pick Your Favorites!</p>
-    </header>
-    <section class="compare">
-      <!-- Movie A -->
-      <div class="poster-card" id="movieA-block">
-        <div class="confetti-container" id="confetti-A"></div>
-        <a id="linkA" href="#" target="_blank" class="poster-link">
-          <img id="posterA" class="poster" src="" alt="Movie A poster">
-          <div id="movieA" class="title">Movie A</div>
-        </a>
-        <button class="btn primary" onclick="vote('A')">Pick Winner</button>
-        <button class="btn tertiary" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
+  <div class="bg-overlay"></div>
+  <div class="container">
+
+    <!-- 🎬 Neon Banner -->
+    <div class="banner-wrapper">
+      <div class="banner-marquee">
+        <div class="banner-top">
+          <span class="banner-era">🎬 NINETIES</span>
+        </div>
+        <div class="banner-title">MOVIE RANKER</div>
       </div>
+    </div>
+
+    <!-- 🎥 Compare Section -->
+    <section id="compare-section">
+      <!-- Movie A -->
+      <div class="movie-block" id="movieA-block">
+        <img src="" alt="Movie Poster 1" class="poster" id="posterA">
+        <div id="movieA" class="movie-title">Movie A</div>
+        <div class="button-group">
+          <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
+  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
+</button>
+          <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
+        </div>
+      </div>
+
+      <!-- VS Badge -->
       <div class="vs-badge">VS</div>
+
       <!-- Movie B -->
-      <div class="poster-card" id="movieB-block">
-        <div class="confetti-container" id="confetti-B"></div>
-        <a id="linkB" href="#" target="_blank" class="poster-link">
-          <img id="posterB" class="poster" src="" alt="Movie B poster">
-          <div id="movieB" class="title">Movie B</div>
-        </a>
-        <button class="btn primary" onclick="vote('B')">Pick Winner</button>
-        <button class="btn tertiary" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
+      <div class="movie-block" id="movieB-block">
+        <img src="" alt="Movie Poster 2" class="poster" id="posterB">
+        <div id="movieB" class="movie-title">Movie B</div>
+        <div class="button-group">
+<button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
+  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
+</button>
+
+          <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
+        </div>
       </div>
     </section>
-    <footer>
-      <a href="list.html" class="view-full">📋 View Full List</a>
-    </footer>
+
+    <!-- 📋 Link to List Page -->
+    <a href="list.html" class="view-full-link">📋 View Full List</a>
+
+    <!-- 🎉 Confetti Container -->
+    <div class="confetti-container" id="confetti-container"></div>
+
   </div>
-  <script src="ranker.js"></script>
+
+  <script src="ranker.js" defer></script>
 </body>
 </html>
