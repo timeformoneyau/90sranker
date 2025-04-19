@@ -104,7 +104,7 @@ async function displayMovies() {
     encodeURIComponent(`${movieB.title} ${movieB.year}`);
 
   // clear old confetti
-  document.querySelectorAll('.confetti-container').forEach(e => e.remove());
+  document.querySelectorAll('.confetti-container').forEach(e => e.innerHTML = '');
 }
 
 // ===== Voting =====
@@ -124,8 +124,9 @@ function vote(which) {
   img.classList.add("popcorn-shake");
 
   // Confetti burst
-  const container = document.getElementById(`Movie${which}-block`)
-                   .querySelector('.confetti-container');
+  // Fixed: use lowercase in ID to match HTML structure
+  const container = document.getElementById(`movie${which.toLowerCase()}-block`)
+                  .querySelector('.confetti-container');
   createConfettiBurst(container);
 
   // Remove shake
@@ -167,27 +168,43 @@ function updateStats(winner, loser) {
 // ===== Confetti =====
 function createConfettiBurst(container) {
   const colors = ['#ff3b3b','#ffc107','#4caf50','#03a9f4','#e91e63','#9c27b0'];
+  container.innerHTML = ''; // Clear any previous confetti
+  
   for (let i = 0; i < 80; i++) {
     const piece = document.createElement("div");
     piece.className = "confetti-piece";
+    
+    // Set random CSS variables for animation
+    const randomX = (-100 + Math.random() * 200) + 'px';
+    const randomY = (-100 + Math.random() * 200) + 'px';
+    const randomRotate = (Math.random() * 720) + 'deg';
+    
+    piece.style.setProperty('--random-x', randomX);
+    piece.style.setProperty('--random-y', randomY);
+    piece.style.setProperty('--random-rotate', randomRotate);
+    
     Object.assign(piece.style, {
       position: 'absolute',
-      width: '8px', height: '12px',
+      width: '8px', 
+      height: '12px',
       background: colors[Math.floor(Math.random()*colors.length)],
       borderRadius: '2px',
-      top: '50%', left: '50%',
-      transform: `translate(-50%,-50%) rotate(${Math.random()*360}deg)`,
-      animation: `confettiBurst 1s ease-out forwards`,
+      top: '50%', 
+      left: '50%',
+      transform: 'translate(-50%,-50%) rotate(0deg)',
+      animation: 'confettiBurst 1s ease-out forwards',
       animationDelay: `${Math.random()*0.3}s`,
-      opacity: 0
+      opacity: '0'
     });
+    
     container.appendChild(piece);
   }
-  // remove after animation
+  
+  // Remove after animation completes
   setTimeout(() => container.innerHTML = "", 1400);
 }
 
-// ===== Haven’t Seen =====
+// ===== Haven't Seen =====
 function markUnseen(movieObj) {
   if (!movieObj || !movieObj.title) return;
   unseen.push(movieObj.title);
@@ -197,6 +214,22 @@ function markUnseen(movieObj) {
 
 function replaceMovie(movieToReplace) {
   // optional: implement if you still need replacement logic
+}
+
+// Placeholder functions for other pages
+function updateRanking() {
+  // Implement this if you have a ranking page
+  console.log("updateRanking called");
+}
+
+function updateUnseenList() {
+  // Implement this if you have an unseen movies page
+  console.log("updateUnseenList called");
+}
+
+function updateTaggedList() {
+  // Implement this if you have a tagged movies page
+  console.log("updateTaggedList called");
 }
 
 // Kick things off!
