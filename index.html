@@ -3,24 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>90s Movie Ranker</title>
-
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="style.css">
-
   <!-- Firebase v8 SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 
 <body>
-  <!-- Theater backdrop -->
-  <div class="vr-theater">
-    <!-- Responsive “screen” we control -->
-    <div class="vr-screen">
-      <div class="vr-overlay"></div>
-      <div class="vr-ui"><!-- everything inside is projected -->
+  <div class="theater-stage">
+    <!-- Cinema backdrop as real content -->
+    <img src="theater-bg.png" alt="Cinema backdrop" class="theater-img" />
 
-        <!-- ✂︎ banner removed per new brief ✂︎ -->
+    <!-- Overlay “screen” for your UI -->
+    <div class="vr-screen">
+      <div class="vr-ui"><!-- everything inside is projected -->
 
         <!-- Compare section -->
         <section id="compare-section">
@@ -32,7 +29,7 @@
               <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
                 <img src="winner.png" alt="Winner Ticket">
               </button>
-              <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
+              <button class="tertiary" onclick="markUnseen('A')">🙈 Haven’t Seen</button>
             </div>
           </div>
 
@@ -47,7 +44,7 @@
               <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
                 <img src="winner.png" alt="Winner Ticket">
               </button>
-              <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
+              <button class="tertiary" onclick="markUnseen('B')">🙈 Haven’t Seen</button>
             </div>
           </div>
         </section>
@@ -59,7 +56,8 @@
 
       </div><!-- /.vr-ui -->
     </div><!-- /.vr-screen -->
-  </div><!-- /.vr-theater -->
+  </div><!-- /.theater-stage -->
+
   <script src="ranker.js" defer></script>
 </body>
 </html>
