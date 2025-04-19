@@ -25,11 +25,10 @@ body::before {
 
 /* ---------- Theater backdrop without curtains ---------- */
 .vr-theater {
-  position: fixed;
-  inset: 0;
-  background: url("theater-bg.png") center/cover no-repeat;
-  background-color: #000;
-  z-index: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* your existing background settings */
 }
 
 @media (max-width: 800px) {
@@ -40,17 +39,11 @@ body::before {
 
 /* ---------- Transparent “screen” container (overlay onto the white area) ---------- */
 .vr-screen {
-  position: absolute;
-  /* these values match the white screen in theater-bg.png */
-  top: 22%;
-  left: 50%;
-  transform: translateX(-50%) perspective(1200px) rotateX(5deg);
+  position: relative;
+  transform: perspective(1200px) rotateX(5deg);
   width: 60%;
-  height: 40%;
-  
-  background: transparent;
-  overflow: visible;
-  z-index: 1;
+  aspect-ratio: 16/9;
+  /* no manual top/left/height needed */
 }
 
 @media (max-width: 600px) {
