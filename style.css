@@ -8,6 +8,7 @@ body {
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 body::before {
   content: "";
   position: fixed;
@@ -22,42 +23,42 @@ body::before {
   pointer-events: none;
 }
 
-/* ---------- Theater backdrop ---------- */
+/* ---------- Theater backdrop without curtains ---------- */
 .vr-theater {
   position: fixed;
   inset: 0;
-
-  /* show the whole image, so the baked‑in hole stays centered */
-  background: url("theater-bg.png") center/contain no-repeat;
+  background: url("theater-bg.png") center/cover no-repeat;
   background-color: #000;
-
   z-index: 0;
 }
+
 @media (max-width: 800px) {
   .vr-theater {
-    /* still contain to preserve center hole */
-    background-size: contain;
+    background-size: cover;
   }
 }
 
-/* ---------- Transparent “screen” container (JS‑aligned) ---------- */
+/* ---------- Transparent “screen” container (overlay onto the white area) ---------- */
 .vr-screen {
   position: absolute;
-  top: 50%;
+  /* these values match the white screen in theater-bg.png */
+  top: 22%;
   left: 50%;
-  transform: translate(-50%, -50%) perspective(1200px) rotateX(5deg);
-
-  /* JS will inject width & left for pixel‑perfect fit */
-  width: auto;
-  max-width: 1200px;
-  aspect-ratio: 16/9;
-
+  transform: translateX(-50%) perspective(1200px) rotateX(5deg);
+  width: 60%;
+  height: 40%;
+  
   background: transparent;
   overflow: visible;
+  z-index: 1;
 }
+
 @media (max-width: 600px) {
   .vr-screen {
-    transform: translate(-50%, -50%); /* disable tilt on phones */
+    transform: translateX(-50%); /* no tilt on phones */
+    top: 20%;
+    width: 80%;
+    height: 50%;
   }
 }
 
@@ -116,6 +117,7 @@ body::before {
   gap: 3vw;
   width: 100%;
 }
+
 @media (max-width: 768px) {
   #compare-section {
     grid-template-columns: 1fr;
@@ -132,6 +134,7 @@ body::before {
   box-shadow: 0 0 20px rgba(0,0,0,.4);
   transition: transform .15s;
 }
+
 @media (max-width: 600px) {
   .poster {
     width: 48vw;
@@ -145,11 +148,13 @@ body::before {
   padding: 0;
   cursor: pointer;
 }
+
 .primary img {
   width: 150px;
   height: auto;
   filter: grayscale(.15) brightness(1.05) contrast(1.1);
 }
+
 .button-group {
   display: flex;
   flex-direction: column;
@@ -157,6 +162,8 @@ body::before {
   gap: .6em;
   margin-top: 1em;
 }
+
+/* “Haven’t Seen” tertiary button */
 .tertiary {
   font-size: .9em;
   font-weight: bold;
@@ -164,9 +171,6 @@ body::before {
   background: #d9c79a;
   border: 2px solid #bca97c;
   border-radius: 4px;
-
-  /* DEBUG: show vr-screen bounds */
-.vr-screen {
-  outline: 2px dashed lime !important;
+  padding: 0.5em 1em;
+  cursor: pointer;
 }
-
