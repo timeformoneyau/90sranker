@@ -34,6 +34,21 @@ body::before {
   margin-bottom: 2em;
 }
 
+.custom-banner {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2em;
+  z-index: 2;
+}
+
+.custom-banner img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(255, 153, 255, 0.4));
+}
+
+
 .banner-marquee {
   display: inline-block;
   padding: 1em 2em;
