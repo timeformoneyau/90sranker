@@ -1,34 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>90s Movie Ranker</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+
   <!-- Firebase SDKs -->
-<!-- ✅ Use Firebase v8 (Namespaced Version for firebase.* to work) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Fonts (Optional: update to match Lovable export) -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="bg-overlay"></div>
+
+  <!-- 🔲 Top Header -->
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+  </header>
+
   <div class="container">
-
-<!-- 🎬 Image Banner -->
-<div class="custom-banner">
-  <img src="banner.png" alt="Nineties Movie Ranker banner">
-</div>
-
-
     <!-- 🎥 Compare Section -->
     <section id="compare-section">
       <!-- Movie A -->
       <div class="movie-block" id="movieA-block">
         <img src="" alt="Movie Poster 1" class="poster" id="posterA">
-        <div id="movieA" class="movie-title">Movie A</div>
+        <div class="movie-title" id="movieA">Movie A</div>
+        <div class="movie-year" id="movieA-year">199X</div>
         <div class="button-group">
           <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
-  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
-</button>
+            Choose Winner
+          </button>
           <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
         </div>
       </div>
@@ -39,23 +45,19 @@
       <!-- Movie B -->
       <div class="movie-block" id="movieB-block">
         <img src="" alt="Movie Poster 2" class="poster" id="posterB">
-        <div id="movieB" class="movie-title">Movie B</div>
+        <div class="movie-title" id="movieB">Movie B</div>
+        <div class="movie-year" id="movieB-year">199X</div>
         <div class="button-group">
-<button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
-  <img src="https://raw.githubusercontent.com/timeformoneyau/90sranker/main/winner.png" alt="Winner Ticket">
-</button>
-
+          <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
+            Choose Winner
+          </button>
           <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
         </div>
       </div>
     </section>
 
-    <!-- 📋 Link to List Page -->
-    <a href="list.html" class="view-full-link">📋 View Full List</a>
-
     <!-- 🎉 Confetti Container -->
     <div class="confetti-container" id="confetti-container"></div>
-
   </div>
 
   <script src="ranker.js" defer></script>
