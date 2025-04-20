@@ -1,11 +1,19 @@
-/* ===== Base Layout ===== */
+
+/* === Shelf Life Style (Merged for 90s Ranker) === */
+
+/* --- Base Layout --- */
 body {
-  background: url('background2.png') center center / cover no-repeat;
-  background-color: #000;
-  color: #fff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Space Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 2em;
+  background-image:
+    radial-gradient(ellipse at 33% 0, rgba(31,210,234,0.09) 0 40%, transparent 70%),
+    radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.09) 0 45%, transparent 80%),
+    linear-gradient(180deg, rgba(30,32,36,0.44) 0 90%, rgba(18,18,18,1) 95% 100%);
+  background-size: cover;
+  min-height: 100vh;
   position: relative;
 }
 
@@ -17,7 +25,6 @@ body {
   z-index: 1;
 }
 
-/* ===== Overlay Gradient ===== */
 body::before {
   content: "";
   position: fixed;
@@ -28,321 +35,149 @@ body::before {
   pointer-events: none;
 }
 
-/* ===== Banner Styling ===== */
-.banner-wrapper {
+/* --- Header Branding --- */
+.site-header {
   text-align: center;
-  margin-bottom: 2em;
-}
-
-.custom-banner {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2em;
-  z-index: 2;
-}
-
-.custom-banner img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 12px rgba(255, 153, 255, 0.4));
-}
-
-
-.banner-marquee {
-  display: inline-block;
-  padding: 1em 2em;
-  border: 6px double #ff99ff;
-  border-radius: 20px;
-  background: linear-gradient(to bottom, #2a002a 0%, #7c007c 100%);
-  box-shadow: 0 0 25px rgba(255, 102, 204, 0.6);
-  text-align: center;
-  animation: neonPulse 2.5s infinite ease-in-out;
-}
-
-.banner-era {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #ff66cc;
-  letter-spacing: 1px;
-  text-shadow: 0 0 5px #ff99ff;
-}
-
-.banner-title {
-  font-size: 2.4em;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 2px;
-  text-shadow: 0 0 8px #ffffff, 0 0 12px #ff66cc;
-  margin-top: 0.3em;
-}
-
-/* Neon Glow Animation */
-@keyframes neonPulse {
-  0%, 100% {
-    box-shadow: 0 0 25px rgba(255, 102, 204, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(255, 102, 204, 1);
-  }
-}
-
-/* ===== Compare Section ===== */
-#compare-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2em;
-  margin-top: 2em;
-}
-
-@media (min-width: 768px) {
-  #compare-section {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 4em;
-  }
-}
-
-.movie-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  gap: 0.8em;
-}
-
-/* ===== VS Badge ===== */
-.vs-badge {
-  font-size: 2.4em;
-  font-weight: 900;
-  color: #ff66cc;
-  background: #1a001a;
-  padding: 0.5em 1.4em;
-  border: 3px solid #ff99ff;
-  border-radius: 999px;
-  box-shadow: 0 0 10px #ff99ff;
-  text-shadow: 0 0 4px #ff66cc;
-  margin: 1em 0;
-  animation: pulseBadge 1.8s ease-in-out infinite;
-}
-
-@keyframes pulseBadge {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px #ff99ff; }
-  50% { transform: scale(1.05); box-shadow: 0 0 18px #ff66cc; }
-}
-
-/* ===== Poster Styling ===== */
-.poster {
-  width: 220px;
-  height: auto;
-  border-radius: 8px;
-  transition: transform 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  margin-bottom: 0.4em;
-}
-
-/* ===== Button Group ===== */
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6em;
-  margin-top: 0.6em;
-}
-
-/* ===== Buttons ===== */
-.primary {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.primary img {
-  display: block;
-  width: 220px;
-  height: auto;
-  transition: transform 0.2s ease;
-}
-
-.primary:hover img {
-  transform: scale(1.03);
-}
-
-.primary:active img {
-  transform: scale(0.96);
-}
-
-.tertiary {
-  font-size: 0.95em;
-  font-weight: bold;
-  background: #2a002a;
-  color: #ff99ff;
-  border: 2px dashed #ff99ff;
-  padding: 0.5em 1.2em;
-  border-radius: 6px;
-  box-shadow: 0 0 6px rgba(255, 153, 255, 0.3);
-  transition: all 0.2s ease;
-  cursor: pointer;
+  margin-bottom: 2.5em;
+  border-bottom: 2.5px solid #23282f;
+  box-shadow: 0 2.5px 19px 0 #d946ef33;
+  padding-bottom: 0.5em;
   position: relative;
 }
-
-.tertiary:hover {
-  transform: scale(1.05);
-  background: #3c003c;
-  box-shadow: 0 0 10px rgba(255, 153, 255, 0.6);
-}
-
-/* Tooltip */
-.tertiary::after {
-  content: "Removes this movie from future rankings.";
+.site-header::after {
+  content: '';
   position: absolute;
-  bottom: 120%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #2a002a;
-  color: #fff;
-  padding: 0.4em 0.6em;
-  font-size: 0.75em;
-  border-radius: 4px;
-  opacity: 0;
+  left: 0; right: 0; bottom: -2px;
+  height: 2.3px;
+  width: 100%;
+  background: linear-gradient(90deg,#d946ef 15%,#8b5cf6 63%,#1fd2ea 100%);
+  box-shadow: 0 2px 16px #d946ef92, 0 0 18px #8b5cf64d;
+  border-radius: 3px;
   pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 0 6px rgba(255, 153, 255, 0.4);
-  transition: opacity 0.2s ease;
-}
-
-.tertiary:hover::after {
   opacity: 1;
 }
 
-/* ===== Confetti Styling ===== */
-.confetti-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 200;
+.site-title {
+  font-size: 2.4em;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-shadow: 0 2px 14px #23285477, 0 1.5px 8px #d946ef6c, 0 0px 4px #00eaff3d;
 }
 
-.confetti-piece {
-  position: absolute;
-  width: 14px;
-  height: 18px;
-  border-radius: 2px;
-  opacity: 0;
-  transform-origin: center;
-  animation: confettiBurst 1.4s ease-out forwards;
-}
-
-@keyframes confettiBurst {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0) scale(0.5) rotate(0deg);
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r));
-  }
-}
-
-/* ===== Popcorn Shake Animation ===== */
-.popcorn-shake {
-  animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-3px, 0); }
-  40% { transform: translate(3px, 0); }
-  60% { transform: translate(-2px, 0); }
-  80% { transform: translate(2px, 0); }
-  100% { transform: translate(0, 0); }
-}
-
-/* ===== Utility ===== */
-.bg-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 0;
-  pointer-events: none;
-}
-
-a {
-  text-decoration: underline;
-  color: #ff99ff;
+.site-subtitle {
   font-size: 1em;
-  margin-top: 2em;
+  color: #bbb;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 5px #2224;
+  margin-top: 0.3em;
+}
+
+/* --- Movie Poster / Card Style --- */
+.poster {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  width: 230px;
+  min-height: 230px;
+  border-radius: 0.81rem;
+  background: #23232a;
+  box-shadow: 0 6px 36px 4px #20234560, 0 3px 19px #d946ef21, 0 5px 22px #1fd2ea30;
+  outline: 2.5px solid #1fd2ea33;
+  border-left: 9px solid #1fd2ea44;
+  border-right: 5px solid #8b5cf666;
+  transition: box-shadow .23s, transform .17s;
+}
+.poster:hover {
+  box-shadow: 0 15px 55px 6px #8b5cf688, 0 3px 19px #d946ef51, 0 6px 25px #1fd2ea60;
+  outline: 2.5px solid #8b5cf6b7;
+  transform: scale(1.026) rotateY(-1deg) translateY(-2px);
+}
+
+.movie-title {
+  font-weight: 800;
+  text-transform: small-caps;
+  color: #fff;
+  font-size: 1.2rem;
+  text-shadow: 0 4px 16px #1fd2ea33, 0 2px 8px #d946ef21;
+  border-bottom: 2px solid #1fd2ea99;
+  border-radius: 2px;
   display: inline-block;
+  margin-top: 0.4em;
 }
 
-/* ===== Tag List ===== */
-#tagged-list {
-  list-style-type: none;
-  padding-left: 0;
-  margin-top: 1em;
-  color: #ddd;
+.movie-year {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #bbb;
+  margin-top: 0.2em;
 }
 
-/* ===== Tables (Rankings & Unseen) ===== */
-/* ===== Enhanced Table Styling ===== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 2em 0;
-  font-size: 0.95em;
-  background: rgba(20, 0, 30, 0.88); /* less transparent, richer tone */
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 0 25px rgba(255, 153, 255, 0.25);
-  backdrop-filter: blur(6px);
-}
-
-table thead {
-  background: rgba(255, 153, 255, 0.18);
+/* --- Button Styles --- */
+.primary {
+  background: linear-gradient(91deg, #1f85de 9%, #1fd2ea 75%);
   color: #fff;
   font-weight: bold;
-  text-align: center;
-  font-size: 1em;
-}
-
-table th, table td {
-  padding: 0.9em 1em;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #f5f5f5;
-}
-
-table tr:last-child td {
-  border-bottom: none;
-}
-
-table td button {
-  padding: 0.45em 1em;
-  border: none;
-  background: #ff99ff;
-  color: #1a001a;
-  font-weight: bold;
-  border-radius: 6px;
+  padding: 0.7em 1.6em;
+  border-radius: 8px;
+  margin-top: 0.5em;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85em;
-  box-shadow: 0 0 6px #ff99ff88;
+  border: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.primary:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 36px 0 #1fd2ea80, 0 3px 11px #1fd2ea1a;
+  border: 2px solid #1fd2ea;
 }
 
-table td button:hover {
-  background: #ff66cc;
-  color: white;
-  box-shadow: 0 0 10px #ff99ffcc;
+.tertiary {
+  font-size: 0.9em;
+  font-weight: 600;
+  background: #29303a;
+  color: #e4e4e4;
+  border: 1px solid #444f;
+  padding: 0.5em 1.2em;
+  border-radius: 6px;
+  margin-top: 0.5em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tertiary:hover {
+  background: #353d47;
+  color: #1fd2ea;
+  border-color: #1fd2ea;
+  transform: scale(1.066);
+  box-shadow: 0 4px 16px 0 #1fd2ea44;
+}
+
+/* --- VS Badge --- */
+.vs-badge {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: linear-gradient(122deg, #222c 61%, #1fd2ea11 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5em;
+  color: #101325;
+  text-shadow: 0 2px 8px #8b5cf666;
+  box-shadow: 0 0 38px 6px #1fd2ea75, 0 0px 19px 8px #8b5cf688;
+  animation: vsPulse 2.1s infinite cubic-bezier(0.67,0,0.33,1);
+  margin: 2em;
+}
+
+@keyframes vsPulse {
+  0%, 100% { box-shadow: 0 0 38px 6px #1fd2ea55, 0 0px 17px 8px #8b5cf679; }
+  55% { box-shadow: 0 0 70px 12px #1fd2eab6, 0 0px 50px 14px #8b5cf6af; }
+}
+
+/* --- Utility --- */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  margin-top: 0.6em;
 }
