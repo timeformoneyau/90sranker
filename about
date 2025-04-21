@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>About – Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="bg-overlay"></div>
+
+  <!-- 🔲 Header -->
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+  </header>
+
+  <!-- 🔗 Navigation Bar -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Rankings</a></li>
+      <li><a href="notseen.html">Not Seen</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+  </nav>
+
+  <!-- 📖 About Content -->
+  <div class="container" style="max-width: 700px; text-align: center; margin-top: 3em;">
+    <h2 style="font-weight: 700; font-size: 1.5rem; color: #fff; text-shadow: 0 0 12px #1fd2ea66;">
+      Killer Klownz from Outer Space shits on all of these movies but I decided to start with the 90's, so here we are.
+    </h2>
+
+    <img 
+      src="https://i0.wp.com/aiptcomics.com/wp-content/uploads/2017/01/killer-klowns-from-outer-space-cover.jpg?w=580&ssl=1" 
+      alt="Killer Klowns from Outer Space Poster"
+      style="margin-top: 2em; max-width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
+    />
+  </div>
+</body>
+</html>
