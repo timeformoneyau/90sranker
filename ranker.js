@@ -167,9 +167,8 @@ function updateStats(winner, loser) {
 
 // === Haven't Seen ===
 function markUnseen(movie) {
-  const key = `${movie.title}|${movie.year}`;
-  if (!unseen.includes(key)) {
-    unseen.push(key);
+  if (!unseen.includes(movie.title)) {
+    unseen.push(movie.title);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
     replaceMovie(movie);
   }
