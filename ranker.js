@@ -166,10 +166,10 @@ function updateStats(winner, loser) {
 }
 
 // === Haven't Seen ===
-function markUnseen(which) {
-  const movie = which === 'A' ? movieA : movieB;
-  if (!unseen.includes(movie.title)) {
-    unseen.push(movie.title);
+function markUnseen(movie) {
+  const key = `${movie.title}|${movie.year}`;
+  if (!unseen.includes(key)) {
+    unseen.push(key);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
     replaceMovie(movie);
   }
