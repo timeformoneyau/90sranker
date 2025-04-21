@@ -280,3 +280,61 @@ body::before {
     opacity: 0;
   }
 }
+
+/* === 🎬 Rankings Tables === */
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-size: 0.95rem;
+  background: #1a1b22;
+  box-shadow: 0 4px 12px rgba(31, 210, 234, 0.08);
+  border: 1px solid #2c2c38;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ranking-table th {
+  background: #23242e;
+  color: #1fd2ea;
+  font-weight: 700;
+  padding: 0.75em;
+  border-bottom: 1px solid #333;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.ranking-table td {
+  padding: 0.7em 1em;
+  border-bottom: 1px solid #2b2b2b;
+  color: #eee;
+  text-shadow: 0 0 1px #0008;
+}
+
+.ranking-table tr:nth-child(even) {
+  background-color: #20212a;
+}
+.ranking-table tr:nth-child(odd) {
+  background-color: #181920;
+}
+
+.ranking-table tr:hover {
+  background-color: #2d2e38;
+}
+
+/* "Put Back" button in unseen list */
+.ranking-table button {
+  background-color: #1fd2ea;
+  border: none;
+  padding: 0.4em 0.8em;
+  border-radius: 5px;
+  font-weight: 600;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ranking-table button:hover {
+  background-color: #8b5cf6;
+  color: #fff;
+}
