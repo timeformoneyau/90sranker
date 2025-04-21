@@ -125,9 +125,30 @@ function markUnseen(movie) {
   if (!unseen.includes(movie.title)) {
     unseen.push(movie.title);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-    chooseTwoMovies();
+    replaceMovie(movie);
   }
 }
+async function replaceMovie(movieToReplace) {
+  const available = movies.filter(m =>
+    !unseen.includes(m.title) &&
+    m.title !== movieA.title &&
+    m.title !== movieB.title
+  );
 
+  if (available.length === 0) {
+    alert("No more unseen movies to replace with.");
+    return;
+  }
+
+  const replacement = available[Math.floor(Math.random() * available.length)];
+
+  if (movieToReplace.title === movieA.title) {
+    movieA = replacement;
+  } else {
+    movieB = replacement;
+  }
+
+  await displayMovies();
+}
 // === Start App ===
 window.onload = loadMovies;
