@@ -134,10 +134,40 @@ function vote(winner) {
 // === Confetti Effect ===
 function createConfettiBurst(winner) {
   const container = document.getElementById(`confetti-container-${winner.toLowerCase()}`);
-  if (!container) {
-    console.error(`Confetti container for ${winner} not found`);
-    return;
+  if (!container) return;
+
+  container.innerHTML = "";
+  const colors = ['#1fd2ea', '#8b5cf6', '#d946ef'];
+
+  for (let i = 0; i < 50; i++) {
+    const dot = document.createElement("div");
+    dot.className = "confetti-dot";
+    dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+    // Starting position
+    dot.style.left = "50%";
+    dot.style.top = "50%";
+    dot.style.transform = "translate(-50%, -50%)";
+
+    container.appendChild(dot);
+
+    // Random end position
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = 80 + Math.random() * 80;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+
+    // Animate using Web Animations API
+    dot.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(1.5)`, opacity: 0 }
+    ], {
+      duration: 900 + Math.random() * 300,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
   }
+}
   
   container.innerHTML = "";
   const colors = ['#1fd2ea', '#8b5cf6', '#d946ef'];
