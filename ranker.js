@@ -9,11 +9,8 @@ const firebaseConfig = {
   measurementId: "G-JTG8MVCW64"
 };
 
-// Initialize Firebase (must match script version in index.html)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
-// ===== App Logic (unchanged except vote function) =====
 
 let movies = [];
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
@@ -129,6 +126,9 @@ async function displayMovies() {
   imgA.src = await fetchPosterUrl(movieA.title, movieA.year);
   imgB.src = await fetchPosterUrl(movieB.title, movieB.year);
 
+  document.getElementById("movieA-year").textContent = "";
+  document.getElementById("movieB-year").textContent = "";
+
   document.querySelectorAll('.confetti-container').forEach(e => e.remove());
 }
 
@@ -136,7 +136,6 @@ function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
 
-  // 🧠 Firebase Vote Logging
   db.collection("votes").add({
     winner: winnerTitle,
     loser: loserTitle,
@@ -152,6 +151,8 @@ function vote(winner) {
   parent.querySelectorAll('.confetti-container').forEach(e => e.remove());
   createConfettiBurst(parent);
 
+  showLaserShow();
+
   setTimeout(() => votedPoster.classList.remove("popcorn-shake"), 700);
 
   updateElo(winnerTitle, loserTitle);
@@ -165,6 +166,16 @@ function vote(winner) {
   if (document.getElementById("ranking-list")) updateRanking();
 
   setTimeout(() => chooseTwoMovies(), 1500);
+}
+
+function showLaserShow() {
+  const overlay = document.createElement("div");
+  overlay.classList.add("laser-overlay");
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.classList.add("fade-out");
+    setTimeout(() => overlay.remove(), 700);
+  }, 500);
 }
 
 function createConfettiBurst(element) {
@@ -219,7 +230,6 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-/* ===== Haven’t Seen Logic ===== */
 function markUnseen(movie) {
   if (!movie || !movie.title) return;
 
