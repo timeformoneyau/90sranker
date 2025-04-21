@@ -2,58 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Your 90s Movie Rankings</title>
+  <title>Shelf Life – Rankings</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <!--––––––––– new: full‑bleed theater background –––––––––-->
-  <div class="vr-theater">
+  <div class="bg-overlay"></div>
 
-    <!--––––––––– new: virtual screen we control –––––––––-->
-    <div class="vr-screen">
-      <div class="vr-overlay"></div>     <!-- grain + vignette -->
-      <div class="vr-ui"><!-- everything inside gets projection filters -->
+  <!-- 🔲 Header -->
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+  </header>
 
-        <!--–––– EXISTING MARKUP START ––––-->
-        <div class="container" id="list">
-          <h1>🍿 Your 90s Movie Rankings</h1>
+  <!-- 🔗 Navigation Bar -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Rankings</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+  </nav>
 
-          <button onclick="exportToCSV()" class="export-btn">
-            📤 Export Rankings to CSV
-          </button>
+  <div class="container">
+    <h1 style="margin-bottom: 0.5em;">🍿 Your 90s Movie Rankings</h1>
+    <button onclick="exportToCSV()" class="primary" style="margin-bottom: 2em;">📤 Export Rankings to CSV</button>
 
-          <h2>🎯 Top 20 Ranked Movies</h2>
-          <table class="ranking-table">
-            <thead>
-              <tr>
-                <th>Movie</th><th>Rating</th><th>Wins</th>
-                <th>Losses</th><th>Win%</th>
-              </tr>
-            </thead>
-            <tbody id="ranking-list"></tbody>
-          </table>
+    <h2>🎯 Top 20 Ranked Movies</h2>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Rating</th>
+          <th>Wins</th>
+          <th>Losses</th>
+          <th>Win%</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-list"></tbody>
+    </table>
 
-          <h2>🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
-          <table class="unseen-table">
-            <thead>
-              <tr>
-                <th>Movie</th><th>Year</th><th>TMDB Rating</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="unseen-list"></tbody>
-          </table>
+    <h2 style="margin-top: 3em;">🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Year</th>
+          <th>TMDB Rating</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="unseen-list"></tbody>
+    </table>
 
-          <h2>🏷️ Tagged Movies</h2>
-          <ul id="tagged-list"></ul>
+    <h2 style="margin-top: 3em;">🏷️ Tagged Movies</h2>
+    <ul id="tagged-list" style="text-align: left;"></ul>
 
-          <a href="index.html" class="view-full-link">⬅️ Back to Voting</a>
-        </div>
-        <!--–––– EXISTING MARKUP END ––––-->
-
-      </div><!--/.vr-ui-->
-    </div><!--/.vr-screen-->
-  </div><!--/.vr-theater-->
+    <div style="margin-top: 3em;">
+      <a href="index.html" class="tertiary">⬅️ Back to Voting</a>
+    </div>
+  </div>
 
   <script src="list.js" defer></script>
 </body>
