@@ -201,3 +201,39 @@ body::before {
   background: #333646;
   transform: scale(1.05);
 }
+
+.nav-bar {
+  background: linear-gradient(to right, #1fd2ea33, #8b5cf633);
+  padding: 0.7em 0;
+  text-align: center;
+  box-shadow: 0 1px 10px #1fd2ea22;
+  z-index: 10;
+  position: relative;
+}
+
+.nav-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  gap: 1.5em;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-links li a {
+  color: #ffffffdd;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease;
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 0.2em 0.6em;
+  border-radius: 6px;
+}
+
+.nav-links li a:hover {
+  color: #1fd2ea;
+  background-color: #1fd2ea22;
+}
+
