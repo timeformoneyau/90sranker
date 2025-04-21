@@ -1,22 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Shelf Life – Rankings</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Your Rankings | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    .ranking-table, .global-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2em 0;
+      font-size: 0.95rem;
+    }
+    .ranking-table th, .ranking-table td,
+    .global-table th, .global-table td {
+      border: 1px solid #444;
+      padding: 0.6em 0.8em;
+      text-align: left;
+    }
+    .ranking-table tr:nth-child(even),
+    .global-table tr:nth-child(even) {
+      background-color: #1e1e28;
+    }
+    .ranking-table tr:nth-child(odd),
+    .global-table tr:nth-child(odd) {
+      background-color: #2a2a36;
+    }
+    .ranking-table th,
+    .global-table th {
+      background-color: #121212;
+      color: #1fd2ea;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 2em;
+      color: #1fd2ea;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 
 <body>
   <div class="bg-overlay"></div>
 
-  <!-- 🔲 Header -->
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
-    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+    <p class="site-subtitle">Your 90s movie showdowns, tallied and tracked.</p>
   </header>
 
-  <!-- 🔗 Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
@@ -26,10 +65,7 @@
   </nav>
 
   <div class="container">
-    <h1 style="margin-bottom: 0.5em;">🍿 Your 90s Movie Rankings</h1>
-    <button onclick="exportToCSV()" class="primary" style="margin-bottom: 2em;">📤 Export Rankings to CSV</button>
-
-    <h2>🎯 Top 20 Ranked Movies</h2>
+    <h2>🎯 Your Top 20 Rankings</h2>
     <table class="ranking-table">
       <thead>
         <tr>
@@ -37,33 +73,107 @@
           <th>Rating</th>
           <th>Wins</th>
           <th>Losses</th>
-          <th>Win%</th>
+          <th>Win %</th>
         </tr>
       </thead>
       <tbody id="ranking-list"></tbody>
     </table>
 
-    <h2 style="margin-top: 3em;">🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
-    <table class="ranking-table">
+    <h2>🔥 Global Top 20 Movies</h2>
+    <table class="global-table">
       <thead>
         <tr>
           <th>Movie</th>
-          <th>Year</th>
-          <th>TMDB Rating</th>
-          <th></th>
+          <th>Total Wins</th>
         </tr>
       </thead>
-      <tbody id="unseen-list"></tbody>
+      <tbody id="global-list"></tbody>
     </table>
 
-    <h2 style="margin-top: 3em;">🏷️ Tagged Movies</h2>
-    <ul id="tagged-list" style="text-align: left;"></ul>
-
-    <div style="margin-top: 3em;">
-      <a href="index.html" class="tertiary">⬅️ Back to Voting</a>
-    </div>
+    <a href="index.html" class="back-link">⬅️ Back to Voting</a>
   </div>
 
-  <script src="list.js" defer></script>
+  <script>
+    const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
+    const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+
+    // 🔥 Replace this with actual Firebase aggregation later
+    const globalWins = {
+      "The Matrix": 12,
+      "Titanic": 11,
+      "Pulp Fiction": 9,
+      "Jurassic Park": 8,
+      "Fight Club": 7,
+      "Toy Story": 6,
+      "Terminator 2": 6,
+      "Forrest Gump": 5,
+      "The Lion King": 5,
+      "The Shawshank Redemption": 5,
+      "Scream": 4,
+      "Speed": 4,
+      "Heat": 4,
+      "The Fifth Element": 3,
+      "Clueless": 3,
+      "Batman Forever": 3,
+      "Good Will Hunting": 3,
+      "Men in Black": 2,
+      "A Few Good Men": 2,
+      "Space Jam": 2
+    };
+
+    function renderRankings() {
+      const topUser = Object.keys(stats).map(title => {
+        const r = stats[title];
+        const rating = ratings[title] || 1000;
+        const total = r.wins + r.losses;
+        const winPct = total > 0 ? ((r.wins / total) * 100).toFixed(1) : "0.0";
+        return {
+          title,
+          rating,
+          wins: r.wins,
+          losses: r.losses,
+          winPct,
+          isGlobalTop: globalWins[title] !== undefined
+        };
+      }).sort((a, b) => b.rating - a.rating).slice(0, 20);
+
+      const rankingList = document.getElementById("ranking-list");
+      rankingList.innerHTML = "";
+      topUser.forEach(movie => {
+        const tr = document.createElement("tr");
+        const label = movie.isGlobalTop ? `🔥 ${movie.title}` : movie.title;
+        tr.innerHTML = `
+          <td>${label}</td>
+          <td>${movie.rating}</td>
+          <td>${movie.wins}</td>
+          <td>${movie.losses}</td>
+          <td>${movie.winPct}%</td>
+        `;
+        rankingList.appendChild(tr);
+      });
+    }
+
+    function renderGlobalTop() {
+      const sorted = Object.entries(globalWins)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 20);
+
+      const globalList = document.getElementById("global-list");
+      globalList.innerHTML = "";
+      sorted.forEach(([title, wins]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${title}</td>
+          <td>${wins}</td>
+        `;
+        globalList.appendChild(tr);
+      });
+    }
+
+    window.onload = () => {
+      renderRankings();
+      renderGlobalTop();
+    };
+  </script>
 </body>
 </html>
