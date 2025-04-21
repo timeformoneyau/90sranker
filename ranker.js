@@ -29,7 +29,7 @@ async function loadMovies() {
     setupEventListeners(); // Add event listeners after movies are loaded
   } catch (error) {
     console.error("Error loading movies:", error);
-    alert("Error loading movie data. Please check the console for details.");
+    /*alert("Error loading movie data. Please check the console for details.");*/
   }
 }
 
