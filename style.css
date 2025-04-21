@@ -1,5 +1,4 @@
-
-/* === Shelf Life Style (Merged for 90s Ranker) === */
+/* === Shelf Life Style (Finalized for 90s Ranker) === */
 
 /* --- Base Layout --- */
 body {
@@ -44,6 +43,7 @@ body::before {
   padding-bottom: 0.5em;
   position: relative;
 }
+
 .site-header::after {
   content: '';
   position: absolute;
@@ -54,7 +54,6 @@ body::before {
   box-shadow: 0 2px 16px #d946ef92, 0 0 18px #8b5cf64d;
   border-radius: 3px;
   pointer-events: none;
-  opacity: 1;
 }
 
 .site-title {
@@ -73,7 +72,59 @@ body::before {
   margin-top: 0.3em;
 }
 
-/* --- Movie Poster / Card Style --- */
+/* --- Navigation Links --- */
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.nav-link {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -5px;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, #1fd2ea, #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* --- Layout (Compare Section) --- */
+#compare-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2em;
+  margin-top: 2em;
+}
+
+@media (min-width: 768px) {
+  #compare-section {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.movie-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Poster --- */
 .poster {
   aspect-ratio: 2 / 3;
   object-fit: cover;
@@ -87,12 +138,14 @@ body::before {
   border-right: 5px solid #8b5cf666;
   transition: box-shadow .23s, transform .17s;
 }
+
 .poster:hover {
   box-shadow: 0 15px 55px 6px #8b5cf688, 0 3px 19px #d946ef51, 0 6px 25px #1fd2ea60;
   outline: 2.5px solid #8b5cf6b7;
   transform: scale(1.026) rotateY(-1deg) translateY(-2px);
 }
 
+/* --- Movie Text --- */
 .movie-title {
   font-weight: 800;
   text-transform: small-caps;
@@ -112,7 +165,7 @@ body::before {
   margin-top: 0.2em;
 }
 
-/* --- Button Styles --- */
+/* --- Buttons --- */
 .primary {
   background: linear-gradient(91deg, #1f85de 9%, #1fd2ea 75%);
   color: #fff;
@@ -124,6 +177,7 @@ body::before {
   border: none;
   transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .primary:hover {
   transform: scale(1.08);
   box-shadow: 0 8px 36px 0 #1fd2ea80, 0 3px 11px #1fd2ea1a;
@@ -142,12 +196,22 @@ body::before {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .tertiary:hover {
   background: #353d47;
   color: #1fd2ea;
   border-color: #1fd2ea;
   transform: scale(1.066);
   box-shadow: 0 4px 16px 0 #1fd2ea44;
+}
+
+/* --- Button Group --- */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  margin-top: 0.6em;
 }
 
 /* --- VS Badge --- */
@@ -171,13 +235,4 @@ body::before {
 @keyframes vsPulse {
   0%, 100% { box-shadow: 0 0 38px 6px #1fd2ea55, 0 0px 17px 8px #8b5cf679; }
   55% { box-shadow: 0 0 70px 12px #1fd2eab6, 0 0px 50px 14px #8b5cf6af; }
-}
-
-/* --- Utility --- */
-.button-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6em;
-  margin-top: 0.6em;
 }
