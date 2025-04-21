@@ -26,19 +26,9 @@ async function loadMovies() {
     const res = await fetch("movie_list_cleaned.json");
     movies = await res.json();
     chooseTwoMovies();
-    setupEventListeners();
   } catch (error) {
     console.error("Error loading movies:", error);
-    // alert("Error loading movie data. Please check the console for details.");
   }
-}
-
-// === Setup Event Listeners ===
-function setupEventListeners() {
-  document.getElementById("vote-a").addEventListener("click", () => vote("A"));
-  document.getElementById("vote-b").addEventListener("click", () => vote("B"));
-  document.getElementById("unseen-a").addEventListener("click", () => markUnseen(movieA));
-  document.getElementById("unseen-b").addEventListener("click", () => markUnseen(movieB));
 }
 
 // === Choose Movies ===
@@ -126,19 +116,15 @@ function createConfettiBurst(winner) {
 
   container.innerHTML = "";
   const colors = ['#1fd2ea', '#8b5cf6', '#d946ef', '#fcd34d', '#ef4444', '#10b981'];
-
-  const TOTAL_CONFETTI = 200; // 🔥 Crank it up
+  const TOTAL_CONFETTI = 200;
 
   for (let i = 0; i < TOTAL_CONFETTI; i++) {
     const dot = document.createElement("div");
     dot.className = "confetti-dot";
     dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-
-    // Starting position
     dot.style.left = "50%";
     dot.style.top = "50%";
     dot.style.transform = "translate(-50%, -50%)";
-
     dot.style.position = "absolute";
     dot.style.width = "8px";
     dot.style.height = "8px";
@@ -146,12 +132,10 @@ function createConfettiBurst(winner) {
 
     container.appendChild(dot);
 
-    // Random explosion trajectory
     const angle = Math.random() * 2 * Math.PI;
-    const distance = 120 + Math.random() * 200; // 🎯 Wider spread
+    const distance = 120 + Math.random() * 200;
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
-
     const rotation = Math.random() * 720;
     const delay = Math.random() * 0.2;
 
@@ -172,7 +156,6 @@ function createConfettiBurst(winner) {
     });
   }
 }
-
 
 // === Stats ===
 function updateStats(winner, loser) {
