@@ -7,7 +7,7 @@ async function loadUnseenList() {
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
 
-  const unseenMovies = movies.filter(m => unseen.includes(m.title));
+ const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
@@ -47,14 +47,13 @@ async function fetchTMDBRating(title, year) {
   }
   return null;
 }
-
-function putBack(title) {
-  const index = unseen.indexOf(title);
+function putBack(title, year) {
+  const key = `${title}|${year}`;
+  const index = unseen.indexOf(key);
   if (index > -1) {
     unseen.splice(index, 1);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
     location.reload();
   }
 }
-
 window.onload = loadUnseenList;
