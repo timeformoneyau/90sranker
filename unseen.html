@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unseen Movies | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="bg-overlay"></div>
+
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Your Unseen 90s Classics</p>
+  </header>
+
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Rankings</a></li>
+      <li><a href="unseen.html" class="active">Unseen</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <h2>🙈 Most Recommended Movies You Haven’t Seen</h2>
+    <p style="color:#ccc;">These are your unseen movies, sorted by TMDB rating.</p>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Year</th>
+          <th>TMDB Rating</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="unseen-list"></tbody>
+    </table>
+  </div>
+
+  <script src="unseen.js" defer></script>
+</body>
+</html>
