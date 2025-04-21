@@ -23,7 +23,7 @@ let movieA, movieB;
 // === Load Movies ===
 async function loadMovies() {
   try {
-    const res = await fetch("movie_list_cleaned.json");
+  const res = await fetch("lovable/movie_list_cleaned.json");
     movies = await res.json();
     chooseTwoMovies();
     setupEventListeners(); // Add event listeners after movies are loaded
