@@ -33,7 +33,11 @@ async function loadMovies() {
 
 // === Choose Movies ===
 function chooseTwoMovies() {
-  const available = movies.filter(m => !unseen.includes(m.title));
+  const available = movies.filter(m => {
+    const key = `${m.title}|${m.year}`;
+    return !unseen.includes(key);
+  });
+
   if (available.length < 2) {
     alert("Not enough movies to compare.");
     return;
@@ -166,8 +170,10 @@ function updateStats(winner, loser) {
 }
 
 // === Haven't Seen ===
-function markUnseen(movie) {
+function markUnseen(slot) {
+  const movie = slot === 'A' ? movieA : movieB;
   const key = `${movie.title}|${movie.year}`;
+
   if (!unseen.includes(key)) {
     unseen.push(key);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
@@ -176,11 +182,14 @@ function markUnseen(movie) {
 }
 
 async function replaceMovie(movieToReplace) {
-  const available = movies.filter(m =>
-    !unseen.includes(m.title) &&
-    m.title !== movieA.title &&
-    m.title !== movieB.title
-  );
+  const available = movies.filter(m => {
+    const key = `${m.title}|${m.year}`;
+    return (
+      !unseen.includes(key) &&
+      m.title !== movieA.title &&
+      m.title !== movieB.title
+    );
+  });
 
   if (available.length === 0) {
     alert("No more unseen movies to replace with.");
