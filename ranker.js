@@ -125,38 +125,54 @@ function createConfettiBurst(winner) {
   if (!container) return;
 
   container.innerHTML = "";
-  const colors = ['#1fd2ea', '#8b5cf6', '#d946ef'];
+  const colors = ['#1fd2ea', '#8b5cf6', '#d946ef', '#fcd34d', '#ef4444', '#10b981'];
 
-  for (let i = 0; i < 60; i++) {
+  const TOTAL_CONFETTI = 200; // 🔥 Crank it up
+
+  for (let i = 0; i < TOTAL_CONFETTI; i++) {
     const dot = document.createElement("div");
     dot.className = "confetti-dot";
     dot.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+    // Starting position
     dot.style.left = "50%";
     dot.style.top = "50%";
+    dot.style.transform = "translate(-50%, -50%)";
+
+    dot.style.position = "absolute";
     dot.style.width = "8px";
     dot.style.height = "8px";
     dot.style.borderRadius = "50%";
-    dot.style.position = "absolute";
-    dot.style.opacity = "1";
-    dot.style.zIndex = "1000";
 
+    container.appendChild(dot);
+
+    // Random explosion trajectory
     const angle = Math.random() * 2 * Math.PI;
-    const distance = 80 + Math.random() * 80;
+    const distance = 120 + Math.random() * 200; // 🎯 Wider spread
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
 
-    dot.animate([
-      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-      { transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(1.4)`, opacity: 0 }
-    ], {
-      duration: 900 + Math.random() * 300,
-      easing: 'ease-out',
-      fill: 'forwards'
-    });
+    const rotation = Math.random() * 720;
+    const delay = Math.random() * 0.2;
 
-    container.appendChild(dot);
+    dot.animate([
+      {
+        transform: 'translate(-50%, -50%) rotate(0deg)',
+        opacity: 1
+      },
+      {
+        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${rotation}deg)`,
+        opacity: 0
+      }
+    ], {
+      duration: 1200 + Math.random() * 500,
+      easing: 'ease-out',
+      fill: 'forwards',
+      delay: delay * 1000
+    });
   }
 }
+
 
 // === Stats ===
 function updateStats(winner, loser) {
