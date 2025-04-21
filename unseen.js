@@ -7,7 +7,7 @@ async function loadUnseenList() {
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
 
- const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
+ const unseenMovies = movies.filter(m => unseen.includes(m.title));
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
