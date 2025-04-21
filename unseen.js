@@ -7,7 +7,12 @@ async function loadUnseenList() {
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
 
- const unseenMovies = movies.filter(m => unseen.includes(m.title));
+  const unseenMovies = unseen
+    .map(key => {
+      const [title, year] = key.split("|");
+      return movies.find(m => m.title === title && String(m.year) === year);
+    })
+    .filter(Boolean); // remove nulls
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
@@ -23,12 +28,13 @@ async function loadUnseenList() {
     .sort((a, b) => b.tmdbRating - a.tmdbRating)
     .slice(0, 20)
     .forEach(movie => {
+      const key = `${movie.title}|${movie.year}`;
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${movie.title}</td>
         <td>${movie.year}</td>
         <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
-        <td><button onclick="putBack('${movie.title}')">Put Back</button></td>
+        <td><button onclick="putBack('${key}')">Put Back</button></td>
       `;
       document.getElementById("unseen-list").appendChild(tr);
     });
@@ -39,16 +45,16 @@ async function fetchTMDBRating(title, year) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    if (data.results && data.results[0] && data.results[0].vote_average) {
+    if (data.results?.[0]?.vote_average) {
       return data.results[0].vote_average;
     }
   } catch (err) {
-    console.error(\`Failed to fetch TMDB rating for \${title}\`, err);
+    console.error(`Failed to fetch TMDB rating for ${title}`, err);
   }
   return null;
 }
-function putBack(title, year) {
-  const key = `${title}|${year}`;
+
+function putBack(key) {
   const index = unseen.indexOf(key);
   if (index > -1) {
     unseen.splice(index, 1);
@@ -56,4 +62,5 @@ function putBack(title, year) {
     location.reload();
   }
 }
+
 window.onload = loadUnseenList;
