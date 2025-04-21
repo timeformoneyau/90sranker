@@ -5,12 +5,8 @@
   <title>Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 
@@ -24,12 +20,14 @@
   </header>
 
   <!-- 🔷 Navigation Bar -->
-  <nav class="site-nav">
-    <a href="index.html">Home</a>
-    <a href="movies.html">Movies</a>
-    <a href="list.html">Rankings</a>
-    <a href="about.html">About</a>
-  </nav>
+  <div class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="movies.html">Movies</a></li>
+      <li><a href="list.html">Rankings</a></li>
+      <li><a href="about.html">About</a></li>
+    </ul>
+  </div>
 
   <div class="container">
     <!-- 🎥 Compare Section -->
@@ -41,7 +39,7 @@
         <div class="movie-year" id="movieA-year">199X</div>
         <div class="button-group">
           <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
-            Winner
+            SELECT
           </button>
           <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven’t Seen</button>
         </div>
@@ -57,7 +55,7 @@
         <div class="movie-year" id="movieB-year">199X</div>
         <div class="button-group">
           <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
-            Winner
+            SELECT
           </button>
           <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven’t Seen</button>
         </div>
@@ -68,7 +66,6 @@
     <div class="confetti-container" id="confetti-container"></div>
   </div>
 
-  <!-- JS -->
   <script src="ranker.js" defer></script>
 </body>
 </html>
