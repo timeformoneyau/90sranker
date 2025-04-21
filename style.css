@@ -262,9 +262,16 @@ body::before {
   height: 8px;
   border-radius: 50%;
   opacity: 1;
-  animation: confettiFall 0.9s ease-out forwards;
+  animation: confettiFall 1.2s ease-out forwards;
+  z-index: 1000;
 }
 @keyframes confettiFall {
-  from { transform: translateY(0) scale(1); opacity: 1; }
-  to { transform: translateY(-120px) scale(0.2); opacity: 0; }
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-120px) scale(0.2);
+    opacity: 0;
+  }
 }
