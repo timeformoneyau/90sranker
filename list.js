@@ -83,8 +83,10 @@ function renderGlobalRankings() {
         const data = doc.data();
         console.log("Processing vote document:", doc.id);
         
-        const winner = data.winner;
-        const loser = data.loser;
+    const normalize = str => str?.trim();
+    const winner = normalize(data.winner);
+    const loser = normalize(data.loser);
+
         
         if (!winner || !loser) {
           console.warn("Found vote document with missing winner or loser:", doc.id);
