@@ -12,10 +12,9 @@
 
     <!--––––––––– new: virtual screen we control –––––––––-->
     <div class="vr-screen">
-      <div class="vr-overlay"></div>     <!-- grain + vignette -->
-      <div class="vr-ui"><!-- everything inside gets projection filters -->
+      <div class="vr-overlay"></div>
+      <div class="vr-ui">
 
-        <!--–––– EXISTING MARKUP START ––––-->
         <div class="container" id="list">
           <h1>🍿 Your 90s Movie Rankings</h1>
 
@@ -23,17 +22,29 @@
             📤 Export Rankings to CSV
           </button>
 
-          <h2>🎯 Top 20 Ranked Movies</h2>
+          <!-- Local Top 20 -->
+          <h2>🎯 Your Top 20 Movies</h2>
           <table class="ranking-table">
             <thead>
               <tr>
-                <th>Movie</th><th>Rating</th><th>Wins</th>
-                <th>Losses</th><th>Win%</th>
+                <th>Movie</th><th>Year</th><th>Rating</th><th>Wins</th><th>Losses</th><th>Win%</th>
               </tr>
             </thead>
             <tbody id="ranking-list"></tbody>
           </table>
 
+          <!-- Global Top 20 -->
+          <h2>🔥 Global Top 20 Movies</h2>
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th>Movie</th><th>Year</th><th>Wins</th><th>Losses</th><th>Win%</th>
+              </tr>
+            </thead>
+            <tbody id="global-list"></tbody>
+          </table>
+
+          <!-- Unseen Movies -->
           <h2>🙈 Most Recommended Movies You Haven’t Seen Yet</h2>
           <table class="unseen-table">
             <thead>
@@ -44,16 +55,16 @@
             <tbody id="unseen-list"></tbody>
           </table>
 
+          <!-- Tags -->
           <h2>🏷️ Tagged Movies</h2>
           <ul id="tagged-list"></ul>
 
           <a href="index.html" class="view-full-link">⬅️ Back to Voting</a>
         </div>
-        <!--–––– EXISTING MARKUP END ––––-->
 
-      </div><!--/.vr-ui-->
-    </div><!--/.vr-screen-->
-  </div><!--/.vr-theater-->
+      </div>
+    </div>
+  </div>
 
   <script src="list.js" defer></script>
 </body>
