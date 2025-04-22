@@ -13,7 +13,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ===== App Logic (unchanged except vote function) =====
+// Enable offline persistence for better reliability
+firebase.firestore().enablePersistence()
+  .then(() => console.log("Offline persistence enabled"))
+  .catch(err => console.error("Offline persistence error:", err.code));
+
+// ===== App Logic (with improved vote function) =====
 
 let movies = [];
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
@@ -137,16 +142,7 @@ function vote(winner) {
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
   console.log("📨 Sending vote:", { winner: winnerTitle, loser: loserTitle });
 
-  // 🧠 Firebase Vote Logging
-  db.collection("votes").add({
-    winner: winnerTitle,
-    loser: loserTitle,
-    timestamp: new Date().toISOString()
-  })
-  .then(() => console.log("✅ Vote successfully written to Firebase"))
-.catch(err => console.error("❌ Failed to write vote:", err));
-
-
+  // Visual feedback first (regardless of Firebase success)
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("popcorn-shake");
 
@@ -154,6 +150,44 @@ function vote(winner) {
   parent.querySelectorAll('.confetti-container').forEach(e => e.remove());
   createConfettiBurst(parent);
 
+  // Silent Firebase logging with detailed error tracking
+  db.collection("votes").add({
+    winner: winnerTitle,
+    loser: loserTitle,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    userAgent: navigator.userAgent,
+    clientTime: new Date().toISOString() // Backup client timestamp
+  })
+  .then(() => {
+    console.log("✅ Vote successfully written to Firebase");
+  })
+  .catch(err => {
+    // Log errors in detail for your debugging
+    console.error("❌ Firebase write error:", err);
+    
+    // Silent error recovery - log the error to a separate collection
+    db.collection("errorLogs").add({
+      errorType: "voteFailure",
+      errorMessage: err.message,
+      errorCode: err.code,
+      attemptedVote: { winner: winnerTitle, loser: loserTitle },
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
+    }).catch(logErr => {
+      // If even error logging fails, at least write to localStorage
+      let errorLogs = JSON.parse(localStorage.getItem("errorLogs") || "[]");
+      errorLogs.push({
+        errorType: "voteFailure",
+        errorMessage: err.message,
+        errorCode: err.code,
+        attemptedVote: { winner: winnerTitle, loser: loserTitle },
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem("errorLogs", JSON.stringify(errorLogs));
+    });
+  });
+
+  // Continue with local operations regardless of Firebase success
   setTimeout(() => votedPoster.classList.remove("popcorn-shake"), 700);
 
   updateElo(winnerTitle, loserTitle);
@@ -221,7 +255,7 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-/* ===== Haven’t Seen Logic ===== */
+/* ===== Haven't Seen Logic ===== */
 function markUnseen(movie) {
   if (!movie || !movie.title) return;
 
@@ -248,6 +282,16 @@ async function replaceMovie(movieToReplace) {
   }
 
   await displayMovies();
+}
+
+// Admin health check function (can be called from console)
+window.checkFirebaseHealth = function() {
+  console.log("Testing Firebase connection...");
+  db.collection("health").add({
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => console.log("✅ Firebase connection working!"))
+  .catch(err => console.error("❌ Firebase connection failed:", err));
 }
 
 window.onload = loadMovies;
