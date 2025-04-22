@@ -298,3 +298,6 @@ window.onload = loadMovies;
 
 window.vote = vote;
 window.markUnseen = markUnseen;
+
+window.vote = vote;
+window.markUnseen = markUnseen;
