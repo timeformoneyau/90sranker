@@ -135,6 +135,7 @@ async function displayMovies() {
 function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
+  console.log("📨 Sending vote:", { winner: winnerTitle, loser: loserTitle });
 
   // 🧠 Firebase Vote Logging
   db.collection("votes").add({
@@ -142,8 +143,9 @@ function vote(winner) {
     loser: loserTitle,
     timestamp: new Date().toISOString()
   })
-  .then(() => console.log("Vote recorded in Firebase"))
-  .catch(err => console.error("Failed to record vote:", err));
+  .then(() => console.log("✅ Vote successfully written to Firebase"))
+.catch(err => console.error("❌ Failed to write vote:", err));
+
 
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("popcorn-shake");
