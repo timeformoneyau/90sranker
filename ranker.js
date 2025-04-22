@@ -1,3 +1,5 @@
+console.log("🔥 ranker.js loaded!");
+
 // ===== Firebase Setup =====
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
