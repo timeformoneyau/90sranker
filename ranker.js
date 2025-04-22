@@ -251,3 +251,6 @@ async function replaceMovie(movieToReplace) {
 }
 
 window.onload = loadMovies;
+
+window.vote = vote;
+window.markUnseen = markUnseen;
