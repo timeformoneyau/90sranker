@@ -12,57 +12,51 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Optional: Enable offline persistence
-firebase.firestore().enablePersistence()
-  .then(() => console.log("✅ Offline persistence enabled"))
-  .catch(err => console.warn("⚠️ Offline persistence not available:", err.code));
-
-// ===== Global App State =====
 let movies = [];
 let movieA, movieB;
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
 let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
-let tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 
-const K = 32;
-const DEFAULT_RATING = 1000;
 const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const DEFAULT_RATING = 1000;
+const K = 32;
 
-// ===== Load Movies =====
+window.onload = loadMovies;
+window.vote = vote;
+window.markUnseen = markUnseen;
+
 async function loadMovies() {
-  try {
-    const res = await fetch("movie_list_cleaned.json");
-    if (!res.ok) throw new Error("Failed to load movie list.");
-    movies = await res.json();
-    chooseTwoMovies();
-  } catch (err) {
-    console.error("Movie load error:", err);
-    alert("Movie list could not be loaded.");
-  }
+  const res = await fetch("movie_list_cleaned.json");
+  movies = await res.json();
+  chooseTwoMovies();
 }
 
 function getAvailableMovies(exclude = []) {
-  return movies.filter(m => m.title && !unseen.includes(m.title) && !exclude.includes(m.title));
+  return movies.filter(
+    m => m.title && !unseen.includes(m.title) && !exclude.includes(m.title)
+  );
 }
 
 function chooseTwoMovies() {
   const available = getAvailableMovies();
-  if (available.length < 2) return alert("Not enough unseen movies.");
+  if (available.length < 2) return alert("Not enough unseen movies to compare.");
 
-  [movieA, movieB] = available.sort(() => 0.5 - Math.random()).slice(0, 2);
+  const shuffled = available.sort(() => 0.5 - Math.random());
+  [movieA, movieB] = shuffled.slice(0, 2);
   displayMovies();
 }
 
-// ===== Display =====
 async function fetchPosterUrl(title, year) {
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
   try {
     const res = await fetch(url);
     const data = await res.json();
-    return data.results?.[0]?.poster_path ? TMDB_IMAGE_BASE + data.results[0].poster_path : "fallback.jpg";
+    return data?.results?.[0]?.poster_path
+      ? TMDB_IMAGE_BASE + data.results[0].poster_path
+      : "fallback.jpg";
   } catch {
     return "fallback.jpg";
   }
@@ -74,43 +68,32 @@ async function displayMovies() {
 
   document.getElementById("posterA").src = await fetchPosterUrl(movieA.title, movieA.year);
   document.getElementById("posterB").src = await fetchPosterUrl(movieB.title, movieB.year);
-
-  document.querySelectorAll('.confetti-container').forEach(e => e.remove());
 }
 
-// ===== Voting =====
 function vote(winnerKey) {
   const winner = winnerKey === "A" ? movieA : movieB;
   const loser = winnerKey === "A" ? movieB : movieA;
 
-  console.log("📨 Voting:", winner.title, "over", loser.title);
+  console.log("📨 Sending vote:", { winner: winner.title, loser: loser.title });
 
   db.collection("votes").add({
     winner: winner.title,
     loser: loser.title,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    userAgent: navigator.userAgent,
-    clientTime: new Date().toISOString()
-  }).then(() => {
-    console.log("✅ Vote logged to Firebase");
-  }).catch(err => {
-    console.error("❌ Firebase vote error:", err);
-  });
-
-  const votedPoster = document.getElementById(`poster${winnerKey}`);
-  votedPoster.classList.add("popcorn-shake");
-  createConfettiBurst(votedPoster.parentElement);
-  setTimeout(() => votedPoster.classList.remove("popcorn-shake"), 700);
+    userAgent: navigator.userAgent
+  })
+  .then(() => console.log("✅ Vote recorded in Firebase"))
+  .catch(err => console.error("❌ Firebase vote error:", err));
 
   updateElo(winner.title, loser.title);
   updateStats(winner.title, loser.title);
   seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
 
-  localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
   localStorage.setItem("movieRatings", JSON.stringify(ratings));
   localStorage.setItem("movieStats", JSON.stringify(stats));
+  localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
 
-  setTimeout(chooseTwoMovies, 1500);
+  setTimeout(chooseTwoMovies, 1200);
 }
 
 function updateElo(winner, loser) {
@@ -128,45 +111,6 @@ function updateStats(winner, loser) {
   stats[loser].losses++;
 }
 
-// ===== Confetti Animation =====
-function createConfettiBurst(element) {
-  const container = document.createElement("div");
-  container.className = "confetti-container";
-  container.style.cssText = "position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none;z-index:200;";
-  const colors = ['#ff3b3b', '#ffc107', '#4caf50', '#03a9f4', '#e91e63', '#9c27b0'];
-
-  for (let i = 0; i < 100; i++) {
-    const dot = document.createElement("div");
-    dot.className = "confetti-piece";
-    dot.style.cssText = `
-      position:absolute;
-      width:12px;height:16px;
-      background:${colors[Math.floor(Math.random() * colors.length)]};
-      opacity:0;
-      border-radius:2px;
-      transform-origin:center;
-    `;
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 150 + Math.random() * 300;
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-    const rotation = Math.random() * 1440 - 720;
-    const delay = Math.random() * 0.2;
-
-    dot.style.animation = `confettiBurst 1.3s ease-out forwards`;
-    dot.style.animationDelay = `${delay}s`;
-    dot.style.setProperty('--x', `${x}px`);
-    dot.style.setProperty('--y', `${y}px`);
-    dot.style.setProperty('--r', `${rotation}deg`);
-
-    container.appendChild(dot);
-  }
-
-  element.appendChild(container);
-  setTimeout(() => container.remove(), 1600);
-}
-
-// ===== Unseen =====
 function markUnseen(movie) {
   if (!movie || !movie.title || unseen.includes(movie.title)) return;
   unseen.push(movie.title);
@@ -176,24 +120,13 @@ function markUnseen(movie) {
 
 async function replaceMovie(movieToReplace) {
   const available = getAvailableMovies([movieA.title, movieB.title]);
-  if (!available.length) return alert("No more movies to replace with.");
+  if (!available.length) return alert("No more movies available.");
+
   const replacement = available[Math.floor(Math.random() * available.length)];
-  if (movieToReplace.title === movieA.title) movieA = replacement;
-  else movieB = replacement;
+  if (movieToReplace.title === movieA.title) {
+    movieA = replacement;
+  } else {
+    movieB = replacement;
+  }
   await displayMovies();
 }
-
-// ===== Health Check =====
-function checkFirebaseHealth() {
-  console.log("⏳ Checking Firebase...");
-  db.collection("health").add({
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => console.log("✅ Firebase is connected"))
-    .catch(err => console.error("❌ Firebase health check failed:", err));
-}
-
-// ===== Start =====
-window.onload = loadMovies;
-window.vote = vote;
-window.markUnseen = markUnseen;
-window.checkFirebaseHealth = checkFirebaseHealth;
