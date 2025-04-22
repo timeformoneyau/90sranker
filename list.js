@@ -21,16 +21,22 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 async function loadMovieList() {
-  const res = await fetch('movie_list_cleaned.json');
-  movies = await res.json();
-  renderRankings();
-  await renderGlobalRankings();
-  await renderUnseen();
-  renderTags();
+  try {
+    const res = await fetch('movie_list_cleaned.json');
+    movies = await res.json();
+    renderRankings();
+    renderGlobalRankings();
+    await renderUnseen();
+    renderTags();
+  } catch (error) {
+    console.error("Error loading movie list:", error);
+  }
 }
 
 function renderRankings() {
   const rankingList = document.getElementById("ranking-list");
+  if (!rankingList) return;
+  
   rankingList.innerHTML = "";
 
   const movieData = Object.keys(stats).map(title => {
@@ -59,41 +65,70 @@ function renderRankings() {
     });
 }
 
-async function renderGlobalRankings() {
+function renderGlobalRankings() {
   const globalList = document.getElementById("global-list");
   if (!globalList) return;
-
-  const allVotes = await db.collection("votes").get();
-  const globalStats = {};
-
-  allVotes.forEach(doc => {
-    const { winner, loser } = doc.data();
-    if (!globalStats[winner]) globalStats[winner] = { wins: 0, losses: 0 };
-    if (!globalStats[loser]) globalStats[loser] = { wins: 0, losses: 0 };
-    globalStats[winner].wins++;
-    globalStats[loser].losses++;
-  });
-
-  const data = Object.entries(globalStats).map(([title, record]) => {
-    const total = record.wins + record.losses;
-    const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
-    const year = (movies.find(m => m.title === title) || {}).year || "";
-    return { title, year, ...record, winPct };
-  });
-
-  data
-    .sort((a, b) => b.wins - a.wins)
-    .slice(0, 20)
-    .forEach(movie => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${movie.title}</td>
-        <td>${movie.year}</td>
-        <td>${movie.wins}</td>
-        <td>${movie.losses}</td>
-        <td>${movie.winPct}%</td>
-      `;
-      globalList.appendChild(tr);
+  
+  globalList.innerHTML = "<tr><td colspan='5'>Loading global rankings...</td></tr>";
+  
+  // Set up a real-time listener for votes
+  db.collection("votes")
+    .get({ source: "server" })
+    .then(snapshot => {
+      console.log(`Retrieved ${snapshot.size} votes from Firebase`);
+      
+      const globalStats = {};
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        console.log("Processing vote document:", doc.id);
+        
+        const winner = data.winner;
+        const loser = data.loser;
+        
+        if (!winner || !loser) {
+          console.warn("Found vote document with missing winner or loser:", doc.id);
+          return;
+        }
+        
+        if (!globalStats[winner]) globalStats[winner] = { wins: 0, losses: 0 };
+        if (!globalStats[loser]) globalStats[loser] = { wins: 0, losses: 0 };
+        globalStats[winner].wins++;
+        globalStats[loser].losses++;
+      });
+      
+      globalList.innerHTML = "";
+      
+      const data = Object.entries(globalStats).map(([title, record]) => {
+        const total = record.wins + record.losses;
+        const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
+        const year = (movies.find(m => m.title === title) || {}).year || "";
+        return { title, year, ...record, winPct };
+      });
+      
+      if (data.length === 0) {
+        globalList.innerHTML = "<tr><td colspan='5'>No global rankings data available</td></tr>";
+        return;
+      }
+      
+      data
+        .sort((a, b) => b.wins - a.wins)
+        .slice(0, 20)
+        .forEach(movie => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${movie.title}</td>
+            <td>${movie.year}</td>
+            <td>${movie.wins}</td>
+            <td>${movie.losses}</td>
+            <td>${movie.winPct}%</td>
+          `;
+          globalList.appendChild(tr);
+        });
+    })
+    .catch(error => {
+      console.error("Error fetching global rankings:", error);
+      globalList.innerHTML = "<tr><td colspan='5'>Error loading global rankings: " + error.message + "</td></tr>";
     });
 }
 
@@ -101,33 +136,53 @@ async function renderUnseen() {
   const unseenList = document.getElementById("unseen-list");
   if (!unseenList) return;
 
-  unseenList.innerHTML = "";
+  unseenList.innerHTML = "<tr><td colspan='4'>Loading unseen movies...</td></tr>";
 
-  const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
+  try {
+    const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
 
-  const scoredUnseen = await Promise.all(
-    unseenMovies.map(async (movie) => {
-      const tmdbRating = await fetchTMDBRating(movie.title, movie.year);
-      return {
-        ...movie,
-        tmdbRating: tmdbRating || 0
-      };
-    })
-  );
+    if (unseenMovies.length === 0) {
+      unseenList.innerHTML = "<tr><td colspan='4'>No unseen movies.</td></tr>";
+      return;
+    }
 
-  scoredUnseen
-    .sort((a, b) => b.tmdbRating - a.tmdbRating)
-    .slice(0, 20)
-    .forEach(movie => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${movie.title}</td>
-        <td>${movie.year}</td>
-        <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
-        <td><button onclick="putBack('${movie.title}|${movie.year}')">Put Back</button></td>
-      `;
-      unseenList.appendChild(tr);
-    });
+    const scoredUnseen = await Promise.all(
+      unseenMovies.map(async (movie) => {
+        try {
+          const tmdbRating = await fetchTMDBRating(movie.title, movie.year);
+          return {
+            ...movie,
+            tmdbRating: tmdbRating || 0
+          };
+        } catch (error) {
+          console.error(`Error fetching TMDB rating for ${movie.title}:`, error);
+          return {
+            ...movie,
+            tmdbRating: 0
+          };
+        }
+      })
+    );
+
+    unseenList.innerHTML = "";
+    
+    scoredUnseen
+      .sort((a, b) => b.tmdbRating - a.tmdbRating)
+      .slice(0, 20)
+      .forEach(movie => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${movie.title}</td>
+          <td>${movie.year}</td>
+          <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
+          <td><button onclick="putBack('${movie.title}|${movie.year}')">Put Back</button></td>
+        `;
+        unseenList.appendChild(tr);
+      });
+  } catch (error) {
+    console.error("Error rendering unseen movies:", error);
+    unseenList.innerHTML = "<tr><td colspan='4'>Error loading unseen movies: " + error.message + "</td></tr>";
+  }
 }
 
 async function fetchTMDBRating(title, year) {
@@ -186,7 +241,16 @@ function exportToCSV() {
   const link = document.createElement("a");
   link.setAttribute("href", url);
   link.setAttribute("download", "movie_rankings.csv");
+  link.style.display = "none";
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
+}
+
+// Add this function to force refresh global rankings
+function refreshGlobalRankings() {
+  console.log("Manually refreshing global rankings...");
+  renderGlobalRankings();
 }
 
 window.onload = loadMovieList;
