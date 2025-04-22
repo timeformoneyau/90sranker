@@ -1,3 +1,5 @@
+// list.js — Updated with deduplication and proper global rankings handling
+
 const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
 const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 const unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
@@ -25,7 +27,7 @@ async function loadMovieList() {
     const res = await fetch('movie_list_cleaned.json');
     movies = await res.json();
     renderRankings();
-    renderGlobalRankings();
+    await renderGlobalRankings();
     await renderUnseen();
     renderTags();
   } catch (error) {
@@ -36,7 +38,7 @@ async function loadMovieList() {
 function renderRankings() {
   const rankingList = document.getElementById("ranking-list");
   if (!rankingList) return;
-  
+
   rankingList.innerHTML = "";
 
   const movieData = Object.keys(stats).map(title => {
@@ -65,73 +67,73 @@ function renderRankings() {
     });
 }
 
-function renderGlobalRankings() {
+async function renderGlobalRankings() {
   const globalList = document.getElementById("global-list");
   if (!globalList) return;
-  
-  globalList.innerHTML = "<tr><td colspan='5'>Loading global rankings...</td></tr>";
-  
-  // Set up a real-time listener for votes
-  db.collection("votes")
-    .get({ source: "server" })
-    .then(snapshot => {
-      console.log(`Retrieved ${snapshot.size} votes from Firebase`);
-      
-      const globalStats = {};
-      
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        console.log("Processing vote document:", doc.id);
-        
-    const normalize = str => str?.trim();
-    const winner = normalize(data.winner);
-    const loser = normalize(data.loser);
 
-        
-        if (!winner || !loser) {
-          console.warn("Found vote document with missing winner or loser:", doc.id);
-          return;
-        }
-        
-        if (!globalStats[winner]) globalStats[winner] = { wins: 0, losses: 0 };
-        if (!globalStats[loser]) globalStats[loser] = { wins: 0, losses: 0 };
-        globalStats[winner].wins++;
-        globalStats[loser].losses++;
-      });
-      
-      globalList.innerHTML = "";
-      
-      const data = Object.entries(globalStats).map(([title, record]) => {
-        const total = record.wins + record.losses;
-        const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
-        const year = (movies.find(m => m.title === title) || {}).year || "";
-        return { title, year, ...record, winPct };
-      });
-      
-      if (data.length === 0) {
-        globalList.innerHTML = "<tr><td colspan='5'>No global rankings data available</td></tr>";
+  globalList.innerHTML = "<tr><td colspan='5'>Loading global rankings...</td></tr>";
+
+  try {
+    const snapshot = await db.collection("votes").get();
+    console.log(`Retrieved ${snapshot.size} votes from Firebase`);
+
+    const globalStats = {};
+    const seenVotes = new Set();
+
+    snapshot.forEach(doc => {
+      if (seenVotes.has(doc.id)) {
+        console.warn("Duplicate vote detected:", doc.id);
         return;
       }
-      
-      data
-        .sort((a, b) => b.wins - a.wins)
-        .slice(0, 20)
-        .forEach(movie => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${movie.title}</td>
-            <td>${movie.year}</td>
-            <td>${movie.wins}</td>
-            <td>${movie.losses}</td>
-            <td>${movie.winPct}%</td>
-          `;
-          globalList.appendChild(tr);
-        });
-    })
-    .catch(error => {
-      console.error("Error fetching global rankings:", error);
-      globalList.innerHTML = "<tr><td colspan='5'>Error loading global rankings: " + error.message + "</td></tr>";
+      seenVotes.add(doc.id);
+
+      const data = doc.data();
+      const winner = data.winner?.trim();
+      const loser = data.loser?.trim();
+
+      if (!winner || !loser) {
+        console.warn("Invalid vote document:", doc.id);
+        return;
+      }
+
+      if (!globalStats[winner]) globalStats[winner] = { wins: 0, losses: 0 };
+      if (!globalStats[loser]) globalStats[loser] = { wins: 0, losses: 0 };
+      globalStats[winner].wins++;
+      globalStats[loser].losses++;
     });
+
+    const data = Object.entries(globalStats).map(([title, record]) => {
+      const total = record.wins + record.losses;
+      const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
+      const year = (movies.find(m => m.title === title) || {}).year || "";
+      return { title, year, ...record, winPct };
+    });
+
+    globalList.innerHTML = "";
+
+    if (data.length === 0) {
+      globalList.innerHTML = "<tr><td colspan='5'>No global rankings data available</td></tr>";
+      return;
+    }
+
+    data
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, 20)
+      .forEach(movie => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${movie.title}</td>
+          <td>${movie.year}</td>
+          <td>${movie.wins}</td>
+          <td>${movie.losses}</td>
+          <td>${movie.winPct}%</td>
+        `;
+        globalList.appendChild(tr);
+      });
+  } catch (error) {
+    console.error("Error fetching global rankings:", error);
+    globalList.innerHTML = "<tr><td colspan='5'>Error loading global rankings: " + error.message + "</td></tr>";
+  }
 }
 
 async function renderUnseen() {
@@ -167,7 +169,7 @@ async function renderUnseen() {
     );
 
     unseenList.innerHTML = "";
-    
+
     scoredUnseen
       .sort((a, b) => b.tmdbRating - a.tmdbRating)
       .slice(0, 20)
@@ -243,16 +245,9 @@ function exportToCSV() {
   const link = document.createElement("a");
   link.setAttribute("href", url);
   link.setAttribute("download", "movie_rankings.csv");
-  link.style.display = "none";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-// Add this function to force refresh global rankings
-function refreshGlobalRankings() {
-  console.log("Manually refreshing global rankings...");
-  renderGlobalRankings();
 }
 
 window.onload = loadMovieList;
