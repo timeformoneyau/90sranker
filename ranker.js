@@ -44,20 +44,23 @@ function chooseTwoMovies() {
   }
 
   let attempts = 0;
+  let matchupKey = "";
+
   do {
     [movieA, movieB] = available.sort(() => Math.random() - 0.5).slice(0, 2);
+    matchupKey = [movieA.title, movieB.title].sort().join("|");
     attempts++;
     if (attempts > 50) break;
-  } while (seenMatchups.includes([movieA.title, movieB.title].sort().join("|")));
+  } while (seenMatchups.includes(matchupKey));
 
   displayMovies();
 }
 
 // === Display Movies ===
 async function displayMovies() {
-  document.getElementById("movieA").textContent = `${movieA.title}`;
+  document.getElementById("movieA").textContent = movieA.title;
   document.getElementById("movieA-year").textContent = `(${movieA.year})`;
-  document.getElementById("movieB").textContent = `${movieB.title}`;
+  document.getElementById("movieB").textContent = movieB.title;
   document.getElementById("movieB-year").textContent = `(${movieB.year})`;
 
   const imgA = document.getElementById("posterA");
@@ -100,13 +103,13 @@ function vote(winner) {
 
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("shake");
-
   createConfettiBurst(winner);
-
   setTimeout(() => votedPoster.classList.remove("shake"), 800);
 
   updateStats(winnerTitle, loserTitle);
-  seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
+
+  const matchupKey = [movieA.title, movieB.title].sort().join("|");
+  seenMatchups.push(matchupKey);
   localStorage.setItem("movieStats", JSON.stringify(stats));
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
 
