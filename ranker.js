@@ -28,16 +28,23 @@ window.onload = loadMovies;
 window.vote = vote;
 window.markUnseen = markUnseen;
 
+// 🔑 Helper: get unique key per movie
+function getMovieKey(movie) {
+  return `${movie.title.trim().toLowerCase()}|${movie.year}`;
+}
+
 async function loadMovies() {
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
+  console.log("🧠 Unseen movies list (compound keys):", unseen);
   chooseTwoMovies();
 }
 
 function getAvailableMovies(exclude = []) {
-  return movies.filter(
-    m => m.title && !unseen.includes(m.title) && !exclude.includes(m.title)
-  );
+  return movies.filter(m => {
+    const key = getMovieKey(m);
+    return !unseen.includes(key) && !exclude.includes(m.title);
+  });
 }
 
 function chooseTwoMovies() {
@@ -112,8 +119,9 @@ function updateStats(winner, loser) {
 }
 
 function markUnseen(movie) {
-  if (!movie || !movie.title || unseen.includes(movie.title)) return;
-  unseen.push(movie.title);
+  const key = getMovieKey(movie);
+  if (!movie || unseen.includes(key)) return;
+  unseen.push(key);
   localStorage.setItem("unseenMovies", JSON.stringify(unseen));
   replaceMovie(movie);
 }
