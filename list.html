@@ -94,87 +94,91 @@
     <a href="index.html" class="back-link">⬅️ Back to Voting</a>
   </div>
 
-  <script>
-    const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
-    const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+ <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+<script>
+  // === Firebase Setup ===
+  const firebaseConfig = {
+    apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+    authDomain: "sranker-f2642.firebaseapp.com",
+    projectId: "sranker-f2642",
+    storageBucket: "sranker-f2642.appspot.com",
+    messagingSenderId: "601665183803",
+    appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+    measurementId: "G-JTG8MVCW64"
+  };
 
-    // 🔥 Replace this with actual Firebase aggregation later
-    const globalWins = {
-      "The Matrix": 12,
-      "Titanic": 11,
-      "Pulp Fiction": 9,
-      "Jurassic Park": 8,
-      "Fight Club": 7,
-      "Toy Story": 6,
-      "Terminator 2": 6,
-      "Forrest Gump": 5,
-      "The Lion King": 5,
-      "The Shawshank Redemption": 5,
-      "Scream": 4,
-      "Speed": 4,
-      "Heat": 4,
-      "The Fifth Element": 3,
-      "Clueless": 3,
-      "Batman Forever": 3,
-      "Good Will Hunting": 3,
-      "Men in Black": 2,
-      "A Few Good Men": 2,
-      "Space Jam": 2
-    };
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-    function renderRankings() {
-      const topUser = Object.keys(stats).map(title => {
-        const r = stats[title];
-        const rating = ratings[title] || 1000;
-        const total = r.wins + r.losses;
-        const winPct = total > 0 ? ((r.wins / total) * 100).toFixed(1) : "0.0";
-        return {
-          title,
-          rating,
-          wins: r.wins,
-          losses: r.losses,
-          winPct,
-          isGlobalTop: globalWins[title] !== undefined
-        };
-      }).sort((a, b) => b.rating - a.rating).slice(0, 20);
+  const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
+  const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 
-      const rankingList = document.getElementById("ranking-list");
-      rankingList.innerHTML = "";
-      topUser.forEach(movie => {
-        const tr = document.createElement("tr");
-        const label = movie.isGlobalTop ? `🔥 ${movie.title}` : movie.title;
-        tr.innerHTML = `
-          <td>${label}</td>
-          <td>${movie.rating}</td>
-          <td>${movie.wins}</td>
-          <td>${movie.losses}</td>
-          <td>${movie.winPct}%</td>
-        `;
-        rankingList.appendChild(tr);
-      });
-    }
+  async function renderRankings(globalWinsMap = {}) {
+    const topUser = Object.keys(stats).map(title => {
+      const r = stats[title];
+      const rating = ratings[title] || 1000;
+      const total = r.wins + r.losses;
+      const winPct = total > 0 ? ((r.wins / total) * 100).toFixed(1) : "0.0";
+      return {
+        title,
+        rating,
+        wins: r.wins,
+        losses: r.losses,
+        winPct,
+        isGlobalTop: globalWinsMap[title] !== undefined
+      };
+    }).sort((a, b) => b.rating - a.rating).slice(0, 20);
 
-    function renderGlobalTop() {
-      const sorted = Object.entries(globalWins)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 20);
+    const rankingList = document.getElementById("ranking-list");
+    rankingList.innerHTML = "";
+    topUser.forEach(movie => {
+      const tr = document.createElement("tr");
+      const label = movie.isGlobalTop ? `🔥 ${movie.title}` : movie.title;
+      tr.innerHTML = `
+        <td>${label}</td>
+        <td>${movie.rating}</td>
+        <td>${movie.wins}</td>
+        <td>${movie.losses}</td>
+        <td>${movie.winPct}%</td>
+      `;
+      rankingList.appendChild(tr);
+    });
+  }
 
-      const globalList = document.getElementById("global-list");
-      globalList.innerHTML = "";
-      sorted.forEach(([title, wins]) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${title}</td>
-          <td>${wins}</td>
-        `;
-        globalList.appendChild(tr);
-      });
-    }
+  async function renderGlobalTop() {
+    const snapshot = await db.collection("votes").get();
+    const globalWins = {};
 
-    window.onload = () => {
-      renderRankings();
-      renderGlobalTop();
-    };
-  </script>
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.winner) {
+        globalWins[data.winner] = (globalWins[data.winner] || 0) + 1;
+      }
+    });
+
+    const sorted = Object.entries(globalWins)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20);
+
+    const globalList = document.getElementById("global-list");
+    globalList.innerHTML = "";
+    sorted.forEach(([title, wins]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${title}</td>
+        <td>${wins}</td>
+      `;
+      globalList.appendChild(tr);
+    });
+
+    await renderRankings(globalWins);
+  }
+
+  window.onload = () => {
+    renderGlobalTop(); // also calls renderRankings with global info
+  };
+</script>
+
 </body>
 </html>
