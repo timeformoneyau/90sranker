@@ -13,14 +13,11 @@ async function loadUnseenList() {
         const [title, year] = key.split("|");
         return movies.find(m => m.title === title && String(m.year) === year);
       } else {
-        // Legacy fallback for title-only entries
+        // fallback for older entries (title only)
         return movies.find(m => m.title === key);
       }
     })
     .filter(Boolean);
-
-  console.log("Unseen keys:", unseen);
-  console.log("Matched unseen movies:", unseenMovies.length);
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
