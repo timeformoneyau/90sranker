@@ -1,48 +1,69 @@
-const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
+// === Firebase Setup ===
+const firebaseConfig = {
+  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+  authDomain: "sranker-f2642.firebaseapp.com",
+  projectId: "sranker-f2642",
+  storageBucket: "sranker-f2642.appspot.com",
+  messagingSenderId: "601665183803",
+  appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+  measurementId: "G-JTG8MVCW64"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// === Local State ===
 const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 const unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 const tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 let movies = [];
 
-const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-
+// === Load Movies & Then Rankings ===
 async function loadMovieList() {
   const res = await fetch('movie_list_cleaned.json');
   movies = await res.json();
-  renderRankings();
+  await renderRankings(); // Now async!
   await renderUnseen();
   renderTags();
 }
 
-function renderRankings() {
+// === Fetch and Render Global Rankings ===
+async function renderRankings() {
   const rankingList = document.getElementById("ranking-list");
   rankingList.innerHTML = "";
 
-  const movieData = Object.keys(stats).map(title => {
-    const record = stats[title];
-    const rating = ratings[title] || 1000;
-    const total = record.wins + record.losses;
-    const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
-    return { title, rating, ...record, winPct };
+  const snapshot = await db.collection("votes").get();
+
+  const globalStats = {};
+
+  snapshot.forEach(doc => {
+    const { winner } = doc.data();
+    if (!winner) return;
+
+    if (!globalStats[winner]) {
+      globalStats[winner] = { wins: 0 };
+    }
+    globalStats[winner].wins++;
   });
 
+  const movieData = Object.keys(globalStats).map(title => ({
+    title,
+    wins: globalStats[title].wins
+  }));
+
   movieData
-    .sort((a, b) => b.rating - a.rating)
+    .sort((a, b) => b.wins - a.wins)
     .slice(0, 20)
     .forEach(movie => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${movie.title}</td>
-        <td>${movie.rating}</td>
         <td>${movie.wins}</td>
-        <td>${movie.losses}</td>
-        <td>${movie.winPct}%</td>
       `;
       rankingList.appendChild(tr);
     });
 }
 
+// === Render Unseen List with TMDB Ratings ===
 async function renderUnseen() {
   const unseenList = document.getElementById("unseen-list");
   unseenList.innerHTML = "";
@@ -74,6 +95,8 @@ async function renderUnseen() {
     });
 }
 
+// === Fetch TMDB Rating ===
+const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
 async function fetchTMDBRating(title, year) {
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
   try {
@@ -88,6 +111,7 @@ async function fetchTMDBRating(title, year) {
   return null;
 }
 
+// === Restore Movie from Unseen List ===
 function putBack(title) {
   const index = unseen.indexOf(title);
   if (index > -1) {
@@ -97,6 +121,7 @@ function putBack(title) {
   }
 }
 
+// === Tags Viewer ===
 function renderTags() {
   const tagList = document.getElementById("tagged-list");
   tagList.innerHTML = "";
@@ -114,22 +139,5 @@ function renderTags() {
   });
 }
 
-function exportToCSV() {
-  let csv = "Movie,Rating,Wins,Losses,Win%\n";
-  Object.keys(stats).forEach(title => {
-    const record = stats[title];
-    const rating = ratings[title] || 1000;
-    const total = record.wins + record.losses;
-    const winPct = total > 0 ? ((record.wins / total) * 100).toFixed(1) : "0.0";
-    csv += `"${title}",${rating},${record.wins},${record.losses},${winPct}%\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "movie_rankings.csv");
-  link.click();
-}
-
+// === Start ===
 window.onload = loadMovieList;
