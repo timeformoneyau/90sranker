@@ -12,7 +12,7 @@ async function loadUnseenList() {
       const [title, year] = key.split("|");
       return movies.find(m => m.title === title && String(m.year) === year);
     })
-    .filter(Boolean); // remove nulls
+    .filter(Boolean);
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
@@ -24,19 +24,23 @@ async function loadUnseenList() {
     })
   );
 
+  const tableBody = document.getElementById("unseen-list");
+  tableBody.innerHTML = "";
+
   scoredUnseen
     .sort((a, b) => b.tmdbRating - a.tmdbRating)
     .slice(0, 20)
     .forEach(movie => {
       const key = `${movie.title}|${movie.year}`;
       const tr = document.createElement("tr");
+      tr.setAttribute("data-key", key);
       tr.innerHTML = `
         <td>${movie.title}</td>
         <td>${movie.year}</td>
         <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
         <td><button onclick="putBack('${key}')">Put Back</button></td>
       `;
-      document.getElementById("unseen-list").appendChild(tr);
+      tableBody.appendChild(tr);
     });
 }
 
@@ -59,7 +63,8 @@ function putBack(key) {
   if (index > -1) {
     unseen.splice(index, 1);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-    location.reload();
+    const row = document.querySelector(`tr[data-key="${key}"]`);
+    if (row) row.remove();
   }
 }
 
