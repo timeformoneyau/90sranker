@@ -90,16 +90,6 @@
     "category": "cult"
   },
   {
-    "title": "Coyote Ugly",
-    "year": "2000",
-    "genre": "Drama",
-    "blurb": "An aspiring songwriter finds fame at a rowdy NYC bar.",
-    "poster": null,
-    "vibes": "romantic,nostalgic,musical",
-    "tone": "fun",
-    "category": "blockbuster"
-  },
-  {
     "title": "Cruel Intentions",
     "year": "1999",
     "genre": "Drama",
@@ -127,16 +117,6 @@
     "poster": null,
     "vibes": "music,teen,roadtrip",
     "tone": "chaotic",
-    "category": "cult"
-  },
-  {
-    "title": "Down to You",
-    "year": "2000",
-    "genre": "Romantic-Comedy",
-    "blurb": "Two college students fall in and out of love in NYC.",
-    "poster": null,
-    "vibes": "romantic-comedy,teen,cult",
-    "tone": "sweet",
     "category": "cult"
   },
   {
@@ -189,36 +169,7 @@
     "tone": "absurd",
     "category": "cult"
   },
-  {
-    "title": "Final Destination",
-    "year": "2000",
-    "genre": "Horror",
-    "blurb": "A teen cheats death—temporarily. Fate doesn’t like to be tricked.",
-    "poster": null,
-    "vibes": "slasher,suspense,cult",
-    "tone": "tense",
-    "category": "cult"
-  },
-  {
-    "title": "Final Fantasy: The Spirits Within",
-    "year": "2001",
-    "genre": "Sci-Fi",
-    "blurb": "Earth faces destruction from alien phantoms. One woman may hold the key.",
-    "poster": null,
-    "vibes": "sci-fi,animated,blockbuster",
-    "tone": "ambitious",
-    "category": "blockbuster"
-  },
-  {
-    "title": "Ginger Snaps",
-    "year": "2000",
-    "genre": "Horror",
-    "blurb": "Two sisters deal with puberty and lycanthropy.",
-    "poster": null,
-    "vibes": "horror,feminist,cult",
-    "tone": "dark",
-    "category": "cult"
-  },
+
   {
     "title": "Go",
     "year": "1999",
@@ -299,16 +250,7 @@
     "tone": "gritty",
     "category": "cult"
   },
-  {
-    "title": "Love & Basketball",
-    "year": "2000",
-    "genre": "Romance",
-    "blurb": "Childhood friends chase dreams and each other.",
-    "poster": null,
-    "vibes": "romantic,sports,emotional",
-    "tone": "warm",
-    "category": "cult"
-  },
+
   {
     "title": "Love Jones",
     "year": "1997",
@@ -460,16 +402,6 @@
     "category": "cult"
   },
   {
-    "title": "The Legend of Billie Jean",
-    "year": "1985",
-    "genre": "Drama",
-    "blurb": "A teen becomes a folk hero after standing up to injustice.",
-    "poster": null,
-    "vibes": "rebellious,feminist,cult",
-    "tone": "empowering",
-    "category": "cult"
-  },
-  {
     "title": "The Long Kiss Goodnight",
     "year": "1996",
     "genre": "Action",
@@ -617,16 +549,6 @@
     "poster": null,
     "vibes": "twisty,sexy,thriller",
     "tone": "dark",
-    "category": "cult"
-  },
-  {
-    "title": "Zardoz",
-    "year": "1974",
-    "genre": "Sci-Fi",
-    "blurb": "A brutal enforcer uncovers the truth of his bizarre society.",
-    "poster": null,
-    "vibes": "weird,futuristic,cult",
-    "tone": "bizarre",
     "category": "cult"
   },
   {
@@ -819,16 +741,7 @@
     "tone": "charming",
     "category": "blockbuster"
   },
-  {
-    "title": "Kiss Kiss Bang Bang",
-    "year": "2005",
-    "genre": "Crime",
-    "blurb": "An actor caught in a noir mystery tries to stay alive and look cool.",
-    "poster": null,
-    "vibes": "funny,thriller,meta",
-    "tone": "slick",
-    "category": "cult"
-  },
+
   {
     "title": "The Big Hit",
     "year": "1998",
@@ -1079,16 +992,7 @@
     "tone": "earnest",
     "category": null
   },
-  {
-    "title": "The Legend of Bagger Vance",
-    "year": "2000",
-    "genre": "Sports",
-    "blurb": "A washed-up golfer regains purpose with help from a mystical caddy.",
-    "poster": null,
-    "vibes": "philosophical,sports,feel-good",
-    "tone": "sentimental",
-    "category": null
-  },
+
   {
     "title": "The Cutting Edge",
     "year": "1992",
@@ -1747,16 +1651,6 @@
     "poster": "https://image.tmdb.org/t/p/original/jmi3i0KgjhTVEvY9VtbC9RD2uFZ.jpg",
     "vibes": "comic-book,absurd,funny",
     "tone": "cartoonish",
-    "category": "blockbuster"
-  },
-  {
-    "title": "Batman",
-    "year": "1989",
-    "genre": "Action",
-    "blurb": "The Dark Knight faces off against the Joker in a gothic, stylish Gotham.",
-    "poster": "https://image.tmdb.org/t/p/original/kBf3g9crrADGMc2AMAMlLBgSm2h.jpg",
-    "vibes": "dark,comic-book,iconic",
-    "tone": "moody",
     "category": "blockbuster"
   },
   {
@@ -2797,16 +2691,6 @@
     "poster": null,
     "vibes": "legal,tense,classic",
     "tone": "serious",
-    "category": "blockbuster"
-  },
-  {
-    "title": "Dead Poets Society",
-    "year": "1989",
-    "genre": "Drama",
-    "blurb": "An unorthodox teacher inspires his students to seize the day through poetry.",
-    "poster": null,
-    "vibes": "inspiring,emotional,academic",
-    "tone": "uplifting",
     "category": "blockbuster"
   },
   {
@@ -4137,86 +4021,6 @@
     "poster": null,
     "vibes": "revenge,gritty,noir",
     "tone": "dark",
-    "category": null
-  },
-  {
-    "title": "Iron Man",
-    "year": "2008",
-    "genre": "Superhero",
-    "blurb": "Tony Stark builds a suit to escape captivity and becomes a hero.",
-    "poster": null,
-    "vibes": "superhero,tech,blockbuster",
-    "tone": "charismatic",
-    "category": null
-  },
-  {
-    "title": "Spider-Man",
-    "year": "2002",
-    "genre": "Superhero",
-    "blurb": "Peter Parker gains powers and battles the Green Goblin.",
-    "poster": null,
-    "vibes": "superhero,romantic,blockbuster",
-    "tone": "earnest",
-    "category": null
-  },
-  {
-    "title": "Superman IV: The Quest for Peace",
-    "year": "1987",
-    "genre": "Superhero",
-    "blurb": "Superman tries to rid the world of nuclear weapons.",
-    "poster": null,
-    "vibes": "superhero,campy",
-    "tone": "idealistic",
-    "category": null
-  },
-  {
-    "title": "Donnie Darko",
-    "year": "2001",
-    "genre": "Thriller",
-    "blurb": "A troubled teen is haunted by visions of a man in a rabbit suit.",
-    "poster": null,
-    "vibes": "weird,psychological,cult",
-    "tone": "dreamlike",
-    "category": null
-  },
-  {
-    "title": "Moon",
-    "year": "2009",
-    "genre": "Sci-Fi",
-    "blurb": "A lone worker on the moon begins to unravel his reality.",
-    "poster": null,
-    "vibes": "sci-fi,philosophical,psychological",
-    "tone": "lonely",
-    "category": null
-  },
-  {
-    "title": "Confessions of a Dangerous Mind",
-    "year": "2002",
-    "genre": "Biography",
-    "blurb": "TV host Chuck Barris claims he was a CIA assassin.",
-    "poster": null,
-    "vibes": "weird,stylized,biopic",
-    "tone": "quirky",
-    "category": null
-  },
-  {
-    "title": "Frost/Nixon",
-    "year": "2008",
-    "genre": "Drama",
-    "blurb": "David Frost interviews disgraced former president Richard Nixon.",
-    "poster": null,
-    "vibes": "political,intense,historical",
-    "tone": "tense",
-    "category": null
-  },
-  {
-    "title": "Zodiac",
-    "year": "2007",
-    "genre": "Thriller",
-    "blurb": "A cartoonist and reporters investigate the Zodiac killer.",
-    "poster": null,
-    "vibes": "true-crime,slow-burn,psychological",
-    "tone": "moody",
     "category": null
   },
   {
