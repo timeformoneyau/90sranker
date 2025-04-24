@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
@@ -13,42 +14,45 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // === Local State ===
 const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+const localStats = JSON.parse(localStorage.getItem("movieStats")) || {};
 const unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 const tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 let movies = [];
 
 // === Load Movies & Then Rankings ===
 async function loadMovieList() {
-  const res = await fetch('movie_list_cleaned.json');
+  const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
   await renderRankings();
   await renderUnseen();
   renderTags();
 }
 
-// === Fetch and Render Global Rankings ===
+// === Fetch and Render Rankings (Firebase or local fallback) ===
 async function renderRankings() {
   const rankingList = document.getElementById("ranking-list");
   rankingList.innerHTML = "";
 
-  const snapshot = await getDocs(collection(db, "votes"));
+  const user = auth.currentUser;
+  const stats = user ? {} : localStats;
 
-  const globalStats = {};
-  snapshot.forEach(doc => {
-    const { winner } = doc.data();
-    if (!winner) return;
-    if (!globalStats[winner]) {
-      globalStats[winner] = { wins: 0 };
-    }
-    globalStats[winner].wins++;
-  });
+  if (user) {
+    const snapshot = await getDocs(collection(db, "votes"));
+    snapshot.forEach(doc => {
+      const { winner } = doc.data();
+      if (!winner) return;
+      if (!stats[winner]) stats[winner] = { wins: 0 };
+      stats[winner].wins++;
+    });
+  }
 
-  const movieData = Object.keys(globalStats).map(title => ({
+  const movieData = Object.keys(stats).map(title => ({
     title,
-    wins: globalStats[title].wins
+    wins: stats[title].wins
   }));
 
   movieData
@@ -69,7 +73,7 @@ async function renderUnseen() {
   const unseenList = document.getElementById("unseen-list");
   unseenList.innerHTML = "";
 
-  const unseenMovies = movies.filter(m => unseen.includes(m.title));
+  const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
 
   const scoredUnseen = await Promise.all(
     unseenMovies.map(async (movie) => {
@@ -90,20 +94,20 @@ async function renderUnseen() {
         <td>${movie.title}</td>
         <td>${movie.year}</td>
         <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
-        <td><button onclick="putBack('${movie.title}')">Put Back</button></td>
+        <td><button onclick="putBack('${movie.title}|${movie.year}')">Put Back</button></td>
       `;
       unseenList.appendChild(tr);
     });
 }
 
 // === Fetch TMDB Rating ===
-const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
+const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 async function fetchTMDBRating(title, year) {
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
   try {
     const res = await fetch(url);
     const data = await res.json();
-    if (data.results && data.results[0] && data.results[0].vote_average) {
+    if (data.results?.[0]?.vote_average) {
       return data.results[0].vote_average;
     }
   } catch (err) {
@@ -113,8 +117,8 @@ async function fetchTMDBRating(title, year) {
 }
 
 // === Restore Movie from Unseen List ===
-function putBack(title) {
-  const index = unseen.indexOf(title);
+function putBack(key) {
+  const index = unseen.indexOf(key);
   if (index > -1) {
     unseen.splice(index, 1);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
