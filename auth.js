@@ -127,11 +127,24 @@ async function recordVoteToFirestore(movieKey) {
 // === Auth State Change Hook ===
 
 onAuthStateChanged(auth, async user => {
+  const authBox = document.querySelector(".auth-box");
+  const userInfo = document.querySelector(".user-info");
+
   if (user) {
     console.log("User is signed in:", user.email);
     await loadVotesFromCloud(user.uid);
+    if (authBox) authBox.style.display = "none";
+    if (userInfo) {
+      userInfo.innerHTML = `
+        <p style="margin-bottom: 0.5rem;">Welcome, <strong>${user.email}</strong></p>
+        <button onclick="logOut()">Log Out</button>
+      `;
+      userInfo.style.display = "block";
+    }
   } else {
     console.log("No user logged in.");
+    if (authBox) authBox.style.display = "block";
+    if (userInfo) userInfo.style.display = "none";
   }
 });
 
