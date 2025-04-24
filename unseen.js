@@ -1,5 +1,5 @@
 import { auth, db } from "./auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 let movies = [];
@@ -7,7 +7,6 @@ let movies = [];
 const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
 
 async function loadUnseenList() {
-  // Check if user is logged in and fetch unseen list from Firestore
   if (auth.currentUser) {
     try {
       const ref = doc(db, "users", auth.currentUser.uid);
@@ -20,7 +19,6 @@ async function loadUnseenList() {
     }
   }
 
-  // Always fallback to localStorage if needed
   if (!Array.isArray(unseen)) unseen = [];
   localStorage.setItem("unseenMovies", JSON.stringify(unseen));
 
@@ -87,6 +85,19 @@ function putBack(key) {
   if (index > -1) {
     unseen.splice(index, 1);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+
+    // If user is logged in, remove from Firestore too
+    if (auth.currentUser) {
+      const ref = doc(db, "users", auth.currentUser.uid);
+      getDoc(ref).then(snapshot => {
+        if (snapshot.exists()) {
+          const seen = snapshot.data().seen || [];
+          const updated = seen.filter(item => item !== key);
+          updateDoc(ref, { seen: updated });
+        }
+      });
+    }
+
     const row = document.querySelector(`tr[data-key="${key}"]`);
     if (row) row.remove();
   }
