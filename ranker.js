@@ -1,4 +1,6 @@
 // === Firebase Setup ===
+import { auth, recordVoteToFirestore } from "./auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
   authDomain: "sranker-f2642.firebaseapp.com",
@@ -94,23 +96,24 @@ async function fetchPosterUrl(title, year) {
 function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
+  const matchupKey = [movieA.title, movieB.title].sort().join("|");
 
-  db.collection("votes").add({
-    winner: winnerTitle,
-    loser: loserTitle,
-    timestamp: new Date().toISOString()
-  }).catch(error => console.error("Error recording vote:", error));
+  if (auth.currentUser) {
+    recordVoteToFirestore(`${winnerTitle}|${movieA.year}`); // Assumes year is from movieA
+  } else {
+    stats[winnerTitle] = stats[winnerTitle] || { wins: 0, losses: 0 };
+    stats[loserTitle] = stats[loserTitle] || { wins: 0, losses: 0 };
+    stats[winnerTitle].wins++;
+    stats[loserTitle].losses++;
+    localStorage.setItem("movieStats", JSON.stringify(stats));
+  }
 
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("shake");
   createConfettiBurst(winner);
   setTimeout(() => votedPoster.classList.remove("shake"), 800);
 
-  updateStats(winnerTitle, loserTitle);
-
-  const matchupKey = [movieA.title, movieB.title].sort().join("|");
   seenMatchups.push(matchupKey);
-  localStorage.setItem("movieStats", JSON.stringify(stats));
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
 
   setTimeout(chooseTwoMovies, 1500);
@@ -162,14 +165,6 @@ function createConfettiBurst(winner) {
       delay: delay * 1000
     });
   }
-}
-
-// === Stats ===
-function updateStats(winner, loser) {
-  stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-  stats[loser] = stats[loser] || { wins: 0, losses: 0 };
-  stats[winner].wins++;
-  stats[loser].losses++;
 }
 
 // === Haven't Seen ===
