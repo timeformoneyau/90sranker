@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Shelf Life</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #f0f0f0;
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .auth-box {
+      background: #1e1e2f;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 0 20px rgba(31, 210, 234, 0.2);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background-color: #2a2a3a;
+      border: none;
+      border-radius: 6px;
+      color: #f0f0f0;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.75rem;
+      background-color: #1fd2ea;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #17b7ce;
+    }
+    .nav-bar {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      background-color: #000;
+      padding: 1rem 2rem;
+    }
+    .nav-links {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+    }
+    .nav-links a {
+      color: #f0f0f0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .user-info {
+      margin-top: 1rem;
+      color: #1fd2ea;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results & Rankings</a></li>
+      <li><a href="unseen.html">Your 'To-Watch' List</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">My Profile</a></li>
+    </ul>
+  </nav>
+
+  <main class="auth-box">
+    <h2>Create or Log In to Your Account</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="signUp()">Sign Up</button>
+    <button onclick="logIn()">Log In</button>
+    <button onclick="logOut()">Log Out</button>
+    <div class="user-info" style="display:none;"></div>
+  </main>
+
+  <script type="module" src="auth.js"></script>
+</body>
+</html>
