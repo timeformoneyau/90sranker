@@ -31,8 +31,21 @@
   </style>
 </head>
 <body>
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results & Rankings</a></li>
+      <li><a href="unseen.html">Your 'To-Watch' List</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">My Profile</a></li>
+    </ul>
+  </nav>
+
+  <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
+
   <h1>My Movie Ranking Stats</h1>
   <div id="stats-container">Loading stats...</div>
+  <script type="module" src="auth.js"></script>
   <script type="module" src="my_stats.js"></script>
 </body>
 </html>
