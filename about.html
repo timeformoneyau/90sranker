@@ -17,15 +17,19 @@
     <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
   </header>
 
-  <!-- 🔗 Navigation Bar -->
-  <nav class="nav-bar">
+  <!-- 🔷 Navigation Bar -->
+  <nav>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Results & Rankings</a></li>
       <li><a href="unseen.html">Your 'To-Watch' List</a></li>
       <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">My Profile</a></li>
     </ul>
   </nav>
+
+  <!-- 🔐 Auth State UI -->
+  <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
   <!-- 📖 About Content -->
   <div class="container" style="max-width: 700px; text-align: center; margin-top: 3em;">
@@ -39,5 +43,7 @@
       style="margin-top: 2em; max-width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
     />
   </div>
+
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
