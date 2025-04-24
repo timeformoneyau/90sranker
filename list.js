@@ -1,4 +1,6 @@
-// === Firebase Setup ===
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
   authDomain: "sranker-f2642.firebaseapp.com",
@@ -8,8 +10,9 @@ const firebaseConfig = {
   appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
   measurementId: "G-JTG8MVCW64"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // === Local State ===
 const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
@@ -21,7 +24,7 @@ let movies = [];
 async function loadMovieList() {
   const res = await fetch('movie_list_cleaned.json');
   movies = await res.json();
-  await renderRankings(); // Now async!
+  await renderRankings();
   await renderUnseen();
   renderTags();
 }
@@ -31,14 +34,12 @@ async function renderRankings() {
   const rankingList = document.getElementById("ranking-list");
   rankingList.innerHTML = "";
 
-  const snapshot = await db.collection("votes").get();
+  const snapshot = await getDocs(collection(db, "votes"));
 
   const globalStats = {};
-
   snapshot.forEach(doc => {
     const { winner } = doc.data();
     if (!winner) return;
-
     if (!globalStats[winner]) {
       globalStats[winner] = { wins: 0 };
     }
@@ -139,5 +140,4 @@ function renderTags() {
   });
 }
 
-// === Start ===
 window.onload = loadMovieList;
