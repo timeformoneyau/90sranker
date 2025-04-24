@@ -37,6 +37,7 @@ window.signUp = async function () {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     console.log("Signed up:", userCred.user.email);
     await syncLocalToCloud(userCred.user.uid);
+    await loadVotesFromCloud(userCred.user.uid);
     window.location.reload();
   } catch (err) {
     console.error("Signup error:", err.message);
@@ -51,6 +52,7 @@ window.logIn = async function () {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     console.log("Logged in:", userCred.user.email);
     await syncLocalToCloud(userCred.user.uid);
+    await loadVotesFromCloud(userCred.user.uid);
     window.location.reload();
   } catch (err) {
     console.error("Login error:", err.message);
@@ -89,14 +91,48 @@ async function syncLocalToCloud(uid) {
   }
 }
 
-// === On Auth State Change ===
+// === Load Firestore into localStorage ===
+
+async function loadVotesFromCloud(uid) {
+  const ref = doc(db, "users", uid);
+  const snapshot = await getDoc(ref);
+
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+
+    localStorage.setItem("movieStats", JSON.stringify(data.votes || {}));
+    localStorage.setItem("movieTags", JSON.stringify(data.tags || {}));
+    localStorage.setItem("unseenMovies", JSON.stringify(data.seen || []));
+  }
+}
+
+// === Record a Vote to Firestore (exported for use in ranker.js) ===
+
+async function recordVoteToFirestore(movieKey) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = doc(db, "users", user.uid);
+  const snapshot = await getDoc(ref);
+
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    const currentVotes = data.votes || {};
+    currentVotes[movieKey] = (currentVotes[movieKey] || 0) + 1;
+
+    await updateDoc(ref, { votes: currentVotes });
+  }
+}
+
+// === Auth State Change Hook ===
+
 onAuthStateChanged(auth, async user => {
   if (user) {
     console.log("User is signed in:", user.email);
-    // You could optionally load their Firestore data here if not already handled
+    await loadVotesFromCloud(user.uid);
   } else {
     console.log("No user logged in.");
   }
 });
 
-export { auth, db };
+export { auth, db, recordVoteToFirestore };
