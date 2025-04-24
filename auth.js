@@ -30,26 +30,28 @@ const db = getFirestore(app);
 // === Auth Functions ===
 
 window.signUp = async function () {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.toLowerCase();
   const password = document.getElementById("password").value;
 
   try {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     console.log("Signed up:", userCred.user.email);
     await syncLocalToCloud(userCred.user.uid);
+    window.location.reload();
   } catch (err) {
     console.error("Signup error:", err.message);
   }
 };
 
 window.logIn = async function () {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.toLowerCase();
   const password = document.getElementById("password").value;
 
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     console.log("Logged in:", userCred.user.email);
     await syncLocalToCloud(userCred.user.uid);
+    window.location.reload();
   } catch (err) {
     console.error("Login error:", err.message);
   }
@@ -58,6 +60,7 @@ window.logIn = async function () {
 window.logOut = async function () {
   await signOut(auth);
   console.log("Logged out.");
+  window.location.reload();
 };
 
 // === Sync LocalStorage to Firestore ===
@@ -90,7 +93,7 @@ async function syncLocalToCloud(uid) {
 onAuthStateChanged(auth, async user => {
   if (user) {
     console.log("User is signed in:", user.email);
-    // Optional: Load their data into localStorage or UI
+    // You could optionally load their Firestore data here if not already handled
   } else {
     console.log("No user logged in.");
   }
