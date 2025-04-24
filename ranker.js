@@ -1,20 +1,6 @@
-// === Firebase Setup ===
 import { auth, recordVoteToFirestore, db } from "./auth.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
-  authDomain: "sranker-f2642.firebaseapp.com",
-  projectId: "sranker-f2642",
-  storageBucket: "sranker-f2642.appspot.com",
-  messagingSenderId: "601665183803",
-  appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
-  measurementId: "G-JTG8MVCW64"
-};
-firebase.initializeApp(firebaseConfig);
-const dbFallback = firebase.firestore(); // For anonymous vote logging
-
-// === Global Variables ===
 let movies = [];
 let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
@@ -23,7 +9,6 @@ let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
 let movieA, movieB;
 
-// === Load Movies ===
 async function loadMovies() {
   try {
     const res = await fetch("movie_list_cleaned.json");
@@ -34,7 +19,6 @@ async function loadMovies() {
   }
 }
 
-// === Choose Movies ===
 function chooseTwoMovies() {
   const available = movies.filter(m => {
     const key = `${m.title}|${m.year}`;
@@ -59,7 +43,6 @@ function chooseTwoMovies() {
   displayMovies();
 }
 
-// === Display Movies ===
 async function displayMovies() {
   document.getElementById("movieA").textContent = movieA.title;
   document.getElementById("movieA-year").textContent = `(${movieA.year})`;
@@ -75,7 +58,6 @@ async function displayMovies() {
   document.querySelectorAll(".confetti-container").forEach(e => e.innerHTML = '');
 }
 
-// === Fetch Poster from TMDB ===
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
@@ -93,7 +75,6 @@ async function fetchPosterUrl(title, year) {
   }
 }
 
-// === Vote Logic ===
 function vote(winner) {
   const winnerTitle = winner === "A" ? movieA.title : movieB.title;
   const loserTitle = winner === "A" ? movieB.title : movieA.title;
@@ -120,7 +101,6 @@ function vote(winner) {
   setTimeout(chooseTwoMovies, 1500);
 }
 
-// === Confetti Burst Animation ===
 function createConfettiBurst(winner) {
   const container = document.getElementById(`confetti-container-${winner.toLowerCase()}`);
   if (!container) return;
@@ -168,7 +148,6 @@ function createConfettiBurst(winner) {
   }
 }
 
-// === Haven't Seen ===
 function markUnseen(slot) {
   const movie = slot === 'A' ? movieA : movieB;
   const key = `${movie.title}|${movie.year}`;
@@ -218,5 +197,4 @@ async function replaceMovie(movieToReplace) {
   await displayMovies();
 }
 
-// === Start App ===
 window.onload = loadMovies;
