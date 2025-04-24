@@ -62,8 +62,11 @@
       <li><a href="list.html">Results & Rankings</a></li>
       <li><a href="unseen.html">Your 'To-Watch' List</a></li>
       <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">My Profile</a></li>
     </ul>
   </nav>
+
+  <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
   <div class="container">
     <h2>🎯 Your Top 20 Rankings</h2>
@@ -94,91 +97,91 @@
     <a href="index.html" class="back-link">⬅️ Back to Voting</a>
   </div>
 
- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script>
-  // === Firebase Setup ===
-  const firebaseConfig = {
-    apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
-    authDomain: "sranker-f2642.firebaseapp.com",
-    projectId: "sranker-f2642",
-    storageBucket: "sranker-f2642.appspot.com",
-    messagingSenderId: "601665183803",
-    appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
-    measurementId: "G-JTG8MVCW64"
-  };
+  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+    const firebaseConfig = {
+      apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+      authDomain: "sranker-f2642.firebaseapp.com",
+      projectId: "sranker-f2642",
+      storageBucket: "sranker-f2642.appspot.com",
+      messagingSenderId: "601665183803",
+      appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+      measurementId: "G-JTG8MVCW64"
+    };
 
-  const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
-  const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  async function renderRankings(globalWinsMap = {}) {
-    const topUser = Object.keys(stats).map(title => {
-      const r = stats[title];
-      const rating = ratings[title] || 1000;
-      const total = r.wins + r.losses;
-      const winPct = total > 0 ? ((r.wins / total) * 100).toFixed(1) : "0.0";
-      return {
-        title,
-        rating,
-        wins: r.wins,
-        losses: r.losses,
-        winPct,
-        isGlobalTop: globalWinsMap[title] !== undefined
-      };
-    }).sort((a, b) => b.rating - a.rating).slice(0, 20);
+    const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
+    const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 
-    const rankingList = document.getElementById("ranking-list");
-    rankingList.innerHTML = "";
-    topUser.forEach(movie => {
-      const tr = document.createElement("tr");
-      const label = movie.isGlobalTop ? `🔥 ${movie.title}` : movie.title;
-      tr.innerHTML = `
-        <td>${label}</td>
-        <td>${movie.rating}</td>
-        <td>${movie.wins}</td>
-        <td>${movie.losses}</td>
-        <td>${movie.winPct}%</td>
-      `;
-      rankingList.appendChild(tr);
-    });
-  }
+    async function renderRankings(globalWinsMap = {}) {
+      const topUser = Object.keys(stats).map(title => {
+        const r = stats[title];
+        const rating = ratings[title] || 1000;
+        const total = r.wins + r.losses;
+        const winPct = total > 0 ? ((r.wins / total) * 100).toFixed(1) : "0.0";
+        return {
+          title,
+          rating,
+          wins: r.wins,
+          losses: r.losses,
+          winPct,
+          isGlobalTop: globalWinsMap[title] !== undefined
+        };
+      }).sort((a, b) => b.rating - a.rating).slice(0, 20);
 
-  async function renderGlobalTop() {
-    const snapshot = await db.collection("votes").get();
-    const globalWins = {};
+      const rankingList = document.getElementById("ranking-list");
+      rankingList.innerHTML = "";
+      topUser.forEach(movie => {
+        const tr = document.createElement("tr");
+        const label = movie.isGlobalTop ? `🔥 ${movie.title}` : movie.title;
+        tr.innerHTML = `
+          <td>${label}</td>
+          <td>${movie.rating}</td>
+          <td>${movie.wins}</td>
+          <td>${movie.losses}</td>
+          <td>${movie.winPct}%</td>
+        `;
+        rankingList.appendChild(tr);
+      });
+    }
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.winner) {
-        globalWins[data.winner] = (globalWins[data.winner] || 0) + 1;
-      }
-    });
+    async function renderGlobalTop() {
+      const snapshot = await getDocs(collection(db, "votes"));
+      const globalWins = {};
 
-    const sorted = Object.entries(globalWins)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 20);
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.winner) {
+          globalWins[data.winner] = (globalWins[data.winner] || 0) + 1;
+        }
+      });
 
-    const globalList = document.getElementById("global-list");
-    globalList.innerHTML = "";
-    sorted.forEach(([title, wins]) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${title}</td>
-        <td>${wins}</td>
-      `;
-      globalList.appendChild(tr);
-    });
+      const sorted = Object.entries(globalWins)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 20);
 
-    await renderRankings(globalWins);
-  }
+      const globalList = document.getElementById("global-list");
+      globalList.innerHTML = "";
+      sorted.forEach(([title, wins]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${title}</td>
+          <td>${wins}</td>
+        `;
+        globalList.appendChild(tr);
+      });
 
-  window.onload = () => {
-    renderGlobalTop(); // also calls renderRankings with global info
-  };
-</script>
+      await renderRankings(globalWins);
+    }
 
+    window.onload = () => {
+      renderGlobalTop();
+    };
+  </script>
 </body>
 </html>
