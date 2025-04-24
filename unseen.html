@@ -22,8 +22,11 @@
       <li><a href="list.html">Results & Rankings</a></li>
       <li><a href="unseen.html">Your 'To-Watch' List</a></li>
       <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">My Profile</a></li>
     </ul>
   </nav>
+
+  <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
   <div class="container">
     <h2>🙈 Most Recommended Movies You Haven’t Seen</h2>
@@ -41,11 +44,7 @@
     </table>
   </div>
 
-  <!-- Firebase (v8 for consistency) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- Script -->
-  <script src="unseen.js" defer></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="unseen.js"></script>
 </body>
 </html>
