@@ -1,9 +1,29 @@
-const unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+import { auth, db } from "./auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 let movies = [];
 
 const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
 
 async function loadUnseenList() {
+  // Check if user is logged in and fetch unseen list from Firestore
+  if (auth.currentUser) {
+    try {
+      const ref = doc(db, "users", auth.currentUser.uid);
+      const snapshot = await getDoc(ref);
+      if (snapshot.exists()) {
+        unseen = snapshot.data().seen || [];
+      }
+    } catch (err) {
+      console.error("Error loading unseen list from Firestore:", err);
+    }
+  }
+
+  // Always fallback to localStorage if needed
+  if (!Array.isArray(unseen)) unseen = [];
+  localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
 
@@ -13,7 +33,6 @@ async function loadUnseenList() {
         const [title, year] = key.split("|");
         return movies.find(m => m.title === title && String(m.year) === year);
       } else {
-        // fallback for older entries (title only)
         return movies.find(m => m.title === key);
       }
     })
