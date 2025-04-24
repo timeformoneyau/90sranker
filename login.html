@@ -17,15 +17,21 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
+      padding-top: 80px; /* space for nav */
     }
     .auth-box {
-      background: #1e1e2f;
-      border-radius: 12px;
+      background: rgba(30, 30, 47, 0.95);
+      border-radius: 16px;
       padding: 2rem;
-      box-shadow: 0 0 20px rgba(31, 210, 234, 0.2);
+      box-shadow: 0 0 20px rgba(31, 210, 234, 0.25);
       max-width: 400px;
       width: 90%;
       text-align: center;
+    }
+    .auth-box h2 {
+      font-size: 1.3rem;
+      color: #ffffff;
+      margin-bottom: 1rem;
     }
     input {
       width: 100%;
@@ -35,6 +41,7 @@
       border: none;
       border-radius: 6px;
       color: #f0f0f0;
+      font-size: 1rem;
     }
     button {
       width: 100%;
@@ -44,17 +51,20 @@
       border: none;
       border-radius: 6px;
       font-weight: bold;
+      font-size: 1rem;
+      color: #121212;
       cursor: pointer;
     }
     button:hover {
       background-color: #17b7ce;
     }
     .nav-bar {
-      position: absolute;
+      position: fixed;
       top: 0;
       width: 100%;
       background-color: #000;
       padding: 1rem 2rem;
+      z-index: 999;
     }
     .nav-links {
       list-style: none;
@@ -69,6 +79,9 @@
       text-decoration: none;
       font-weight: 600;
     }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
     .user-info {
       margin-top: 1rem;
       color: #1fd2ea;
@@ -76,7 +89,7 @@
   </style>
 </head>
 <body>
- <!-- 🔷 Navigation Bar -->
+  <!-- 🔷 Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
@@ -87,7 +100,6 @@
       <li><a href="login.html">Login</a></li>
     </ul>
   </nav>
-
 
   <main class="auth-box">
     <h2>Create or Log In to Your Account</h2>
