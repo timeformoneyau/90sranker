@@ -18,9 +18,9 @@ import {
 
 // === Firebase Config ===
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
+  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+  authDomain: "sranker-f2642.firebaseapp.com",
+  projectId: "sranker-f2642",
 };
 
 const app = initializeApp(firebaseConfig);
