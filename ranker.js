@@ -1,5 +1,6 @@
 // === Firebase Setup ===
-import { auth, recordVoteToFirestore } from "./auth.js";
+import { auth, recordVoteToFirestore, db } from "./auth.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
@@ -11,7 +12,7 @@ const firebaseConfig = {
   measurementId: "G-JTG8MVCW64"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const dbFallback = firebase.firestore(); // For anonymous vote logging
 
 // === Global Variables ===
 let movies = [];
@@ -99,7 +100,7 @@ function vote(winner) {
   const matchupKey = [movieA.title, movieB.title].sort().join("|");
 
   if (auth.currentUser) {
-    recordVoteToFirestore(`${winnerTitle}|${movieA.year}`); // Assumes year is from movieA
+    recordVoteToFirestore(`${winnerTitle}|${movieA.year}`);
   } else {
     stats[winnerTitle] = stats[winnerTitle] || { wins: 0, losses: 0 };
     stats[loserTitle] = stats[loserTitle] || { wins: 0, losses: 0 };
@@ -175,6 +176,18 @@ function markUnseen(slot) {
   if (!unseen.includes(key)) {
     unseen.push(key);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+
+    if (auth.currentUser) {
+      const ref = doc(db, "users", auth.currentUser.uid);
+      getDoc(ref).then(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const merged = Array.from(new Set([...(data.seen || []), key]));
+          updateDoc(ref, { seen: merged });
+        }
+      });
+    }
+
     replaceMovie(movie);
   }
 }
