@@ -151,32 +151,40 @@
     }
 
     async function renderGlobalTop() {
-      const snapshot = await getDocs(collection(db, "votes"));
-      const globalWins = {};
+      console.log("Fetching global list from Firestore...");
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.winner) {
-          globalWins[data.winner] = (globalWins[data.winner] || 0) + 1;
-        }
-      });
+      try {
+        const snapshot = await getDocs(collection(db, "votes"));
+        console.log("Successfully fetched snapshot");
 
-      const sorted = Object.entries(globalWins)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 20);
+        const globalWins = {};
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.winner) {
+            globalWins[data.winner] = (globalWins[data.winner] || 0) + 1;
+          }
+        });
 
-      const globalList = document.getElementById("global-list");
-      globalList.innerHTML = "";
-      sorted.forEach(([title, wins]) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${title}</td>
-          <td>${wins}</td>
-        `;
-        globalList.appendChild(tr);
-      });
+        const sorted = Object.entries(globalWins)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 20);
 
-      await renderRankings(globalWins);
+        const globalList = document.getElementById("global-list");
+        globalList.innerHTML = "";
+        sorted.forEach(([title, wins]) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${title}</td>
+            <td>${wins}</td>
+          `;
+          globalList.appendChild(tr);
+        });
+
+        await renderRankings(globalWins);
+      } catch (err) {
+        console.error("Error fetching global rankings:", err);
+        await renderRankings(); // fallback to local-only data
+      }
     }
 
     window.onload = () => {
