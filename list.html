@@ -1,44 +1,89 @@
-<!-- ...all your existing head/nav/markup above... -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Rankings | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* your existing table styles… */
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Your 90s movie showdowns, tallied and tracked.</p>
+  </header>
+
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="my-stats.html">Your Stats</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <h2>🎯 Your Top 20 Rankings</h2>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Movie</th><th>Rating</th><th>Wins</th><th>Losses</th><th>Win %</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-list"></tbody>
+    </table>
+
+    <h2>🔥 Global Top 20 Movies</h2>
+    <table class="global-table">
+      <thead>
+        <tr>
+          <th>Movie</th><th>Total Wins</th>
+        </tr>
+      </thead>
+      <tbody id="global-list"></tbody>
+    </table>
+
+    <a href="index.html" class="back-link">⬅️ Back to Voting</a>
+  </div>
 
   <!-- Firebase & Auth handling -->
   <script type="module" src="auth.js"></script>
 
   <script type="module">
     import { db } from "./auth.js";
-    import {
-      collection,
-      getDocs
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-    // Personal stats from localStorage
     const stats   = JSON.parse(localStorage.getItem("movieStats")) || {};
     const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
 
-    // Render personal top-20
     function renderRankings(globalWinsMap = {}) {
-      const topUser = Object.entries(stats).map(([key, r]) => {
-        const [title, year] = key.split("|");
-        const total = (r.wins||0)+(r.losses||0);
-        const pct   = total ? ((r.wins/total)*100).toFixed(1) : "0.0";
-        return {
-          key,
-          label: `${title} (${year})`,
-          rating: ratings[key]||1000,
-          wins:  r.wins||0,
-          losses:r.losses||0,
-          winPct: pct,
-          isGlobalTop: globalWinsMap[key] !== undefined
-        };
-      })
-      .sort((a,b) => b.rating - a.rating)
-      .slice(0,20);
+      const rows = Object.entries(stats)
+        .map(([key, r]) => {
+          const [title, year] = key.split("|");
+          const total = (r.wins||0)+(r.losses||0);
+          const pct   = total ? ((r.wins/total)*100).toFixed(1) : "0.0";
+          return {
+            label: `${title} (${year})`,
+            rating: ratings[key] || 1000,
+            wins: r.wins||0,
+            losses: r.losses||0,
+            winPct: pct,
+            isGlobalTop: globalWinsMap[key] !== undefined
+          };
+        })
+        .sort((a,b) => b.rating - a.rating)
+        .slice(0,20);
 
       const tbody = document.getElementById("ranking-list");
       tbody.innerHTML = "";
-      topUser.forEach(m => {
+      rows.forEach(m => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${m.isGlobalTop ? `🔥 ${m.label}` : m.label}</td>
+          <td>${m.isGlobalTop ? '🔥 ' : ''}${m.label}</td>
           <td>${m.rating}</td>
           <td>${m.wins}</td>
           <td>${m.losses}</td>
@@ -48,20 +93,16 @@
       });
     }
 
-    // Aggregate global wins from EVERY vote doc
     async function renderGlobalTop() {
-      // pull all vote docs
-      const snapshot = await getDocs(collection(db,"votes"));
+      const snap = await getDocs(collection(db, "votes"));
       const globalWins = {};
-
-      snapshot.forEach(doc => {
+      snap.forEach(doc => {
         const w = doc.data().winner;
         globalWins[w] = (globalWins[w]||0) + 1;
       });
 
-      // build global top-20
       const sorted = Object.entries(globalWins)
-        .sort(([,a],[,b]) => b-a)
+        .sort(([,a],[,b]) => b - a)
         .slice(0,20);
 
       const glist = document.getElementById("global-list");
@@ -69,20 +110,14 @@
       sorted.forEach(([key, count]) => {
         const [title,year] = key.split("|");
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${title} (${year})</td>
-          <td>${count}</td>
-        `;
+        tr.innerHTML = `<td>${title} (${year})</td><td>${count}</td>`;
         glist.appendChild(tr);
       });
 
-      // then show personal overlay
       renderRankings(globalWins);
     }
 
-    window.onload = () => {
-      renderGlobalTop();
-    };
+    window.onload = renderGlobalTop;
   </script>
 </body>
 </html>
