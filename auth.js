@@ -56,7 +56,7 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
     console.log(" → No user signed in, skipping user doc update");
   }
 
-  // 2) **Global** single-vote record
+  // 2) Global vote record
   const payload = { winner: winnerKey, timestamp: Date.now() };
   if (loserKey)    payload.loser = loserKey;
   if (auth.currentUser) payload.user  = auth.currentUser.uid;
@@ -79,7 +79,6 @@ window.signUp = async function () {
   try {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     console.log("Signed up:", userCred.user.email);
-    // you can sync local data here if needed
   } catch (err) {
     console.error("Signup error:", err.message);
   }
@@ -92,7 +91,6 @@ window.logIn = async function () {
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     console.log("Logged in:", userCred.user.email);
-    // you can sync local data here if needed
   } catch (err) {
     console.error("Login error:", err.message);
   }
