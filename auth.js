@@ -1,4 +1,3 @@
-// auth.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getAuth,
@@ -17,7 +16,7 @@ import {
   addDoc
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// ——— Your Firebase config ———
+// ——— Firebase config & init ———
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
   authDomain: "sranker-f2642.firebaseapp.com",
@@ -27,42 +26,47 @@ const firebaseConfig = {
   appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
   measurementId: "G-JTG8MVCW64"
 };
-
-// ——— Initialize Firebase ———
-const app = initializeApp(firebaseConfig);
+const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 
-// ——— Record a vote to Firestore ———
-//  • Writes one document per vote into "votes"
-//  • Also keeps your per-user vote list for personal stats
-async function recordVoteToFirestore(winnerKey) {
-  if (!auth.currentUser) return;
+// ——— Record a vote ———
+//
+//  • Always adds one doc to /votes for the global tally.
+//  • If signed in, also upserts the user’s own votes array.
+//
+export async function recordVoteToFirestore(winnerKey, loserKey) {
+  // 1️⃣ Per-user array (only if logged in)
+  if (auth.currentUser) {
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const snap    = await getDoc(userRef);
 
-  const userRef = doc(db, "users", auth.currentUser.uid);
-  const snap    = await getDoc(userRef);
-
-  // 1️⃣ Ensure the user's doc has a votes array
-  if (!snap.exists()) {
-    await setDoc(userRef, { votes: [winnerKey], seen: [] });
-  } else {
-    const data = snap.data();
-    let existing = Array.isArray(data.votes) ? data.votes : [];
-    // add only if new to per-user list
-    if (!existing.includes(winnerKey)) {
-      existing.push(winnerKey);
-      await updateDoc(userRef, { votes: existing });
+    if (!snap.exists()) {
+      await setDoc(userRef, { votes: [winnerKey], seen: [] });
+    } else {
+      const data     = snap.data();
+      const existing = Array.isArray(data.votes) ? data.votes : [];
+      if (!existing.includes(winnerKey)) {
+        existing.push(winnerKey);
+        await updateDoc(userRef, { votes: existing });
+      }
     }
   }
 
-  // 2️⃣ Write an independent vote record for global history
-  await addDoc(collection(db, "votes"), {
-    user: auth.currentUser.uid,
-    winner: winnerKey,
+  // 2️⃣ Global per-vote record
+  //    We include loserKey (if supplied) so you can fully backfill Elo later.
+  const payload = {
+    winner:    winnerKey,
     timestamp: Date.now()
-  });
+  };
+  if (loserKey)  payload.loser = loserKey;
+  if (auth.currentUser) payload.user = auth.currentUser.uid;
+
+  await addDoc(collection(db, "votes"), payload);
 }
 
-// ——— Exports (rest of auth.js unchanged) ———
-export { auth, db, recordVoteToFirestore };
-// …plus your existing auth UI & onAuthStateChanged logic…
+// ——— Exports for the rest of your app ———
+export { auth, db };
+
+// ——— (the rest of your auth UI & onAuthStateChanged code) ———
+// … unchanged from what you already had …
