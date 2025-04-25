@@ -36,28 +36,37 @@ const db   = getFirestore(app);
 
 // ——— Record a vote (always writes to /votes) ———
 export async function recordVoteToFirestore(winnerKey, loserKey) {
+  console.log("🎯 recordVoteToFirestore() called", { winnerKey, loserKey, user: auth.currentUser?.uid });
+
   // 1) Per-user array (only when signed in)
   if (auth.currentUser) {
+    console.log(" → User signed in, updating user document");
     const userRef = doc(db, "users", auth.currentUser.uid);
     const snap    = await getDoc(userRef);
     if (!snap.exists()) {
+      console.log(" → No user doc, creating new with votes array");
       await setDoc(userRef, { votes: [winnerKey], seen: [] });
     } else {
+      console.log(" → Appending to user.votes array");
       await updateDoc(userRef, {
         votes: arrayUnion(winnerKey)
       });
     }
+  } else {
+    console.log(" → No user signed in, skipping user doc update");
   }
 
   // 2) **Global** single-vote record
   const payload = { winner: winnerKey, timestamp: Date.now() };
-  if (loserKey)      payload.loser = loserKey;
+  if (loserKey)    payload.loser = loserKey;
   if (auth.currentUser) payload.user  = auth.currentUser.uid;
 
+  console.log(" → Adding global vote document with payload:", payload);
   try {
     await addDoc(collection(db, "votes"), payload);
+    console.log(" ✅ Global vote write succeeded");
   } catch (err) {
-    console.error("Failed to write vote:", err);
+    console.error(" ❌ Global vote write failed:", err);
     alert("Could not record your vote: " + err.message);
   }
 }
@@ -104,3 +113,4 @@ onAuthStateChanged(auth, user => {
 });
 
 export { auth, db };
+
