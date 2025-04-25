@@ -1,3 +1,4 @@
+// auth.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getAuth,
@@ -6,7 +7,6 @@ import {
   signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-
 import {
   getFirestore,
   doc,
@@ -15,7 +15,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// ✅ Firebase config
+// ——— Your Firebase config ———
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
   authDomain: "sranker-f2642.firebaseapp.com",
@@ -26,105 +26,101 @@ const firebaseConfig = {
   measurementId: "G-JTG8MVCW64"
 };
 
-// ✅ Initialize Firebase
+// ——— Initialize Firebase ———
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ Optional login form logic (only on account page)
-const loginForm = document.getElementById("login-form");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const loginButton = document.getElementById("login-button");
-const logoutButton = document.getElementById("logout-button");
-const signupTrigger = document.getElementById("signup-trigger");
+// ——— Auth UI & state handling ———
+const loginForm      = document.getElementById("login-form");
+const emailInput     = document.getElementById("email");
+const passwordInput  = document.getElementById("password");
+const loginButton    = document.getElementById("login-button");
+const logoutButton   = document.getElementById("logout-button");
+const signupTrigger  = document.getElementById("signup-trigger");
+const indicator      = document.getElementById("user-indicator");
 
 if (loginForm && emailInput && passwordInput && loginButton && signupTrigger && logoutButton) {
-  loginForm.addEventListener("submit", async (e) => {
+  // Log in
+  loginForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const email = emailInput.value;
-    const password = passwordInput.value;
-
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     } catch (err) {
       alert("Login failed: " + err.message);
     }
   });
 
-  signupTrigger.addEventListener("click", async (e) => {
+  // Sign up
+  signupTrigger.addEventListener("click", async e => {
     e.preventDefault();
-    const email = emailInput.value;
-    const password = passwordInput.value;
-
-    if (!email || !password) {
-      alert("Please enter an email and password first.");
-      return;
+    if (!emailInput.value || !passwordInput.value) {
+      return alert("Please enter an email and password first.");
     }
-
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
       alert("Account created and logged in!");
     } catch (err) {
       alert("Sign up failed: " + err.message);
     }
   });
 
+  // Log out
   logoutButton.addEventListener("click", async () => {
     await signOut(auth);
     location.reload();
   });
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      logoutButton.classList.remove("hidden");
-      loginForm.style.display = "none";
-      signupTrigger.parentElement.style.display = "none";
-    } else {
-      logoutButton.classList.add("hidden");
-      loginForm.style.display = "block";
-      signupTrigger.parentElement.style.display = "block";
-    }
-  });
 }
 
-// ✅ Show login/logout in upper right corner
-const indicator = document.getElementById("user-indicator");
+// Update indicator & inline logout
+onAuthStateChanged(auth, user => {
+  // Toggle form vs logout button
+  if (logoutButton) {
+    logoutButton.classList.toggle("hidden", !user);
+    if (loginForm)  loginForm.style.display   = user ? "none" : "block";
+    if (signupTrigger) signupTrigger.parentElement.style.display = user ? "none" : "block";
+  }
 
-onAuthStateChanged(auth, (user) => {
+  // Upper-right indicator
   if (!indicator) return;
-
   if (user) {
     indicator.innerHTML = `
-      <span style="font-size: 0.8rem; color: #ccc;">${user.email}</span>
-      <button id="logout-button-inline" style="margin-left: 0.5em; font-size: 0.75rem;">Log Out</button>
+      <span style="font-size:0.8rem;color:#ccc;">${user.email}</span>
+      <button id="logout-inline" style="margin-left:0.5em;font-size:0.75rem;">Log Out</button>
     `;
-    const logoutBtn = document.getElementById("logout-button-inline");
-    logoutBtn?.addEventListener("click", () => {
-      signOut(auth).then(() => location.reload());
-    });
+    document.getElementById("logout-inline")
+            ?.addEventListener("click", () => signOut(auth).then(() => location.reload()));
   } else {
-    indicator.innerHTML = `<a href="account.html" style="font-size: 0.8rem; color: #1fd2ea;">Log In</a>`;
+    indicator.innerHTML = `<a href="account.html" style="font-size:0.8rem;color:#1fd2ea;">Log In</a>`;
   }
 });
 
-// ✅ Used by ranker.js to save votes
+// ——— Record a vote to Firestore ———
 async function recordVoteToFirestore(winnerKey) {
   if (!auth.currentUser) return;
+  const userRef = doc(db, "users", auth.currentUser.uid);
+  const snap    = await getDoc(userRef);
 
-  const ref = doc(db, "users", auth.currentUser.uid);
-  const snapshot = await getDoc(ref);
-
-  if (!snapshot.exists()) {
-    await setDoc(ref, {
+  if (!snap.exists()) {
+    // First vote ever
+    await setDoc(userRef, {
       votes: [winnerKey],
       seen: []
     });
   } else {
-    const data = snapshot.data();
-    const currentVotes = Array.from(new Set([...(data.votes || []), winnerKey]));
-    await updateDoc(ref, { votes: currentVotes });
+    const data = snap.data();
+    // Normalize any existing votes into an array
+    let existingVotes = [];
+    if (Array.isArray(data.votes)) {
+      existingVotes = data.votes;
+    } else if (data.votes && typeof data.votes === "object") {
+      existingVotes = Object.keys(data.votes);
+    }
+    // Dedupe and append
+    const updated = Array.from(new Set([...existingVotes, winnerKey]));
+    await updateDoc(userRef, { votes: updated });
   }
 }
 
+// ——— Exports ———
 export { auth, db, recordVoteToFirestore };
