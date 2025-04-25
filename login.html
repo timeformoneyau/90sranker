@@ -9,21 +9,19 @@
   <style>
     .login-container {
       max-width: 360px;
-      margin: 10vh auto 0;
+      margin: 10vh auto;
       padding: 2em;
-      background-color: rgba(18, 18, 18, 0.95);
+      background-color: rgba(30, 30, 30, 0.98);
       border-radius: 12px;
-      box-shadow: 0 0 24px rgba(31, 210, 234, 0.15);
+      box-shadow: 0 0 24px rgba(31, 210, 234, 0.2);
       text-align: center;
     }
-
     .login-container h2 {
-      color: #ccc;
+      color: #e0e0e0;
       margin-bottom: 1.5em;
       font-size: 1.2rem;
       font-weight: 700;
     }
-
     .login-container input[type="email"],
     .login-container input[type="password"] {
       width: 100%;
@@ -35,7 +33,6 @@
       color: #fff;
       font-family: 'Space Grotesk', sans-serif;
     }
-
     .login-container button {
       width: 100%;
       padding: 0.75em;
@@ -48,51 +45,88 @@
       cursor: pointer;
       font-family: 'Space Grotesk', sans-serif;
     }
-
     .login-container button:hover {
       background-color: #8b5cf6;
       color: #fff;
     }
-
     .login-container .signup-link {
       margin-top: 1.2em;
       display: block;
       font-size: 0.9rem;
       color: #bbb;
     }
-
     .login-container .signup-link a {
       color: #1fd2ea;
       text-decoration: none;
       font-weight: 600;
     }
-
     .login-container .signup-link a:hover {
       text-decoration: underline;
     }
-
     .hidden {
       display: none;
     }
   </style>
 </head>
 <body>
-  <div class="user-bar">
-    <div id="user-indicator" class="user-indicator"></div>
+  <div class="bg-overlay"></div>
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+  </header>
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="my-stats.html">Your Profile</a></li>
+      <li><a href="login.html">Login</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="login-container">
+      <h2 id="login-heading">Create or Log In to Your Account</h2>
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" id="login-button">Log In</button>
+      </form>
+      <div class="signup-link" id="signup-area">
+        Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+      </div>
+      <div id="login-status" class="hidden" style="color:#ccc; margin-top: 1em; font-size: 0.9rem;"></div>
+      <button id="logout-button" class="hidden">Log Out</button>
+    </div>
+      <button id="logout-button" class="hidden">Log Out</button>
+    </div>
   </div>
 
-  <div class="login-container">
-    <h2>Create or Log In to Your Account</h2>
-    <form id="login-form">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit" id="login-button">Log In</button>
-    </form>
-    <div class="signup-link">
-      Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
-    </div>
-    <button id="logout-button" class="hidden">Log Out</button>
-  </div>
+  <script type="module">
+    import { auth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { auth as myAuth } from "./auth.js";
+
+    const loginForm = document.getElementById("login-form");
+    const loginHeading = document.getElementById("login-heading");
+    const signupArea = document.getElementById("signup-area");
+    const logoutButton = document.getElementById("logout-button");
+
+    onAuthStateChanged(myAuth, (user) => {
+      const statusMsg = document.getElementById("login-status");
+      if (user) {
+        loginHeading.textContent = `Welcome Back, ${user.email}`;
+        loginForm.classList.add("hidden");
+        signupArea.classList.add("hidden");
+        logoutButton.classList.remove("hidden");
+        statusMsg.textContent = "You are already logged in.";
+        statusMsg.classList.remove("hidden");
+      } else {
+        statusMsg.textContent = "";
+        statusMsg.classList.add("hidden");
+      }
+    });
+  </script>
 
   <script type="module" src="auth.js"></script>
   <script type="module" src="login.js"></script>
