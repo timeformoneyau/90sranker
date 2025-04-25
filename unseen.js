@@ -27,12 +27,8 @@ async function loadUnseenList() {
 
   const unseenMovies = unseen
     .map(key => {
-      if (key.includes("|")) {
-        const [title, year] = key.split("|");
-        return movies.find(m => m.title === title && String(m.year) === year);
-      } else {
-        return movies.find(m => m.title === key);
-      }
+      const [title, year] = key.split("|");
+      return movies.find(m => m.title === title && String(m.year) === year);
     })
     .filter(Boolean);
 
@@ -86,7 +82,6 @@ function putBack(key) {
     unseen.splice(index, 1);
     localStorage.setItem("unseenMovies", JSON.stringify(unseen));
 
-    // If user is logged in, remove from Firestore too
     if (auth.currentUser) {
       const ref = doc(db, "users", auth.currentUser.uid);
       getDoc(ref).then(snapshot => {
