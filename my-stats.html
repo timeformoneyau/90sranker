@@ -28,10 +28,40 @@
     h2, h3 {
       margin-top: 2rem;
     }
+    .user-bar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 10px 20px;
+      z-index: 1000;
+    }
+    .user-indicator {
+      font-size: 0.85rem;
+      color: white;
+      background-color: rgba(0,0,0,0.6);
+      border-radius: 6px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-indicator button {
+      background-color: #ff0066;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
   </style>
 </head>
 <body>
- <!-- 🔷 Navigation Bar -->
+  <div class="user-bar">
+    <div id="user-indicator" class="user-indicator"></div>
+  </div>
+
+  <!-- 🔷 Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
@@ -43,11 +73,11 @@
     </ul>
   </nav>
 
-
   <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
   <h1>My Movie Ranking Stats</h1>
   <div id="stats-container">Loading stats...</div>
+
   <script type="module" src="auth.js"></script>
   <script type="module" src="my_stats.js"></script>
 </body>
