@@ -31,7 +31,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ Optional login form logic (only runs if login page is loaded)
+// ✅ Optional login form logic (only on account page)
 const loginForm = document.getElementById("login-form");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
@@ -87,6 +87,26 @@ if (loginForm && emailInput && passwordInput && loginButton && signupTrigger && 
     }
   });
 }
+
+// ✅ Show login/logout in upper right corner
+const indicator = document.getElementById("user-indicator");
+
+onAuthStateChanged(auth, (user) => {
+  if (!indicator) return;
+
+  if (user) {
+    indicator.innerHTML = `
+      <span style="font-size: 0.8rem; color: #ccc;">${user.email}</span>
+      <button id="logout-button-inline" style="margin-left: 0.5em; font-size: 0.75rem;">Log Out</button>
+    `;
+    const logoutBtn = document.getElementById("logout-button-inline");
+    logoutBtn?.addEventListener("click", () => {
+      signOut(auth).then(() => location.reload());
+    });
+  } else {
+    indicator.innerHTML = `<a href="account.html" style="font-size: 0.8rem; color: #1fd2ea;">Log In</a>`;
+  }
+});
 
 // ✅ Used by ranker.js to save votes
 async function recordVoteToFirestore(winnerKey) {
