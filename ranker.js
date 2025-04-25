@@ -1,3 +1,4 @@
+// ranker.js
 import { auth, recordVoteToFirestore, db } from "./auth.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
@@ -28,6 +29,7 @@ async function syncVotesFromFirestore() {
       stats[fullKey] = stats[fullKey] || { wins: 0, losses: 0 };
       stats[fullKey].wins++;
 
+      // count any other as a loss
       stats["(other)"] = stats["(other)"] || { wins: 0, losses: 0 };
       stats["(other)"].losses++;
     });
@@ -111,24 +113,29 @@ function vote(winner) {
   const loserKey = `${loserMovie.title}|${loserMovie.year}`;
   const matchupKey = [movieA.title, movieB.title].sort().join("|");
 
+  // -- Persist to Firestore for authenticated users
   if (auth.currentUser) {
     recordVoteToFirestore(winnerKey);
-  } else {
-    stats[winnerKey] = stats[winnerKey] || { wins: 0, losses: 0 };
-    stats[loserKey] = stats[loserKey] || { wins: 0, losses: 0 };
-    stats[winnerKey].wins++;
-    stats[loserKey].losses++;
-    localStorage.setItem("movieStats", JSON.stringify(stats));
   }
 
+  // -- Always update local stats for personal rankings
+  stats[winnerKey] = stats[winnerKey] || { wins: 0, losses: 0 };
+  stats[loserKey]  = stats[loserKey]  || { wins: 0, losses: 0 };
+  stats[winnerKey].wins++;
+  stats[loserKey].losses++;
+  localStorage.setItem("movieStats", JSON.stringify(stats));
+
+  // -- Visual feedback
   const votedPoster = document.getElementById(`poster${winner}`);
   votedPoster.classList.add("shake");
   createConfettiBurst(winner);
   setTimeout(() => votedPoster.classList.remove("shake"), 800);
 
+  // -- Track seen matchups
   seenMatchups.push(matchupKey);
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
 
+  // Next round
   setTimeout(chooseTwoMovies, 1500);
 }
 
@@ -151,7 +158,6 @@ function createConfettiBurst(winner) {
     dot.style.width = "8px";
     dot.style.height = "8px";
     dot.style.borderRadius = "50%";
-
     container.appendChild(dot);
 
     const angle = Math.random() * 2 * Math.PI;
@@ -162,14 +168,8 @@ function createConfettiBurst(winner) {
     const delay = Math.random() * 0.2;
 
     dot.animate([
-      {
-        transform: 'translate(-50%, -50%) rotate(0deg)',
-        opacity: 1
-      },
-      {
-        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${rotation}deg)`,
-        opacity: 0
-      }
+      { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${rotation}deg)`, opacity: 0 }
     ], {
       duration: 1200 + Math.random() * 500,
       easing: 'ease-out',
@@ -218,7 +218,6 @@ async function replaceMovie(movieToReplace) {
   }
 
   const replacement = available[Math.floor(Math.random() * available.length)];
-
   if (movieToReplace.title === movieA.title) {
     movieA = replacement;
   } else {
