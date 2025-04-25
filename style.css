@@ -1,3 +1,4 @@
+
 /* === SHELF LIFE MASTER STYLE === */
 
 /* --- Base Layout --- */
@@ -123,7 +124,7 @@ body::before {
   align-items: center;
   width: 260px;
   max-width: 90vw;
-  position: relative; /* Added for absolute positioning of confetti */
+  position: relative;
 }
 
 /* --- Poster Styling --- */
@@ -194,7 +195,7 @@ body::before {
   width: 100%;
 }
 
-/* --- Primary (SELECT) Button --- */
+/* --- Primary Button --- */
 .primary {
   background: linear-gradient(91deg, #1f85de 9%, #1fd2ea 75%);
   color: #fff;
@@ -259,7 +260,6 @@ body::before {
   overflow: visible;
   z-index: 999;
 }
-
 .confetti-dot {
   position: absolute;
   width: 8px;
@@ -268,8 +268,6 @@ body::before {
   opacity: 1;
   z-index: 1000;
 }
-
-/* This is kept for backward compatibility but our JS uses Web Animation API instead */
 @keyframes confettiFall {
   0% {
     transform: translate(-50%, -50%) scale(0.3);
@@ -281,7 +279,7 @@ body::before {
   }
 }
 
-/* === 🎬 Rankings Tables === */
+/* --- Rankings Table --- */
 .ranking-table {
   width: 100%;
   border-collapse: collapse;
@@ -293,7 +291,6 @@ body::before {
   border-radius: 8px;
   overflow: hidden;
 }
-
 .ranking-table th {
   background: #23242e;
   color: #1fd2ea;
@@ -303,26 +300,21 @@ body::before {
   text-align: left;
   font-size: 0.92rem;
 }
-
 .ranking-table td {
   padding: 0.7em 1em;
   border-bottom: 1px solid #2b2b2b;
   color: #eee;
   text-shadow: 0 0 1px #0008;
 }
-
 .ranking-table tr:nth-child(even) {
   background-color: #20212a;
 }
 .ranking-table tr:nth-child(odd) {
   background-color: #181920;
 }
-
 .ranking-table tr:hover {
   background-color: #2d2e38;
 }
-
-/* "Put Back" button in unseen list */
 .ranking-table button {
   background-color: #1fd2ea;
   border: none;
@@ -333,8 +325,42 @@ body::before {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 .ranking-table button:hover {
   background-color: #8b5cf6;
   color: #fff;
+}
+
+/* === 🔐 Logged-In User Indicator === */
+.user-bar {
+  position: fixed;
+  top: 15px;
+  right: 20px;
+  z-index: 1001;
+}
+.user-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: 'Space Grotesk', sans-serif;
+  box-shadow: 0 0 12px rgba(31, 210, 234, 0.2), 0 0 6px rgba(139, 92, 246, 0.2);
+}
+.user-indicator button {
+  background-color: #ff0066;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+.user-indicator button:hover {
+  background-color: #ff3399;
 }
