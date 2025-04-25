@@ -22,10 +22,11 @@ async function syncVotesFromFirestore() {
 
     votes.forEach(voteKey => {
       const [title, year] = voteKey.split("|");
+      const fullKey = `${title}|${year}`;
       if (!title || !year) return;
 
-      stats[title] = stats[title] || { wins: 0, losses: 0 };
-      stats[title].wins++;
+      stats[fullKey] = stats[fullKey] || { wins: 0, losses: 0 };
+      stats[fullKey].wins++;
 
       stats["(other)"] = stats["(other)"] || { wins: 0, losses: 0 };
       stats["(other)"].losses++;
@@ -104,17 +105,19 @@ async function fetchPosterUrl(title, year) {
 }
 
 function vote(winner) {
-  const winnerTitle = winner === "A" ? movieA.title : movieB.title;
-  const loserTitle = winner === "A" ? movieB.title : movieA.title;
+  const winnerMovie = winner === "A" ? movieA : movieB;
+  const loserMovie = winner === "A" ? movieB : movieA;
+  const winnerKey = `${winnerMovie.title}|${winnerMovie.year}`;
+  const loserKey = `${loserMovie.title}|${loserMovie.year}`;
   const matchupKey = [movieA.title, movieB.title].sort().join("|");
 
   if (auth.currentUser) {
-    recordVoteToFirestore(`${winnerTitle}|${movieA.year}`);
+    recordVoteToFirestore(winnerKey);
   } else {
-    stats[winnerTitle] = stats[winnerTitle] || { wins: 0, losses: 0 };
-    stats[loserTitle] = stats[loserTitle] || { wins: 0, losses: 0 };
-    stats[winnerTitle].wins++;
-    stats[loserTitle].losses++;
+    stats[winnerKey] = stats[winnerKey] || { wins: 0, losses: 0 };
+    stats[loserKey] = stats[loserKey] || { wins: 0, losses: 0 };
+    stats[winnerKey].wins++;
+    stats[loserKey].losses++;
     localStorage.setItem("movieStats", JSON.stringify(stats));
   }
 
