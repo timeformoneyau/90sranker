@@ -2,17 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Your Rankings | Shelf Life</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Results | Shelf Life</n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    /* === Layout: two tables side by side, top-aligned === */
+    /* Layout: two tables side by side, top-aligned */
     .tables-wrapper {
       display: flex;
       flex-wrap: wrap;
       gap: 2rem;
-      align-items: flex-start;   /* <-- top-align both containers */
+      align-items: flex-start;
       margin-bottom: 2rem;
     }
     .table-container {
@@ -24,38 +23,27 @@
       margin-bottom: 0.5rem;
     }
 
-    /* === Shared table styling === */
-    .ranking-table,
-    .global-table {
+    /* Shared table styling */
+    table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
     }
-    .ranking-table th,
-    .ranking-table td,
-    .global-table th,
-    .global-table td {
+    th, td {
       border: 1px solid #444;
       padding: 0.6em 0.8em;
       text-align: left;
     }
-    .ranking-table tr:nth-child(even),
-    .global-table tr:nth-child(even) {
-      background-color: #1e1e28;
-    }
-    .ranking-table tr:nth-child(odd),
-    .global-table tr:nth-child(odd) {
-      background-color: #2a2a36;
-    }
-    .ranking-table th,
-    .global-table th {
+    tr:nth-child(even) { background-color: #1e1e28; }
+    tr:nth-child(odd)  { background-color: #2a2a36; }
+    th {
       background-color: #121212;
       color: #1fd2ea;
       text-transform: uppercase;
       font-size: 0.85rem;
     }
 
-    /* === Back link === */
+    /* Back link */
     .back-link {
       display: inline-block;
       color: #1fd2ea;
@@ -63,12 +51,9 @@
       font-weight: bold;
       font-size: 0.95rem;
     }
-    .back-link:hover {
-      text-decoration: underline;
-    }
+    .back-link:hover { text-decoration: underline; }
   </style>
 </head>
-
 <body>
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
@@ -78,7 +63,7 @@
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="list.html">Results</a></li>
+      <li><a href="list.html" class="active">Results</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="my-stats.html">Your Stats</a></li>
       <li><a href="account.html">Your Account</a></li>
@@ -87,26 +72,45 @@
 
   <div class="container">
     <div class="tables-wrapper">
-      <!-- Personal Top 20 -->
+      <!-- Global Top 20 -->
       <div class="table-container">
-        <h2>🎯 Your Top 20 Rankings</h2>
-        <table class="ranking-table">
+        <h2>🔥 Global Top 20 Movies</h2>
+        <table>
           <thead>
-            <tr>
-              <th>Movie</th><th>Rating</th><th>Wins</th><th>Losses</th><th>Win %</th>
-            </tr>
+            <tr><th>Movie</th><th>Total Wins</th></tr>
           </thead>
           <tbody id="ranking-list"></tbody>
         </table>
       </div>
 
-      <!-- Global Top 20 -->
+      <!-- Haven't Seen List -->
       <div class="table-container">
-        <h2>🔥 Global Top 20 Movies</h2>
-        <table class="global-table">
+        <h2>📺 Haven't Seen</h2>
+        <table>
           <thead>
             <tr>
-              <th>Movie</th><th>Total Wins</th>
+              <th>Movie</th>
+              <th>Year</th>
+              <th>Rating</th>
+              <th>Action</th>
             </tr>
           </thead>
-          <tbody id="global
+          <tbody id="unseen-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tagged Movies -->
+    <section class="section">
+      <h2>🏷️ Tagged Movies</h2>
+      <ul id="tagged-list"></ul>
+    </section>
+
+    <a href="index.html" class="back-link">← Back to Home</a>
+  </div>
+
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="list.js"></script>
+</body>
+</html>
+
