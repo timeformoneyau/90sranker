@@ -9,6 +9,34 @@ let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
 let movieA, movieB;
 
+async function syncVotesFromFirestore() {
+  if (!auth.currentUser) return;
+
+  try {
+    const ref = doc(db, "users", auth.currentUser.uid);
+    const snapshot = await getDoc(ref);
+    if (!snapshot.exists()) return;
+
+    const data = snapshot.data();
+    const votes = data.votes || [];
+
+    votes.forEach(voteKey => {
+      const [title, year] = voteKey.split("|");
+      if (!title || !year) return;
+
+      stats[title] = stats[title] || { wins: 0, losses: 0 };
+      stats[title].wins++;
+
+      stats["(other)"] = stats["(other)"] || { wins: 0, losses: 0 };
+      stats["(other)"].losses++;
+    });
+
+    localStorage.setItem("movieStats", JSON.stringify(stats));
+  } catch (err) {
+    console.error("Failed to sync votes from Firestore:", err);
+  }
+}
+
 async function loadMovies() {
   try {
     const res = await fetch("movie_list_cleaned.json");
@@ -197,6 +225,10 @@ async function replaceMovie(movieToReplace) {
   await displayMovies();
 }
 
-window.onload = loadMovies;
+window.onload = async () => {
+  await syncVotesFromFirestore();
+  loadMovies();
+};
+
 window.vote = vote;
 window.markUnseen = markUnseen;
