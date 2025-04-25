@@ -5,7 +5,10 @@ import {
   getDocs,
   doc,
   getDoc,
-  updateDoc
+  updateDoc,
+  query,
+  orderBy,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 let movies = [];
@@ -13,153 +16,154 @@ let unseen = [];
 const tags = JSON.parse(localStorage.getItem("movieTags")) || {};
 const stats = JSON.parse(localStorage.getItem("movieStats")) || {};
 
-// ——— Load movies and initialize lists ———
+// ——— Load movies and initial data ———
 async function loadMovieList() {
   // Fetch movie list
-  const res = await fetch("movie_list_cleaned.json");
-  movies = await res.json();
+  const res = await fetch("movie_list_cleaned.json"); movies = await res.json();
 
-  // Load unseen from Firestore or localStorage
+  // Load unseen
   if (auth.currentUser) {
     try {
       const ref = doc(db, "users", auth.currentUser.uid);
       const snap = await getDoc(ref);
       unseen = snap.exists() ? (snap.data().seen || []) : [];
-      // Mirror to localStorage for consistency
       localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-    } catch (err) {
-      console.error("Error loading unseen from Firestore:", err);
+    } catch {
       unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
     }
   } else {
     unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
   }
 
-  await renderRankings();
-  await renderUnseen();
+  renderPersonal();
+  renderRankings();
+  renderUnseen();
   renderTags();
+  renderRecentVotes();
 }
 
-// ——— Render global top-20 rankings ———
-async function renderRankings() {
-  const rankingList = document.getElementById("ranking-list");
-  rankingList.innerHTML = "";
+// ——— Render personal top 20 ———
+function renderPersonal() {
+  const tbody = document.getElementById("personal-list"); tbody.innerHTML = "";
+  const personal = Object.entries(stats)
+    .map(([key,val]) => ({ key, wins: val.wins, losses: val.losses }))
+    .sort((a,b) => b.wins - a.wins)
+    .slice(0,20);
 
-  let movieData = [];
-  try {
-    const snapshot = await getDocs(collection(db, "votes"));
-    const globalStats = {};
-
-    snapshot.forEach(doc => {
-      const { winner } = doc.data();
-      if (!winner) return;
-      if (!globalStats[winner]) globalStats[winner] = { wins: 0 };
-      globalStats[winner].wins++;
-    });
-
-    movieData = Object.keys(globalStats).map(key => {
-      const [title, year] = key.split("|");
-      return { title: `${title} (${year})`, wins: globalStats[key].wins };
-    });
-  } catch (error) {
-    movieData = Object.entries(stats).map(([key, result]) => {
-      const [title, year] = key.split("|");
-      return { title: `${title} (${year})`, wins: result.wins || 0 };
-    });
-  }
-
-  movieData.sort((a, b) => b.wins - a.wins)
-           .slice(0, 20)
-           .forEach(movie => {
+  personal.forEach(({key,wins,losses}) => {
+    const [title,year] = key.split("|");
+    const percent = wins+losses ? Math.round(100*wins/(wins+losses)) : 0;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${movie.title}</td><td>${movie.wins}</td>`;
-    rankingList.appendChild(tr);
+    tr.innerHTML = `
+      <td>${title} (${year})</td>
+      <td>${wins}</td>
+      <td>${losses}</td>
+      <td>${percent}%</td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
-// ——— Render unseen movies list ———
+// ——— Render global top 20 ———
+async function renderRankings() {
+  const tbody = document.getElementById("ranking-list"); tbody.innerHTML = "";
+  try {
+    const snap = await getDocs(collection(db,"votes"));
+    const globalStats = {};
+    snap.forEach(d => {
+      const w = d.data().winner;
+      globalStats[w] = (globalStats[w]||0)+1;
+    });
+    Object.entries(globalStats)
+      .map(([key,wins]) => ({key,wins}))
+      .sort((a,b)=>b.wins-a.wins)
+      .slice(0,20)
+      .forEach(({key,wins})=>{
+        const [title,year]=key.split("|");
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td>${title} (${year})</td><td>${wins}</td>`;
+        tbody.appendChild(tr);
+      });
+  } catch {
+    // fallback
+  }
+}
+
+// ——— Render unseen list ———
 async function renderUnseen() {
-  const unseenList = document.getElementById("unseen-list");
-  if (!unseenList) return;
-  unseenList.innerHTML = "";
-
-  const unseenMovies = movies.filter(m => unseen.includes(`${m.title}|${m.year}`));
-
-  const scoredUnseen = await Promise.all(
-    unseenMovies.map(async movie => {
-      const tmdbRating = await fetchTMDBRating(movie.title, movie.year);
-      return { ...movie, tmdbRating: tmdbRating || 0 };
-    })
-  );
-
-  scoredUnseen.sort((a, b) => b.tmdbRating - a.tmdbRating)
-              .slice(0, 20)
-              .forEach(movie => {
+  const tbody = document.getElementById("unseen-list"); if (!tbody) return; tbody.innerHTML="";
+  const list = movies.filter(m=>unseen.includes(`${m.title}|${m.year}`));
+  for (const movie of list) {
+    const rating = await fetchTMDBRating(movie.title,movie.year)||"N/A";
     const key = `${movie.title}|${movie.year}`;
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${movie.title}</td>
       <td>${movie.year}</td>
-      <td>${movie.tmdbRating ? movie.tmdbRating.toFixed(1) : "N/A"}</td>
+      <td>${typeof rating==="number"?rating.toFixed(1):rating}</td>
       <td><button onclick="putBack('${key}')">Put Back</button></td>
     `;
-    unseenList.appendChild(tr);
-  });
+    tbody.appendChild(tr);
+  }
 }
 
-// ——— Remove movie from unseen ———
+// ——— Put back unseen ———
 async function putBack(key) {
-  const index = unseen.indexOf(key);
-  if (index === -1) return;
-
-  unseen.splice(index, 1);
+  const idx = unseen.indexOf(key); if (idx<0) return;
+  unseen.splice(idx,1);
   if (auth.currentUser) {
-    const ref = doc(db, "users", auth.currentUser.uid);
-    try {
-      await updateDoc(ref, { seen: unseen });
-    } catch (err) {
-      console.error("Error updating unseen in Firestore:", err);
-    }
+    await updateDoc(doc(db,"users",auth.currentUser.uid),{seen:unseen});
   } else {
-    localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+    localStorage.setItem("unseenMovies",JSON.stringify(unseen));
   }
-  await renderUnseen();
+  renderUnseen();
 }
 window.putBack = putBack;
+
+// ——— Render tags ———
+function renderTags() {
+  const ul = document.getElementById("tagged-list"); if(!ul) return; ul.innerHTML="";
+  const keys=Object.keys(tags);
+  if (!keys.length) { ul.innerHTML="<li>No tagged movies yet.</li>"; return; }
+  for (const k of keys) {
+    const [title,year]=k.split("|");
+    const li=document.createElement("li");
+    li.textContent=`${title} (${year}) — ${tags[k].join(",")}`;
+    ul.appendChild(li);
+  }
+}
+
+// ——— Fetch recent votes ———
+async function renderRecentVotes() {
+  const tbody = document.getElementById("recent-votes"); if(!tbody) return; tbody.innerHTML="";
+  try {
+    const q = query(collection(db,"votes"), orderBy("timestamp","desc"), limit(10));
+    const snap = await getDocs(q);
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      const dt = new Date(data.timestamp);
+      const formatted = dt.toLocaleString('en-US',{
+        year:'numeric', month:'long', day:'numeric', hour:'numeric', minute:'2-digit'
+      });
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${formatted}</td><td>${data.winner}</td><td>${data.loser||''}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Failed to load recent votes:", err);
+  }
+}
 
 // ——— TMDB rating helper ———
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 async function fetchTMDBRating(title, year) {
-  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    return data.results?.[0]?.vote_average || null;
-  } catch (err) {
-    console.error(`Failed to fetch TMDB rating for ${title}`, err);
-    return null;
-  }
-}
-
-// ——— Render tags ———
-function renderTags() {
-  const tagList = document.getElementById("tagged-list");
-  if (!tagList) return;
-  tagList.innerHTML = "";
-
-  const taggedTitles = Object.keys(tags);
-  if (!taggedTitles.length) {
-    tagList.innerHTML = "<li>No tagged movies yet.</li>";
-    return;
-  }
-
-  taggedTitles.forEach(key => {
-    const [title, year] = key.split("|");
-    const li = document.createElement("li");
-    li.textContent = `${title} (${year}) — ${tags[key].join(", ")}`;
-    tagList.appendChild(li);
-  });
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+    const res = await fetch(url); const json = await res.json();
+    return json.results?.[0]?.vote_average || null;
+  } catch { return null; }
 }
 
 // ——— Initialize on load ———
 window.addEventListener('load', loadMovieList);
+
