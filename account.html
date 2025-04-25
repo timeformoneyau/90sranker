@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Account | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    .account-container {
+      max-width: 400px;
+      margin: 10vh auto;
+      padding: 2em;
+      background-color: rgba(30, 30, 30, 0.98);
+      border-radius: 12px;
+      box-shadow: 0 0 24px rgba(31, 210, 234, 0.2);
+      text-align: center;
+    }
+    .account-container h2 {
+      color: #e0e0e0;
+      margin-bottom: 1.5em;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .account-container input {
+      width: 100%;
+      padding: 0.75em;
+      margin-bottom: 1em;
+      border: none;
+      border-radius: 6px;
+      background-color: #1a1a1f;
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .account-container button {
+      width: 100%;
+      padding: 0.75em;
+      margin-top: 0.6em;
+      font-weight: bold;
+      background-color: #1fd2ea;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .account-container button:hover {
+      background-color: #8b5cf6;
+      color: #fff;
+    }
+    .signup-link {
+      margin-top: 1.2em;
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+    .signup-link a {
+      color: #1fd2ea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+  </header>
+
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="my-stats.html">Your Stats</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="account-container">
+      <h2 id="login-heading">Your Account</h2>
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" id="login-button">Log In</button>
+      </form>
+      <div class="signup-link" id="signup-area">
+        Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+      </div>
+      <button id="logout-button" class="hidden">Log Out</button>
+    </div>
+  </div>
+
+  <script type="module" src="auth.js"></script>
+</body>
+</html>
