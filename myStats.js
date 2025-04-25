@@ -2,34 +2,48 @@ import { auth, db } from "./auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 async function loadUserStats() {
+  const container = document.getElementById("stats-container");
+
+  // Prompt to log in if needed
   if (!auth.currentUser) {
-    document.getElementById("stats-container").innerHTML = "<p>Please log in to see your stats.</p>";
+    container.innerHTML = "<p>Please log in to see your stats.</p>";
     return;
   }
 
+  // Fetch this user's document
   const ref = doc(db, "users", auth.currentUser.uid);
   const snapshot = await getDoc(ref);
 
   if (!snapshot.exists()) {
-    document.getElementById("stats-container").innerHTML = "<p>No stats found.</p>";
+    container.innerHTML = "<p>No stats found.</p>";
     return;
   }
 
   const data = snapshot.data();
-  const votes = data.votes || {};
+  const votesArray = data.votes || [];       // Firestore stores this as an array
   const seen = data.seen || [];
 
-  const voteEntries = Object.entries(votes);
-  const totalVotes = voteEntries.reduce((sum, [key, count]) => sum + count, 0);
-  const uniqueMovies = voteEntries.length;
+  // Tally up vote counts per movie key
+  const voteCounts = {};
+  votesArray.forEach(key => {
+    voteCounts[key] = (voteCounts[key] || 0) + 1;
+  });
 
-  const topMovies = voteEntries
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([key, count]) => `<tr><td>${key}</td><td>${count}</td></tr>`) 
-    .join("");
+  const totalVotes = votesArray.length;
+  const uniqueMovies = Object.keys(voteCounts).length;
 
-  const statsHTML = `
+  // Build the top-10 rows
+  const topEntries = Object.entries(voteCounts)
+    .sort(([, aCount], [, bCount]) => bCount - aCount)
+    .slice(0, 10);
+
+  const topRows = topEntries.map(([key, count]) => {
+    const [title, year] = key.split("|");
+    return `<tr><td>${title} (${year})</td><td>${count}</td></tr>`;
+  }).join("");
+
+  // Render the HTML
+  container.innerHTML = `
     <h2>Your Stats</h2>
     <p><strong>Total Votes:</strong> ${totalVotes}</p>
     <p><strong>Unique Movies Voted:</strong> ${uniqueMovies}</p>
@@ -37,12 +51,14 @@ async function loadUserStats() {
 
     <h3>Top Voted Movies</h3>
     <table>
-      <thead><tr><th>Movie</th><th>Votes</th></tr></thead>
-      <tbody>${topMovies}</tbody>
+      <thead>
+        <tr><th>Movie</th><th>Votes</th></tr>
+      </thead>
+      <tbody>
+        ${topRows || '<tr><td colspan="2">No votes yet.</td></tr>'}
+      </tbody>
     </table>
   `;
-
-  document.getElementById("stats-container").innerHTML = statsHTML;
 }
 
 window.onload = loadUserStats;
