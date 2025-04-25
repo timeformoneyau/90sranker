@@ -1,3 +1,4 @@
+// auth.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getAuth,
@@ -16,7 +17,7 @@ import {
   addDoc
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// ——— Firebase config & init ———
+// ——— Firebase config & initialization ———
 const firebaseConfig = {
   apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
   authDomain: "sranker-f2642.firebaseapp.com",
@@ -30,17 +31,80 @@ const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ——— Record a vote ———
-//
-//  • Always adds one doc to /votes for the global tally.
-//  • If signed in, also upserts the user’s own votes array.
-//
+// ——— DOM elements for login/logout UI ———
+const loginForm     = document.getElementById("login-form");
+const emailInput    = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const loginButton   = document.getElementById("login-button");
+const logoutButton  = document.getElementById("logout-button");
+const signupTrigger = document.getElementById("signup-trigger");
+const indicator     = document.getElementById("user-indicator");
+
+// ——— Login form submission ———
+if (loginForm) {
+  loginForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+    } catch (err) {
+      alert("Login failed: " + err.message);
+    }
+  });
+}
+
+// ——— Sign-up click handler ———
+if (signupTrigger) {
+  signupTrigger.addEventListener("click", async e => {
+    e.preventDefault();
+    if (!emailInput.value || !passwordInput.value) {
+      return alert("Please enter an email and password first.");
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      alert("Account created and logged in!");
+    } catch (err) {
+      alert("Sign up failed: " + err.message);
+    }
+  });
+}
+
+// ——— Logout button ———
+if (logoutButton) {
+  logoutButton.addEventListener("click", async () => {
+    await signOut(auth);
+    location.reload();
+  });
+}
+
+// ——— Update UI on auth state change ———
+onAuthStateChanged(auth, user => {
+  // Toggle login form vs logout button
+  if (loginForm)     loginForm.style.display    = user ? "none" : "block";
+  if (signupTrigger) signupTrigger.parentElement.style.display = user ? "none" : "block";
+  if (logoutButton)  logoutButton.classList.toggle("hidden", !user);
+
+  // Upper-right indicator
+  if (!indicator) return;
+  if (user) {
+    indicator.innerHTML = `
+      <span style="font-size:0.8rem;color:#ccc;">${user.email}</span>
+      <button id="logout-inline" style="margin-left:0.5em;font-size:0.75rem;">Log Out</button>
+    `;
+    document.getElementById("logout-inline")
+            ?.addEventListener("click", () => signOut(auth).then(() => location.reload()));
+  } else {
+    indicator.innerHTML = `<a href="account.html" style="font-size:0.8rem;color:#1fd2ea;">Log In</a>`;
+  }
+});
+
+// ——— Record a vote to Firestore ———
+//  • Always writes a doc into /votes for the global tally
+//  • If logged in, also updates users/{uid}.votes array
 export async function recordVoteToFirestore(winnerKey, loserKey) {
-  // 1️⃣ Per-user array (only if logged in)
+  // 1️⃣ Per-user array (only when signed in)
   if (auth.currentUser) {
     const userRef = doc(db, "users", auth.currentUser.uid);
     const snap    = await getDoc(userRef);
-
     if (!snap.exists()) {
       await setDoc(userRef, { votes: [winnerKey], seen: [] });
     } else {
@@ -54,19 +118,11 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
   }
 
   // 2️⃣ Global per-vote record
-  //    We include loserKey (if supplied) so you can fully backfill Elo later.
-  const payload = {
-    winner:    winnerKey,
-    timestamp: Date.now()
-  };
-  if (loserKey)  payload.loser = loserKey;
+  const payload = { winner: winnerKey, timestamp: Date.now() };
+  if (loserKey) payload.loser = loserKey;
   if (auth.currentUser) payload.user = auth.currentUser.uid;
-
   await addDoc(collection(db, "votes"), payload);
 }
 
-// ——— Exports for the rest of your app ———
+// ——— Exports for other modules ———
 export { auth, db };
-
-// ——— (the rest of your auth UI & onAuthStateChanged code) ———
-// … unchanged from what you already had …
