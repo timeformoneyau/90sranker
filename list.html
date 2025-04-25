@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    /* Layout: two tables side-by-side */
+    /* === Layout: two tables side by side, top-aligned === */
     .tables-wrapper {
       display: flex;
       flex-wrap: wrap;
       gap: 2rem;
+      align-items: flex-start;   /* <-- top-align both containers */
       margin-bottom: 2rem;
     }
     .table-container {
@@ -23,7 +24,7 @@
       margin-bottom: 0.5rem;
     }
 
-    /* Shared table styling */
+    /* === Shared table styling === */
     .ranking-table,
     .global-table {
       width: 100%;
@@ -54,7 +55,7 @@
       font-size: 0.85rem;
     }
 
-    /* Back link */
+    /* === Back link === */
     .back-link {
       display: inline-block;
       color: #1fd2ea;
@@ -108,81 +109,4 @@
               <th>Movie</th><th>Total Wins</th>
             </tr>
           </thead>
-          <tbody id="global-list"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <a href="index.html" class="back-link">⬅️ Back to Voting</a>
-  </div>
-
-  <!-- Firebase & Auth handling -->
-  <script type="module" src="auth.js"></script>
-  <script type="module">
-    import { db } from "./auth.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-
-    const stats   = JSON.parse(localStorage.getItem("movieStats")) || {};
-    const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
-
-    function renderRankings(globalWinsMap = {}) {
-      const topUser = Object.entries(stats)
-        .map(([key, r]) => {
-          const [title, year] = key.split("|");
-          const total = (r.wins||0) + (r.losses||0);
-          const pct   = total ? ((r.wins/total)*100).toFixed(1) : "0.0";
-          return {
-            label: `${title} (${year})`,
-            rating: ratings[key] || 1000,
-            wins:   r.wins || 0,
-            losses: r.losses || 0,
-            winPct: pct,
-            isGlobalTop: globalWinsMap[key] !== undefined
-          };
-        })
-        .sort((a, b) => b.rating - a.rating)
-        .slice(0, 20);
-
-      const tbody = document.getElementById("ranking-list");
-      tbody.innerHTML = "";
-      topUser.forEach(m => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${m.isGlobalTop ? "🔥 " + m.label : m.label}</td>
-          <td>${m.rating}</td>
-          <td>${m.wins}</td>
-          <td>${m.losses}</td>
-          <td>${m.winPct}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function renderGlobalTop() {
-      const snap = await getDocs(collection(db, "votes"));
-      const globalWins = {};
-      snap.forEach(doc => {
-        const w = doc.data().winner;
-        globalWins[w] = (globalWins[w]||0) + 1;
-      });
-
-      const sorted = Object.entries(globalWins)
-        .sort(([,a],[,b]) => b - a)
-        .slice(0, 20);
-
-      const glist = document.getElementById("global-list");
-      glist.innerHTML = "";
-      sorted.forEach(([key, count]) => {
-        const [title,year] = key.split("|");
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${title} (${year})</td><td>${count}</td>`;
-        glist.appendChild(tr);
-      });
-
-      renderRankings(globalWins);
-    }
-
-    window.onload = renderGlobalTop;
-  </script>
-</body>
-</html>
+          <tbody id="global
