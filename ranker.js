@@ -1,140 +1,119 @@
-// ===== Firebase Setup =====
-const firebaseConfig = {
-  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
-  authDomain: "sranker-f2642.firebaseapp.com",
-  projectId: "sranker-f2642",
-  storageBucket: "sranker-f2642.appspot.com",
-  messagingSenderId: "601665183803",
-  appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
-  measurementId: "G-JTG8MVCW64"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// === ranker.js ===
+import { db, collection, addDoc, writeBatch, increment, serverTimestamp } from './firebase.js';
 
 let movies = [];
 let movieA, movieB;
-let ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
-let stats = JSON.parse(localStorage.getItem("movieStats")) || {};
-let unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
-let seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
+const ratings = JSON.parse(localStorage.getItem("movieRatings")) || {};
+const stats   = JSON.parse(localStorage.getItem("movieStats"))   || {};
+const unseen  = JSON.parse(localStorage.getItem("unseenMovies"))  || [];
+const seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
-const TMDB_API_KEY = '825459de57821b3ab63446cce9046516';
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-const DEFAULT_RATING = 1000;
-const K = 32;
+const TMDB_API_KEY     = '825459de57821b3ab63446cce9046516';
+const TMDB_IMAGE_BASE  = 'https://image.tmdb.org/t/p/w500';
+const DEFAULT_RATING   = 1000;
+const K                = 32;
 
-window.onload = loadMovies;
-window.vote = vote;
+window.onload   = loadMovies;
+window.vote     = vote;
 window.markUnseen = markUnseen;
 
-// 🔑 Helper: get unique key per movie
-function getMovieKey(movie) {
-  return `${movie.title.trim().toLowerCase()}|${movie.year}`;
-}
+function getMovieKey(m){ return `${m.title.trim()}|${m.year}`; }
 
 async function loadMovies() {
   const res = await fetch("movie_list_cleaned.json");
   movies = await res.json();
-  console.log("🧠 Unseen movies list (compound keys):", unseen);
   chooseTwoMovies();
 }
 
-function getAvailableMovies(exclude = []) {
-  return movies.filter(m => {
-    const key = getMovieKey(m);
-    return !unseen.includes(key) && !exclude.includes(m.title);
-  });
+function getAvailableMovies(exclude=[]) {
+  return movies.filter(m=> !unseen.includes(getMovieKey(m)) && !exclude.includes(m.title));
 }
 
 function chooseTwoMovies() {
-  const available = getAvailableMovies();
-  if (available.length < 2) return alert("Not enough unseen movies to compare.");
-
-  const shuffled = available.sort(() => 0.5 - Math.random());
-  [movieA, movieB] = shuffled.slice(0, 2);
+  const avail = getAvailableMovies();
+  if (avail.length<2) return alert("Not enough unseen movies.");
+  [movieA,movieB] = avail.sort(()=>0.5-Math.random()).slice(0,2);
   displayMovies();
 }
 
-async function fetchPosterUrl(title, year) {
+async function fetchPosterUrl(title,year){
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    return data?.results?.[0]?.poster_path
-      ? TMDB_IMAGE_BASE + data.results[0].poster_path
+  try{
+    const d = await (await fetch(url)).json();
+    return d.results?.[0]?.poster_path
+      ? TMDB_IMAGE_BASE + d.results[0].poster_path
       : "fallback.jpg";
-  } catch {
-    return "fallback.jpg";
-  }
+  } catch { return "fallback.jpg"; }
 }
 
-async function displayMovies() {
+async function displayMovies(){
   document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
   document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
-
-  document.getElementById("posterA").src = await fetchPosterUrl(movieA.title, movieA.year);
-  document.getElementById("posterB").src = await fetchPosterUrl(movieB.title, movieB.year);
+  document.getElementById("posterA").src = await fetchPosterUrl(movieA.title,movieA.year);
+  document.getElementById("posterB").src = await fetchPosterUrl(movieB.title,movieB.year);
 }
 
-function vote(winnerKey) {
-  const winner = winnerKey === "A" ? movieA : movieB;
-  const loser = winnerKey === "A" ? movieB : movieA;
+async function vote(winnerKey) {
+  const winner = winnerKey==="A"? movieA: movieB;
+  const loser  = winnerKey==="A"? movieB: movieA;
 
-  console.log("📨 Sending vote:", { winner: winner.title, loser: loser.title });
-
-  db.collection("votes").add({
+  console.log("📨 Vote:", winner.title, loser.title);
+  // record raw vote
+  await addDoc(collection(db, "votes"), {
     winner: winner.title,
     loser: loser.title,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    timestamp: serverTimestamp(),
     userAgent: navigator.userAgent
-  })
-  .then(() => console.log("✅ Vote recorded in Firebase"))
-  .catch(err => console.error("❌ Firebase vote error:", err));
+  });
 
-  updateElo(winner.title, loser.title);
-  updateStats(winner.title, loser.title);
-  seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
+  // atomic update of global stats
+  const batch = writeBatch(db);
+  const globalRef = doc(db, "stats", "global");
+  batch.set(globalRef, {
+    [`stats.${winner.title}.wins`]: increment(1),
+    [`stats.${loser.title}.losses`]: increment(1)
+  }, { merge: true });
+  await batch.commit();
 
-  localStorage.setItem("movieRatings", JSON.stringify(ratings));
-  localStorage.setItem("movieStats", JSON.stringify(stats));
+  // local Elo & stats
+  updateElo(winner.title,loser.title);
+  updateStats(winner.title,loser.title);
+  seenMatchups.push([movieA.title,movieB.title].sort().join("|"));
+
+  localStorage.setItem("movieRatings",JSON.stringify(ratings));
+  localStorage.setItem("movieStats",  JSON.stringify(stats));
   localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
 
-  setTimeout(chooseTwoMovies, 1200);
+  setTimeout(chooseTwoMovies,1200);
 }
 
-function updateElo(winner, loser) {
-  const Ra = ratings[winner] || DEFAULT_RATING;
-  const Rb = ratings[loser] || DEFAULT_RATING;
-  const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
-  ratings[winner] = Math.round(Ra + K * (1 - Ea));
-  ratings[loser] = Math.round(Rb + K * (0 - (1 - Ea)));
+function updateElo(w,l){
+  const Ra = ratings[w]||DEFAULT_RATING;
+  const Rb = ratings[l]||DEFAULT_RATING;
+  const Ea = 1/(1+Math.pow(10,(Rb-Ra)/400));
+  ratings[w] = Math.round(Ra + K*(1-Ea));
+  ratings[l] = Math.round(Rb + K*(0-(1-Ea)));
 }
 
-function updateStats(winner, loser) {
-  stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-  stats[loser] = stats[loser] || { wins: 0, losses: 0 };
-  stats[winner].wins++;
-  stats[loser].losses++;
+function updateStats(w,l){
+  stats[w]=stats[w]||{wins:0,losses:0};
+  stats[l]=stats[l]||{wins:0,losses:0};
+  stats[w].wins++;
+  stats[l].losses++;
 }
 
-function markUnseen(movie) {
-  const key = getMovieKey(movie);
-  if (!movie || unseen.includes(key)) return;
+function markUnseen(m) {
+  const key=getMovieKey(m);
+  if(!m||unseen.includes(key))return;
   unseen.push(key);
-  localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-  replaceMovie(movie);
+  localStorage.setItem("unseenMovies",JSON.stringify(unseen));
+  replaceMovie(m);
 }
 
-async function replaceMovie(movieToReplace) {
-  const available = getAvailableMovies([movieA.title, movieB.title]);
-  if (!available.length) return alert("No more movies available.");
-
-  const replacement = available[Math.floor(Math.random() * available.length)];
-  if (movieToReplace.title === movieA.title) {
-    movieA = replacement;
-  } else {
-    movieB = replacement;
-  }
+async function replaceMovie(oldM) {
+  const avail = getAvailableMovies([movieA.title,movieB.title]);
+  if(!avail.length) return alert("No more movies.");
+  const repl = avail[Math.floor(Math.random()*avail.length)];
+  if(oldM.title===movieA.title) movieA=repl; else movieB=repl;
   await displayMovies();
 }
