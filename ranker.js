@@ -17,14 +17,18 @@ const stats        = JSON.parse(localStorage.getItem("movieStats"))   || {};
 const unseen       = JSON.parse(localStorage.getItem("unseenMovies"))  || [];
 const seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
-window.onload     = loadMovies;
+window.addEventListener("load", loadMovies);
 window.vote       = vote;
 window.markUnseen = markUnseen;
 
 async function loadMovies() {
-  const res = await fetch("movie_list_cleaned.json");
-  movies = await res.json();
-  chooseTwoMovies();
+  try {
+    const res = await fetch("movie_list_cleaned.json");
+    movies = await res.json();
+    chooseTwoMovies();
+  } catch (err) {
+    console.error("Error loading movies:", err);
+  }
 }
 
 function getMovieKey(m) {
@@ -41,7 +45,10 @@ function getAvailableMovies(exclude = []) {
 
 function chooseTwoMovies() {
   const avail = getAvailableMovies();
-  if (avail.length < 2) return alert("Not enough unseen movies.");
+  if (avail.length < 2) {
+    alert("Not enough unseen movies.");
+    return;
+  }
   [movieA, movieB] = avail.sort(() => 0.5 - Math.random()).slice(0, 2);
   displayMovies();
 }
@@ -54,58 +61,56 @@ async function fetchPosterUrl(title, year) {
     `&query=${encodeURIComponent(title)}&year=${year}`;
   try {
     const d = await (await fetch(url)).json();
-    return d.results?.[0]?.poster_path
-      ? TMDB_IMAGE_BASE + d.results[0].poster_path
-      : "fallback.jpg";
-  } catch {
+    return d.results[0]?.poster_path ? TMDB_IMAGE_BASE + d.results[0].poster_path : "fallback.jpg";
+  } catch (err) {
+    console.error("Error fetching poster:", err);
     return "fallback.jpg";
   }
 }
 
 async function displayMovies() {
-  document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
-  document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
-  document.getElementById("posterA").src = await fetchPosterUrl(
-    movieA.title,
-    movieA.year
-  );
-  document.getElementById("posterB").src = await fetchPosterUrl(
-    movieB.title,
-    movieB.year
-  );
+  try {
+    document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
+    document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
+    document.getElementById("posterA").src = await fetchPosterUrl(movieA.title, movieA.year);
+    document.getElementById("posterB").src = await fetchPosterUrl(movieB.title, movieB.year);
+  } catch (err) {
+    console.error("Error displaying movies:", err);
+  }
 }
 
 async function vote(winnerKey) {
   const winner = winnerKey === "A" ? movieA : movieB;
-  const loser = winnerKey === "A" ? movieB : movieA;
+  const loser  = winnerKey === "A" ? movieB : movieA;
 
-  console.log("📨 Vote recorded:", winner.title, "beats", loser.title);
+  console.log("Vote:", winner.title, "beats", loser.title);
 
-  // 1) Record raw vote globally
-  await addDoc(collection(db, "votes"), {
-    winner: winner.title,
-    loser: loser.title,
-    timestamp: serverTimestamp(),
-    userAgent: navigator.userAgent
-  });
+  // Global vote
+  try {
+    await addDoc(collection(db, "votes"), {
+      winner: winner.title,
+      loser: loser.title,
+      timestamp: serverTimestamp(),
+      userAgent: navigator.userAgent
+    });
+  } catch (err) {
+    console.error("Global vote fail:", err);
+  }
 
-  // 2) Atomic update of aggregated stats
-  const batch = writeBatch(db);
-  const globalRef = doc(db, "stats", "global");
-  batch.set(
-    globalRef,
-    {
+  // Global stats
+  try {
+    const batch = writeBatch(db);
+    const ref   = doc(db, "stats", "global");
+    batch.set(ref, {
       [`stats.${winner.title}.wins`]: increment(1),
       [`stats.${loser.title}.losses`]: increment(1)
-    },
-    { merge: true }
-  );
-  await batch.commit();
+    }, { merge: true });
+    await batch.commit();
+  } catch (err) {
+    console.error("Stats update fail:", err);
+  }
 
-  // 3) Confetti celebration
   createConfettiBurst();
-
-  // 4) Local Elo & stats adjustments
   updateElo(winner.title, loser.title);
   updateStats(winner.title, loser.title);
   seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
@@ -119,15 +124,15 @@ async function vote(winnerKey) {
 
 function updateElo(winner, loser) {
   const Ra = ratings[winner] || 1000;
-  const Rb = ratings[loser] || 1000;
+  const Rb = ratings[loser]  || 1000;
   const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
   ratings[winner] = Math.round(Ra + 32 * (1 - Ea));
-  ratings[loser] = Math.round(Rb + 32 * (0 - (1 - Ea)));
+  ratings[loser]  = Math.round(Rb + 32 * (0 - (1 - Ea)));
 }
 
 function updateStats(winner, loser) {
-  stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-  stats[loser] = stats[loser] || { wins: 0, losses: 0 };
+  stats[winner] = stats[winner] || { wins:0, losses:0 };
+  stats[loser]  = stats[loser]  || { wins:0, losses:0 };
   stats[winner].wins++;
   stats[loser].losses++;
 }
@@ -142,9 +147,13 @@ function markUnseen(m) {
 
 async function replaceMovie(oldMovie) {
   const avail = getAvailableMovies([movieA.title, movieB.title]);
-  if (!avail.length) return alert("No more movies.");
-  const replacement = avail[Math.floor(Math.random() * avail.length)];
-  if (oldMovie.title === movieA.title) movieA = replacement;
-  else movieB = replacement;
+  if (!avail.length) {
+    alert("No more movies.");
+    return;
+  }
+  const repl = avail[Math.floor(Math.random()*avail.length)];
+  if (oldMovie.title === movieA.title) movieA = repl; else movieB = repl;
   await displayMovies();
 }
+
+export {};
