@@ -1,6 +1,5 @@
 // myStats.js
-import { auth, db } from "./auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { auth, db, doc, getDoc } from "./firebase.js";
 
 async function loadUserStats() {
   const container = document.getElementById("stats-container");
@@ -17,7 +16,6 @@ async function loadUserStats() {
       const snap = await getDoc(userRef);
       const data = snap.exists() ? snap.data() : { votes: [], seen: [] };
 
-      // Firestore votes array
       const votesArray = Array.isArray(data.votes) ? data.votes : [];
       voteCounts = votesArray.reduce((acc, key) => {
         acc[key] = (acc[key] || 0) + 1;
@@ -29,7 +27,6 @@ async function loadUserStats() {
       uniqueMovies = Object.keys(voteCounts).length;
     } catch (err) {
       console.error("Error loading stats from Firestore:", err);
-      // Fallback to localStorage
       const statsMap = JSON.parse(localStorage.getItem("movieStats")) || {};
       voteCounts = Object.fromEntries(
         Object.entries(statsMap)
@@ -41,7 +38,6 @@ async function loadUserStats() {
       unseenCount = JSON.parse(localStorage.getItem("unseenMovies"))?.length || 0;
     }
   } else {
-    // LocalStorage fallback
     const statsMap = JSON.parse(localStorage.getItem("movieStats")) || {};
     voteCounts = Object.fromEntries(
       Object.entries(statsMap)
@@ -53,7 +49,6 @@ async function loadUserStats() {
     unseenCount = JSON.parse(localStorage.getItem("unseenMovies"))?.length || 0;
   }
 
-  // Build top-10 table rows
   const topEntries = Object.entries(voteCounts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 10);
@@ -63,7 +58,6 @@ async function loadUserStats() {
     return `<tr><td>${title} (${year})</td><td>${count}</td></tr>`;
   }).join("");
 
-  // Render
   container.innerHTML = `
     <h2>Your Stats</h2>
     <p><strong>Total Votes:</strong> ${totalVotes}</p>
@@ -78,4 +72,4 @@ async function loadUserStats() {
   `;
 }
 
-window.addEventListener('load', loadUserStats);
+window.addEventListener("load", loadUserStats);
