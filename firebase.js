@@ -25,13 +25,13 @@ import {
 
 // Firebase config
 const firebaseConfig = {
-  apiKey:            "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
-  authDomain:        "sranker-f2642.firebaseapp.com",
-  projectId:         "sranker-f2642",
-  storageBucket:     "sranker-f2642.appspot.com",
+  apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+  authDomain: "sranker-f2642.firebaseapp.com",
+  projectId: "sranker-f2642",
+  storageBucket: "sranker-f2642.appspot.com",
   messagingSenderId: "601665183803",
-  appId:             "1:601665183803:web:705a2ebeeb43b672ef3c1e",
-  measurementId:     "G-JTG8MVCW64"
+  appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+  measurementId: "G-JTG8MVCW64"
 };
 
 // Initialize Firebase
@@ -44,3 +44,19 @@ export const signIn  = (email, password) => signInWithEmailAndPassword(auth, ema
 export const signUp  = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 export const signOut = () => firebaseSignOut(auth);
 export const onAuth  = (cb) => onAuthStateChanged(auth, cb);
+
+// Re-export Firestore functions
+export {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  writeBatch,
+  increment,
+  serverTimestamp,
+  runTransaction,
+  onSnapshot,
+  arrayUnion
+};
