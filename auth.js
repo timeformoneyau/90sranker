@@ -1,70 +1,85 @@
-// === auth.js ===
-import { auth, db, doc, getDoc, setDoc, updateDoc } from './firebase.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+// auth.js
+// ------------------------------------------------------------
+//  Firebase initialisation + auth / Firestore helpers
+// ------------------------------------------------------------
 
-window.signUp = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  try {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    console.log("Signed up:", user.email);
-    await syncLocalToCloud(user.uid);
-  } catch (err) {
-    console.error("Signup error:", err.message);
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+// ----- Firebase config (for sranker-f2642) -------------------
+const firebaseConfig = {
+  apiKey:            "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+  authDomain:        "sranker-f2642.firebaseapp.com",
+  projectId:         "sranker-f2642",
+  storageBucket:     "sranker-f2642.appspot.com",
+  messagingSenderId: "601665183803",
+  appId:             "1:601665183803:web:705a2ebeeb43b672ef3c1e",
+  measurementId:     "G-JTG8MVCW64"
+};
+
+// ----- Initialise Firebase services --------------------------
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db   = getFirestore(app);
+
+// ------------------------------------------------------------
+//  Helper – save a vote for the signed-in user
+//  * Adds voteKey to array `votes` on /users/{uid}
+//  * Logs success / failure to the browser console
+// ------------------------------------------------------------
+export async function recordVoteToFirestore(voteKey) {
+  const user = auth.currentUser;
+  if (!user) {
+    console.warn("[vote-write] aborted – user not authenticated");
+    return;
   }
-};
 
-window.logIn = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const userRef = doc(db, "users", user.uid);
+
   try {
-    const { user } = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Logged in:", user.email);
-    await syncLocalToCloud(user.uid);
-  } catch (err) {
-    console.error("Login error:", err.message);
-  }
-};
+    // Create an empty doc the first time a user votes
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      await setDoc(userRef, { votes: [] });
+    }
 
-window.logOut = async () => {
-  await signOut(auth);
-  console.log("Logged out.");
-};
-
-async function syncLocalToCloud(uid) {
-  const userRef = doc(db, "users", uid);
-  const snap = await getDoc(userRef);
-  const localVotes = JSON.parse(localStorage.getItem("movieStats")) || {};
-  const localTags  = JSON.parse(localStorage.getItem("movieTags")) || {};
-  const localSeen  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
-
-  if (!snap.exists()) {
-    await setDoc(userRef, { votes: localVotes, tags: localTags, seen: localSeen });
-  } else {
-    const data = snap.data();
+    // Append the new vote
     await updateDoc(userRef, {
-      votes: { ...data.votes, ...localVotes },
-      tags:  { ...data.tags,  ...localTags  },
-      seen:  Array.from(new Set([...(data.seen || []), ...localSeen]))
+      votes: arrayUnion(voteKey)
+    });
+
+    console.info("[vote-write] ✅ saved", voteKey);
+  } catch (err) {
+    console.error("[vote-write] ❌ Firestore write failed", {
+      code:    err.code,
+      message: err.message,
+      voteKey
     });
   }
 }
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    console.log("User signed in:", user.email);
-    // Pull cloud state into localStorage then reload UI
-    const userRef = doc(db, "users", user.uid);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      const currentVotes = JSON.parse(localStorage.getItem("movieStats")) || {};
-      const currentTags  = JSON.parse(localStorage.getItem("movieTags")) || {};
-      const currentSeen  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
-      localStorage.setItem("movieStats", JSON.stringify({ ...data.votes, ...currentVotes }));
-      localStorage.setItem("movieTags",  JSON.stringify({ ...data.tags,  ...currentTags  }));
-      localStorage.setItem("unseenMovies", JSON.stringify(Array.from(new Set([...(data.seen||[]), ...currentSeen]))));
-      window.location.reload();
-    }
-  }
-});
+// ------------------------------------------------------------
+//  Convenience auth wrappers
+// ------------------------------------------------------------
+export const signIn  = (e, p) => signInWithEmailAndPassword(auth, e, p);
+export const signUp  = (e, p) => createUserWithEmailAndPassword(auth, e, p);
+export const signOut = ()     => firebaseSignOut(auth);
+
+// Hook other modules into auth-state changes
+export const onAuth = (cb) => onAuthStateChanged(auth, cb);
