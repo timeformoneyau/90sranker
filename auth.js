@@ -1,99 +1,70 @@
-// auth.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+// === auth.js ===
+import { auth, db, doc, getDoc, setDoc, updateDoc } from './firebase.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-
-// === Firebase Config ===
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// === Auth Functions ===
-
-window.signUp = async function () {
+window.signUp = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-
   try {
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    console.log("Signed up:", userCred.user.email);
-    await syncLocalToCloud(userCred.user.uid);
+    const { user } = await createUserWithEmailAndPassword(auth, email, password);
+    console.log("Signed up:", user.email);
+    await syncLocalToCloud(user.uid);
   } catch (err) {
     console.error("Signup error:", err.message);
   }
 };
 
-window.logIn = async function () {
+window.logIn = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-
   try {
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Logged in:", userCred.user.email);
-    await syncLocalToCloud(userCred.user.uid);
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Logged in:", user.email);
+    await syncLocalToCloud(user.uid);
   } catch (err) {
     console.error("Login error:", err.message);
   }
 };
 
-window.logOut = async function () {
+window.logOut = async () => {
   await signOut(auth);
   console.log("Logged out.");
 };
 
-// === Sync LocalStorage to Firestore ===
-
 async function syncLocalToCloud(uid) {
-  const ref = doc(db, "users", uid);
-  const snapshot = await getDoc(ref);
-
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
   const localVotes = JSON.parse(localStorage.getItem("movieStats")) || {};
-  const localTags = JSON.parse(localStorage.getItem("movieTags")) || {};
-  const localSeen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+  const localTags  = JSON.parse(localStorage.getItem("movieTags")) || {};
+  const localSeen  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 
-  if (!snapshot.exists()) {
-    await setDoc(ref, {
-      votes: localVotes,
-      tags: localTags,
-      seen: localSeen
-    });
+  if (!snap.exists()) {
+    await setDoc(userRef, { votes: localVotes, tags: localTags, seen: localSeen });
   } else {
-    const data = snapshot.data();
-    await updateDoc(ref, {
+    const data = snap.data();
+    await updateDoc(userRef, {
       votes: { ...data.votes, ...localVotes },
-      tags: { ...data.tags, ...localTags },
-      seen: Array.from(new Set([...(data.seen || []), ...localSeen]))
+      tags:  { ...data.tags,  ...localTags  },
+      seen:  Array.from(new Set([...(data.seen || []), ...localSeen]))
     });
   }
 }
 
-// === On Auth State Change ===
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("User is signed in:", user.email);
-    // Optional: Load their data into localStorage or UI
-  } else {
-    console.log("No user logged in.");
+    console.log("User signed in:", user.email);
+    // Pull cloud state into localStorage then reload UI
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVotes = JSON.parse(localStorage.getItem("movieStats")) || {};
+      const currentTags  = JSON.parse(localStorage.getItem("movieTags")) || {};
+      const currentSeen  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+      localStorage.setItem("movieStats", JSON.stringify({ ...data.votes, ...currentVotes }));
+      localStorage.setItem("movieTags",  JSON.stringify({ ...data.tags,  ...currentTags  }));
+      localStorage.setItem("unseenMovies", JSON.stringify(Array.from(new Set([...(data.seen||[]), ...currentSeen]))));
+      window.location.reload();
+    }
   }
 });
-
-export { auth, db };
