@@ -9,16 +9,18 @@ import {
   doc
 } from "./firebase.js";
 
+// import confetti from your own file or a CDN:
+import confetti from "https://cdn.skypack.dev/canvas-confetti";
+
 let movies = [];
 let movieA, movieB;
+
 const ratings      = JSON.parse(localStorage.getItem("movieRatings"))  || {};
 const stats        = JSON.parse(localStorage.getItem("movieStats"))    || {};
-const unseen       = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+const unseen       = JSON.parse(localStorage.getItem("unseenMovies"))  || [];
 const seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
-// Use load event listener so we don't clobber other onload handlers
 window.addEventListener("load", loadMovies);
-// Expose vote and markUnseen to your buttons
 window.vote       = vote;
 window.markUnseen = markUnseen;
 
@@ -37,10 +39,9 @@ function getMovieKey(m) {
 }
 
 function getAvailableMovies(exclude = []) {
-  return movies.filter(
-    (m) =>
-      !unseen.includes(getMovieKey(m)) &&
-      !exclude.includes(m.title)
+  return movies.filter(m =>
+    !unseen.includes(getMovieKey(m)) &&
+    !exclude.includes(m.title)
   );
 }
 
@@ -62,10 +63,10 @@ async function fetchPosterUrl(title, year) {
   try {
     const res  = await fetch(url);
     const data = await res.json();
-    const path = data.results?.[0]?.poster_path;
-    return path ? TMDB_IMAGE_BASE + path : "./fallback.jpg";
+    const p    = data.results?.[0]?.poster_path;
+    return p ? TMDB_IMAGE_BASE + p : "./fallback.jpg";
   } catch (err) {
-    console.warn("fetchPosterUrl failed, using fallback.jpg:", err);
+    console.warn("fetchPosterUrl failed:", err);
     return "./fallback.jpg";
   }
 }
@@ -74,8 +75,6 @@ async function displayMovies() {
   try {
     document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
     document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
-
-    // Set poster images (will use fallback.jpg if missing)
     document.getElementById("posterA").src = await fetchPosterUrl(movieA.title, movieA.year);
     document.getElementById("posterB").src = await fetchPosterUrl(movieB.title, movieB.year);
   } catch (err) {
@@ -89,7 +88,7 @@ async function vote(winnerKey) {
 
   console.log("Vote:", winner.title, "beats", loser.title);
 
-  // 1) Record raw vote globally
+  // 1) Raw vote
   try {
     await addDoc(collection(db, "votes"), {
       winner:    winner.title,
@@ -101,32 +100,32 @@ async function vote(winnerKey) {
     console.error("Global vote write failed:", err);
   }
 
-  // 2) Atomic update of aggregated stats
+  // 2) Aggregate stats
   try {
     const batch = writeBatch(db);
     const ref   = doc(db, "stats", "global");
-    batch.set(
-      ref,
-      {
-        [`stats.${winner.title}.wins`]:   increment(1),
-        [`stats.${loser.title}.losses`]:  increment(1)
-      },
-      { merge: true }
-    );
+    batch.set(ref, {
+      [`stats.${winner.title}.wins`]:   increment(1),
+      [`stats.${loser.title}.losses`]:  increment(1)
+    }, { merge: true });
     await batch.commit();
   } catch (err) {
     console.error("Stats update failed:", err);
   }
 
-  // 3) Local Elo & stats adjustments
+  // 3) Confetti!
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+  // 4) Local Elo & stats
   updateElo(winner.title, loser.title);
   updateStats(winner.title, loser.title);
   seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
-  localStorage.setItem("movieRatings",   JSON.stringify(ratings));
-  localStorage.setItem("movieStats",     JSON.stringify(stats));
-  localStorage.setItem("seenMatchups",   JSON.stringify(seenMatchups));
 
-  // 4) Show next matchup after a short delay
+  localStorage.setItem("movieRatings", JSON.stringify(ratings));
+  localStorage.setItem("movieStats",   JSON.stringify(stats));
+  localStorage.setItem("seenMatchups", JSON.stringify(seenMatchups));
+
+  // Next matchup
   setTimeout(chooseTwoMovies, 1200);
 }
 
@@ -156,8 +155,7 @@ function markUnseen(m) {
 async function replaceMovie(oldMovie) {
   const avail = getAvailableMovies([movieA.title, movieB.title]);
   if (!avail.length) {
-    alert("No more movies.");
-    return;
+    alert("No more movies."); return;
   }
   const repl = avail[Math.floor(Math.random() * avail.length)];
   if (oldMovie.title === movieA.title) movieA = repl;
@@ -165,4 +163,4 @@ async function replaceMovie(oldMovie) {
   await displayMovies();
 }
 
-export {}; // ensures module context
+export {}; // module context
