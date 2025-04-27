@@ -59,3 +59,44 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
 
 // Export auth utilities
 export { auth, db, signIn, signUp, signOut, onAuth };
+
+// Attach login functionality
+const loginForm = document.getElementById("login-form");
+const logoutButton = document.getElementById("logout-button");
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // Stop the form from refreshing the page
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    try {
+      await signIn(email, password);
+      console.log("[auth] ✅ Login successful");
+      loginForm.classList.add("hidden");
+      logoutButton.classList.remove("hidden");
+      document.getElementById("login-heading").textContent = "Welcome!";
+    } catch (err) {
+      console.error("[auth] ❌ Login failed:", err.message);
+      alert("Login failed: " + err.message);
+    }
+  });
+}
+
+// Attach logout functionality
+if (logoutButton) {
+  logoutButton.addEventListener("click", async () => {
+    try {
+      await signOut();
+      console.log("[auth] ✅ Logged out");
+      loginForm.classList.remove("hidden");
+      logoutButton.classList.add("hidden");
+      document.getElementById("login-heading").textContent = "Your Account";
+    } catch (err) {
+      console.error("[auth] ❌ Logout failed:", err.message);
+      alert("Logout failed: " + err.message);
+    }
+  });
+}
+
