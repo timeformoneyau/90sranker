@@ -25,26 +25,22 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
   }
 
   const userRef = doc(db, "users", user.uid);
-
   try {
     const snap = await getDoc(userRef);
     if (!snap.exists()) {
-      // Create the doc if it doesn't exist
       await setDoc(userRef, { votes: [] }, { merge: true });
     }
 
-    // Update user's personal votes
     await updateDoc(userRef, {
       votes: arrayUnion(winnerKey)
     });
     console.info("[vote-write] ✅ User vote saved:", winnerKey);
 
-    // Push vote to global /votes collection with server-side timestamp
     const globalRef = collection(db, "votes");
     await addDoc(globalRef, {
-      winner:   winnerKey,
-      loser:    loserKey,
-      user:     user.uid,
+      winner:    winnerKey,
+      loser:     loserKey,
+      user:      user.uid,
       timestamp: serverTimestamp()
     });
     console.info("[vote-write] ✅ Global vote saved:", { winnerKey, loserKey });
@@ -60,23 +56,28 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
 // Export auth utilities
 export { auth, db, signIn, signUp, signOut, onAuth };
 
-// Attach login functionality
-const loginForm = document.getElementById("login-form");
-const logoutButton = document.getElementById("logout-button");
+// Grab DOM elements
+const loginForm          = document.getElementById("login-form");
+const logoutButton       = document.getElementById("logout-button");
+const accountLoggedOut   = document.getElementById("account-logged-out");
+const accountLoggedIn    = document.getElementById("account-logged-in");
+const welcomeMessage     = document.getElementById("welcome-message");
+const memberSince        = document.getElementById("member-since");
+const viewStatsButton    = document.getElementById("view-stats");
 
-if (loginForm) {
+// Login handler
+eventListenerLogic: if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault(); // Stop the form from refreshing the page
-
+    e.preventDefault();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-
     try {
       await signIn(email, password);
       console.log("[auth] ✅ Login successful");
-      loginForm.classList.add("hidden");
-      logoutButton.classList.remove("hidden");
-      document.getElementById("login-heading").textContent = "Welcome!";
+      accountLoggedOut.classList.add("hidden");
+      accountLoggedIn.classList.remove("hidden");
+      welcomeMessage.textContent = `Welcome, ${email}!`;
+      memberSince.textContent = "";
     } catch (err) {
       console.error("[auth] ❌ Login failed:", err.message);
       alert("Login failed: " + err.message);
@@ -84,15 +85,14 @@ if (loginForm) {
   });
 }
 
-// Attach logout functionality
+// Logout handler
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
     try {
       await signOut();
       console.log("[auth] ✅ Logged out");
-      loginForm.classList.remove("hidden");
-      logoutButton.classList.add("hidden");
-      document.getElementById("login-heading").textContent = "Your Account";
+      accountLoggedOut.classList.remove("hidden");
+      accountLoggedIn.classList.add("hidden");
     } catch (err) {
       console.error("[auth] ❌ Logout failed:", err.message);
       alert("Logout failed: " + err.message);
@@ -100,3 +100,20 @@ if (logoutButton) {
   });
 }
 
+// Auth state listener
+onAuth((user) => {
+  if (user) {
+    accountLoggedOut.classList.add("hidden");
+    accountLoggedIn.classList.remove("hidden");
+    welcomeMessage.textContent = `Welcome, ${user.email}!`;
+    memberSince.textContent = "";
+    if (viewStatsButton) {
+      viewStatsButton.addEventListener("click", () => {
+        window.location.href = "my-stats.html";
+      });
+    }
+  } else {
+    accountLoggedOut.classList.remove("hidden");
+    accountLoggedIn.classList.add("hidden");
+  }
+});
