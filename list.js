@@ -3,10 +3,10 @@ import { db, doc, onSnapshot } from "./firebase.js";
 import { fetchTMDBRating } from "./unseen.js";
 
 let moviesList = [];
-const statsList   = JSON.parse(localStorage.getItem("movieStats")) || {};
+const statsList   = JSON.parse(localStorage.getItem("movieStats"))   || {};
 const ratingsList = JSON.parse(localStorage.getItem("movieRatings")) || {};
 const unseenList  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
-const tagsList    = JSON.parse(localStorage.getItem("movieTags")) || {};
+const tagsList    = JSON.parse(localStorage.getItem("movieTags"))   || {};
 
 window.addEventListener("load", loadMovieList);
 
@@ -20,8 +20,10 @@ async function loadMovieList() {
     renderTags();
   } catch (e) {
     console.error("Failed to load movie list:", e);
-    document.getElementById("ranking-list").innerHTML =
-      "<tr><td colspan='6'>Error loading movies.</td></tr>";
+    const tbl = document.getElementById("ranking-list");
+    if (tbl) {
+      tbl.innerHTML = "<tr><td colspan='6'>Error loading movies.</td></tr>";
+    }
   }
 }
 
@@ -32,21 +34,28 @@ function renderRankings() {
   Object.entries(statsList)
     .map(([title, r]) => {
       const rating = ratingsList[title] || 1000;
-      const tot = r.wins + r.losses;
+      const tot    = r.wins + r.losses;
       return {
         title,
-        year: (moviesList.find((m) => m.title === title) || {}).year || "",
-        wins: r.wins,
-        losses: r.losses,
+        year:  (moviesList.find(m => m.title === title) || {}).year || "",
+        wins:  r.wins,
+        losses:r.losses,
         rating,
         winPct: tot ? ((r.wins / tot) * 100).toFixed(1) : "0.0"
       };
     })
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 20)
-    .forEach((m) => {
+    .forEach(m => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${m.title}</td><td>${m.year}</td><td>${m.rating}</td><td>${m.wins}</td><td>${m.losses}</td><td>${m.winPct}%</td>`;
+      tr.innerHTML = `
+        <td>${m.title}</td>
+        <td>${m.year}</td>
+        <td>${m.rating}</td>
+        <td>${m.wins}</td>
+        <td>${m.losses}</td>
+        <td>${m.winPct}%</td>
+      `;
       tbl.appendChild(tr);
     });
 }
@@ -55,18 +64,20 @@ function renderGlobalRankings() {
   const gt = document.getElementById("global-list");
   if (!gt) return;
   gt.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
   const globalRef = doc(db, "stats", "global");
-  onSnapshot(globalRef,
-    (snap) => {
+  const unsubscribe = onSnapshot(
+    globalRef,
+    snap => {
       const data = snap.data()?.stats || {};
       gt.innerHTML = "";
       const entries = Object.entries(data).map(([title, r]) => {
         const tot = r.wins + r.losses;
         return {
           title,
-          year: (moviesList.find((m) => m.title === title) || {}).year || "",
-          wins: r.wins,
-          losses: r.losses,
+          year:  (moviesList.find(m => m.title === title) || {}).year || "",
+          wins:  r.wins,
+          losses:r.losses,
           winPct: tot ? ((r.wins / tot) * 100).toFixed(1) : "0.0"
         };
       });
@@ -75,26 +86,35 @@ function renderGlobalRankings() {
         return;
       }
       entries
-        .sort((a, b) => b.wins - a.wins)
-        .slice(0, 20)
-        .forEach((m) => {
+        .sort((a,b) => b.wins - a.wins)
+        .slice(0,20)
+        .forEach(m => {
           const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${m.title}</td><td>${m.year}</td><td>${m.wins}</td><td>${m.losses}</td><td>${m.winPct}%</td>`;
+          tr.innerHTML = `
+            <td>${m.title}</td>
+            <td>${m.year}</td>
+            <td>${m.wins}</td>
+            <td>${m.losses}</td>
+            <td>${m.winPct}%</td>
+          `;
           gt.appendChild(tr);
         });
     },
-    (err) => {
+    err => {
       console.error("Global snapshot error:", err);
       gt.innerHTML = `<tr><td colspan='5'>Error: ${err.message}</td></tr>`;
     }
   );
+
+  // if you ever need to tear it down:
+  // window.addEventListener('beforeunload', () => unsubscribe());
 }
 
 async function renderUnseen() {
   const ut = document.getElementById("unseen-list");
   if (!ut) return;
   ut.innerHTML = "";
-  const unseenMovies = moviesList.filter((m) =>
+  const unseenMovies = moviesList.filter(m =>
     unseenList.includes(`${m.title}|${m.year}`)
   );
   if (!unseenMovies.length) {
@@ -102,15 +122,15 @@ async function renderUnseen() {
     return;
   }
   const scored = await Promise.all(
-    unseenMovies.map(async (m) => ({
+    unseenMovies.map(async m => ({
       ...m,
       tmdbRating: (await fetchTMDBRating(m.title, m.year)) || 0
     }))
   );
   scored
-    .sort((a, b) => b.tmdbRating - a.tmdbRating)
-    .slice(0, 20)
-    .forEach((m) => {
+    .sort((a,b) => b.tmdbRating - a.tmdbRating)
+    .slice(0,20)
+    .forEach(m => {
       const tr = document.createElement("tr");
       const key = `${m.title}|${m.year}`;
       tr.setAttribute("data-key", key);
@@ -133,9 +153,9 @@ function renderTags() {
     tl.innerHTML = "<li>No tagged movies.</li>";
     return;
   }
-  keys.forEach((t) => {
+  keys.forEach(tag => {
     const li = document.createElement("li");
-    li.textContent = `${t} — ${tagsList[t].join(", ")}`;
+    li.textContent = `${tag} — ${tagsList[tag].join(", ")}`;
     tl.appendChild(li);
   });
 }
@@ -143,10 +163,11 @@ function renderTags() {
 function putBack(key) {
   const idx = unseenList.indexOf(key);
   if (idx === -1) return;
-  unseenList.splice(idx, 1);
+  unseenList.splice(idx,1);
   localStorage.setItem("unseenMovies", JSON.stringify(unseenList));
   const row = document.querySelector(`tr[data-key="${key}"]`);
   if (row) row.remove();
 }
 
+// blank export to keep module context
 export {};
