@@ -18,9 +18,14 @@
     }
     .account-container h2 {
       color: #e0e0e0;
-      margin-bottom: 1.5em;
+      margin-bottom: 0.5em;
       font-size: 1.3rem;
       font-weight: 700;
+    }
+    .account-container .subtext {
+      color: #bbb;
+      margin-bottom: 1.5em;
+      font-size: 0.9rem;
     }
     .account-container input {
       width: 100%;
@@ -49,7 +54,7 @@
       color: #fff;
     }
     .signup-link {
-      margin-top: 1.2em;
+      margin-top: 1em;
       font-size: 0.9rem;
       color: #bbb;
     }
@@ -83,16 +88,29 @@
 
   <div class="container">
     <div class="account-container">
-      <h2 id="login-heading">Your Account</h2>
-      <form id="login-form">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button type="submit" id="login-button">Log In</button>
-      </form>
-      <div class="signup-link" id="signup-area">
-        Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+
+      <!-- Logged-out state -->
+      <div id="account-logged-out">
+        <h2>Your Account</h2>
+        <p class="subtext">Log in or create a new account to access your rankings.</p>
+        <form id="login-form">
+          <input type="email" id="email" placeholder="Email" required>
+          <input type="password" id="password" placeholder="Password" required>
+          <button type="submit" id="login-button">Log In</button>
+        </form>
+        <p class="signup-link">
+          Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+        </p>
       </div>
-      <button id="logout-button" class="hidden">Log Out</button>
+
+      <!-- Logged-in state -->
+      <div id="account-logged-in" class="hidden">
+        <h2 id="welcome-message">Welcome, User!</h2>
+        <p id="member-since" class="subtext"></p>
+        <button id="view-stats">View Your Stats</button>
+        <button id="logout-button">Log Out</button>
+      </div>
+
     </div>
   </div>
 
