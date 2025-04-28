@@ -6,9 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    /* same styles as before… */
-  </style>
 </head>
 <body>
   <header class="site-header">
@@ -49,7 +46,12 @@
         <h2>🔥 Global Top 20 Movies</h2>
         <table>
           <thead>
-            <tr><th>Movie</th><th>Total Wins</th></tr>
+            <tr>
+              <th>Movie</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Win %</th>
+            </tr>
           </thead>
           <tbody id="global-list"></tbody>
         </table>
@@ -61,7 +63,11 @@
       <h2>🕒 Recent Votes</h2>
       <table class="recent-table">
         <thead>
-          <tr><th>Date</th><th>Winner</th><th>Loser</th></tr>
+          <tr>
+            <th>Date</th>
+            <th>Winner</th>
+            <th>Loser</th>
+          </tr>
         </thead>
         <tbody id="recent-votes"></tbody>
       </table>
