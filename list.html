@@ -28,7 +28,8 @@
       <!-- Personal Top 20 -->
       <div class="table-container">
         <h2>🎯 Your Top 20 Rankings</h2>
-        <table>
+        <div id="personal-count" class="count-display">Total Votes: 0</div>
+        <table class="results-table">
           <thead>
             <tr>
               <th>Movie</th>
@@ -37,14 +38,17 @@
               <th>Win %</th>
             </tr>
           </thead>
-          <tbody id="personal-list"></tbody>
+          <tbody id="personal-list">
+            <!-- rows inserted here by list.js -->
+          </tbody>
         </table>
       </div>
 
       <!-- Global Top 20 -->
       <div class="table-container">
         <h2>🔥 Global Top 20 Movies</h2>
-        <table>
+        <div id="global-count" class="count-display">Total Votes: 0</div>
+        <table class="results-table">
           <thead>
             <tr>
               <th>Movie</th>
@@ -53,7 +57,9 @@
               <th>Win %</th>
             </tr>
           </thead>
-          <tbody id="global-list"></tbody>
+          <tbody id="global-list">
+            <!-- rows inserted here by list.js -->
+          </tbody>
         </table>
       </div>
     </div>
@@ -69,7 +75,9 @@
             <th>Loser</th>
           </tr>
         </thead>
-        <tbody id="recent-votes"></tbody>
+        <tbody id="recent-votes">
+          <!-- rows inserted here by list.js -->
+        </tbody>
       </table>
     </div>
 
