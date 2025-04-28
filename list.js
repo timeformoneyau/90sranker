@@ -8,26 +8,26 @@ import {
   limit,
   getDocs
 } from "./firebase.js";
-import { fetchTMDBRating } from "./unseen.js";
 
-let moviesList = [];
-
-// DOM references (may be null on pages without these tables)
-const personalTbody = document.getElementById("personal-list");
-const globalTbody   = document.getElementById("global-list");
-const recentTbody   = document.getElementById("recent-votes");
+// DOM references
+const personalCountEl = document.getElementById("personal-count");
+const globalCountEl   = document.getElementById("global-count");
+const personalTbody   = document.getElementById("personal-list");
+const globalTbody     = document.getElementById("global-list");
+const recentTbody     = document.getElementById("recent-votes");
 
 // — Personal Top 20 —
 async function renderPersonalStats(uid) {
   if (!personalTbody) return;
+  personalCountEl.textContent = "Total Votes: Loading…";
   personalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
 
   try {
-    const q = query(
+    const snap = await getDocs(query(
       collection(db, "votes"),
       where("user", "==", uid)
-    );
-    const snap = await getDocs(q);
+    ));
+    personalCountEl.textContent = `Total Votes: ${snap.size}`;
 
     const stats = {};
     snap.forEach(doc => {
@@ -42,9 +42,9 @@ async function renderPersonalStats(uid) {
       .map(([key, r]) => {
         const total = r.wins + r.losses;
         return {
-          title: key.split("|")[0],
-          wins:  r.wins,
-          losses: r.losses,
+          title:  key.split("|")[0],
+          wins:    r.wins,
+          losses:  r.losses,
           winPct: total ? ((r.wins / total) * 100).toFixed(1) : "0.0"
         };
       })
@@ -69,41 +69,41 @@ async function renderPersonalStats(uid) {
   } catch (err) {
     console.error("renderPersonalStats error:", err);
     personalTbody.innerHTML = "<tr><td colspan='4'>Failed to load personal stats.</td></tr>";
+    personalCountEl.textContent = "Total Votes: 0";
   }
 }
 
 // — Global Top 20 —
 async function renderGlobalStats() {
   if (!globalTbody) return;
+  globalCountEl.textContent = "Total Votes: Loading…";
   globalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
 
   try {
     const snap = await getDocs(collection(db, "votes"));
-    const wins = {};
-    const losses = {};
+    globalCountEl.textContent = `Total Votes: ${snap.size}`;
 
+    const wins = {}, losses = {};
     snap.forEach(doc => {
       const { winner, loser } = doc.data();
-      wins[winner] = (wins[winner] || 0) + 1;
-      losses[loser] = (losses[loser] || 0) + 1;
-      // Ensure every key appears in both maps
-      wins[loser] = wins[loser] || 0;
-      losses[winner] = losses[winner] || 0;
+      wins[winner]    = (wins[winner]    || 0) + 1;
+      losses[loser]   = (losses[loser]   || 0) + 1;
+      wins[loser]     = wins[loser]     || 0;
+      losses[winner]  = losses[winner]  || 0;
     });
 
     const rows = Object.keys(wins)
       .map(key => {
-        const winCount = wins[key] || 0;
-        const lossCount = losses[key] || 0;
-        const total = winCount + lossCount;
+        const w = wins[key], l = losses[key];
+        const total = w + l;
         return {
-          title: key.split("|")[0],
-          wins: winCount,
-          losses: lossCount,
-          winPct: total ? ((winCount / total) * 100).toFixed(1) : "0.0"
+          title:  key.split("|")[0],
+          wins:    w,
+          losses:  l,
+          winPct: total ? ((w / total) * 100).toFixed(1) : "0.0"
         };
       })
-      .sort((a, b) => b.wins - a.wins)
+      .sort((a,b) => b.wins - a.wins)
       .slice(0, 20);
 
     globalTbody.innerHTML = "";
@@ -124,6 +124,7 @@ async function renderGlobalStats() {
   } catch (err) {
     console.error("renderGlobalStats error:", err);
     globalTbody.innerHTML = "<tr><td colspan='4'>Failed to load global stats.</td></tr>";
+    globalCountEl.textContent = "Total Votes: 0";
   }
 }
 
@@ -133,20 +134,17 @@ async function renderRecentVotes(uid) {
   recentTbody.innerHTML = "<tr><td colspan='3'>Loading…</td></tr>";
 
   try {
-    const q = query(
+    const snap = await getDocs(query(
       collection(db, "votes"),
-      where("user", "==", uid),
-      orderBy("timestamp", "desc"),
+      where("user","==",uid),
+      orderBy("timestamp","desc"),
       limit(10)
-    );
-    const snap = await getDocs(q);
-
+    ));
     recentTbody.innerHTML = "";
     if (snap.empty) {
       recentTbody.innerHTML = "<tr><td colspan='3'>No recent votes.</td></tr>";
       return;
     }
-
     snap.forEach(doc => {
       const { winner, loser, timestamp } = doc.data();
       const date = timestamp?.toDate().toLocaleString() || "";
@@ -164,26 +162,17 @@ async function renderRecentVotes(uid) {
   }
 }
 
-// Initialize after DOM and auth state are ready
-window.addEventListener("load", async () => {
-  try {
-    const res = await fetch("movie_list_cleaned.json");
-    moviesList = await res.json();
-  } catch (e) {
-    console.error("Movie list load failed:", e);
-  }
-
-  onAuth(async (user) => {
-    if (!personalTbody && !globalTbody && !recentTbody) return;
-
+// Initialize on load & auth
+window.addEventListener("load", () => {
+  onAuth(async user => {
     if (user) {
       await renderPersonalStats(user.uid);
       await renderRecentVotes(user.uid);
     } else {
-      if (personalTbody) personalTbody.innerHTML = `<tr><td colspan="4">Log in to see your stats.</td></tr>`;
-      if (recentTbody)  recentTbody.innerHTML  = `<tr><td colspan="3">Log in to see recent votes.</td></tr>`;
+      personalTbody.innerHTML = `<tr><td colspan="4">Log in to see your stats.</td></tr>`;
+      personalCountEl.textContent = "Total Votes: 0";
+      recentTbody.innerHTML  = `<tr><td colspan="3">Log in to see recent votes.</td></tr>`;
     }
-
     await renderGlobalStats();
   });
 });
