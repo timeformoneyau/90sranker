@@ -26,7 +26,7 @@ window.vote       = vote;
 window.markUnseen = markUnseen;
 
 // Utility to build the consistent key format
-tfunction getMovieKey(m) {
+function getMovieKey(m) {
   return `${m.title.trim()}|${m.year}`;
 }
 
@@ -107,7 +107,7 @@ async function vote(winnerKey) {
     console.error("Global vote write failed:", err);
   }
 
-  // 2) (Optional) Update your aggregate stats document if you still use it
+  // 2) Optional: update aggregate stats document
   try {
     const batch = writeBatch(db);
     const ref   = doc(db, "stats", "global");
@@ -170,7 +170,6 @@ async function replaceMovie(oldMovie) {
   const repl = avail[Math.floor(Math.random() * avail.length)];
   if (oldMovie.title === movieA.title) movieA = repl;
   else movieB = repl;
-  // update globals
   window.movieA = movieA;
   window.movieB = movieB;
   await displayMovies();
