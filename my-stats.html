@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Stats</title>
+  <title>My Stats | Shelf Life</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,31 +55,38 @@
       cursor: pointer;
       font-size: 0.8rem;
     }
+    #login-status {
+      display: inline-block;
+      margin-left: 1em;
+    }
   </style>
 </head>
+
 <body>
   <div class="user-bar">
     <div id="user-indicator" class="user-indicator"></div>
   </div>
 
   <!-- 🔷 Navigation Bar -->
-<nav class="nav-bar">
-  <ul class="nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="list.html">Results</a></li>
-    <li><a href="unseen.html">Haven't Seen</a></li>
-    <li><a href="my-stats.html">Your Stats</a></li>
-    <li><a href="account.html">Your Account</a></li>
-  </ul>
-</nav>
-
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="my-stats.html" class="active">Your Stats</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
 
   <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
   <h1>My Movie Ranking Stats</h1>
   <div id="stats-container">Loading stats...</div>
 
+  <!-- 🧩 Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="my_stats.js"></script>
+  <script type="module" src="loginStatus.js"></script>
 </body>
 </html>
