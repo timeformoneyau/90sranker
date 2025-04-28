@@ -1,5 +1,4 @@
-// unseen.js
-import { auth, db, doc, getDoc, updateDoc } from "./firebase.js";
+import { auth, db, doc, getDoc, updateDoc, onAuth } from "./firebase.js";
 
 let unseen = [];
 let movies = [];
@@ -19,12 +18,18 @@ export async function fetchTMDBRating(title, year) {
 }
 
 async function loadUnseenList() {
+  const unseenListEl = document.getElementById("unseen-list");
+  if (!unseenListEl) return;
+  unseenListEl.innerHTML = "";
+
+  // Load unseen keys from Firestore or localStorage
   if (auth.currentUser) {
     try {
       const ref = doc(db, "users", auth.currentUser.uid);
       const snap = await getDoc(ref);
-      unseen = snap.exists() ? snap.data().seen || [] : [];
-      localStorage.setItem("unseenMovies", JSON.stringify(unseen));
+      unseen = snap.exists() && Array.isArray(snap.data().seen)
+        ? snap.data().seen
+        : [];
     } catch (err) {
       console.error("Load unseen fail:", err);
       unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
@@ -33,6 +38,7 @@ async function loadUnseenList() {
     unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
   }
 
+  // Load full movie list
   try {
     const res = await fetch("movie_list_cleaned.json");
     movies = await res.json();
@@ -41,48 +47,60 @@ async function loadUnseenList() {
     return;
   }
 
-  const unseenMovies = unseen.map(k => {
-    const [t,y] = k.split("|");
-    return movies.find(m => m.title===t&&String(m.year)===y);
-  }).filter(Boolean);
+  // Map keys to movie objects and fetch ratings
+  const unseenMovies = unseen
+    .map(k => {
+      const [t, y] = k.split("|");
+      return movies.find(m => m.title === t && String(m.year) === y);
+    })
+    .filter(Boolean);
 
-  const scored = await Promise.all(unseenMovies.map(async m => ({
-    ...m,
-    tmdbRating: (await fetchTMDBRating(m.title,m.year))||0
-  })));
+  const scored = await Promise.all(
+    unseenMovies.map(async m => ({
+      ...m,
+      tmdbRating: (await fetchTMDBRating(m.title, m.year)) || 0
+    }))
+  );
 
-  scored.sort((a,b)=>b.tmdbRating-a.tmdbRating).slice(0,20)
-    .forEach(m=>{
-      const tr = document.createElement("tr");
+  // Render top 20 by rating
+  scored
+    .sort((a, b) => b.tmdbRating - a.tmdbRating)
+    .slice(0, 20)
+    .forEach(m => {
       const key = `${m.title}|${m.year}`;
-      tr.setAttribute("data-key",key);
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-key", key);
       tr.innerHTML = `
         <td>${m.title}</td>
         <td>${m.year}</td>
         <td>${m.tmdbRating.toFixed(1)}</td>
         <td><button onclick="putBack('${key}')">Put Back</button></td>
       `;
-      document.getElementById("unseen-list").appendChild(tr);
+      unseenListEl.appendChild(tr);
     });
 }
 
 async function putBack(key) {
   const idx = unseen.indexOf(key);
-  if(idx===-1) return;
-  unseen.splice(idx,1);
-  if(auth.currentUser){
-    try{
-      const ref = doc(db,"users",auth.currentUser.uid);
-      await updateDoc(ref,{seen:unseen});
-    }catch(err){
-      console.error("Put back fail:",err);
+  if (idx === -1) return;
+  unseen.splice(idx, 1);
+
+  if (auth.currentUser) {
+    try {
+      const ref = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(ref, { seen: unseen });
+    } catch (err) {
+      console.error("Put back fail:", err);
     }
   } else {
-    localStorage.setItem("unseenMovies",JSON.stringify(unseen));
+    localStorage.setItem("unseenMovies", JSON.stringify(unseen));
   }
-  const row=document.querySelector(`tr[data-key="${key}"]`);
-  if(row) row.remove();
+
+  const row = document.querySelector(`tr[data-key="${key}"]`);
+  if (row) row.remove();
 }
 
+// Load list on initial auth or page load
 window.addEventListener("load", loadUnseenList);
+onAuth(() => loadUnseenList());
 window.putBack = putBack;
