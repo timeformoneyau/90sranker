@@ -99,36 +99,49 @@
       <div id="login-status" class="hidden" style="color:#ccc; margin-top: 1em; font-size: 0.9rem;"></div>
       <button id="logout-button" class="hidden">Log Out</button>
     </div>
-      <button id="logout-button" class="hidden">Log Out</button>
-    </div>
   </div>
 
+  <!-- Load Firebase config and auth, then login logic -->
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="login.js"></script>
+
+  <!-- Handle auth state UI and logout -->
   <script type="module">
-    import { auth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-    import { auth as myAuth } from "./auth.js";
+    import { onAuth, signOut } from './firebase.js';
 
-    const loginForm = document.getElementById("login-form");
-    const loginHeading = document.getElementById("login-heading");
-    const signupArea = document.getElementById("signup-area");
-    const logoutButton = document.getElementById("logout-button");
+    const loginHeading = document.getElementById('login-heading');
+    const loginForm    = document.getElementById('login-form');
+    const signupArea   = document.getElementById('signup-area');
+    const logoutButton = document.getElementById('logout-button');
+    const statusMsg    = document.getElementById('login-status');
 
-    onAuthStateChanged(myAuth, (user) => {
-      const statusMsg = document.getElementById("login-status");
+    // Update UI based on auth state
+    onAuth((user) => {
       if (user) {
         loginHeading.textContent = `Welcome Back, ${user.email}`;
-        loginForm.classList.add("hidden");
-        signupArea.classList.add("hidden");
-        logoutButton.classList.remove("hidden");
-        statusMsg.textContent = "You are already logged in.";
-        statusMsg.classList.remove("hidden");
+        loginForm.classList.add('hidden');
+        signupArea.classList.add('hidden');
+        logoutButton.classList.remove('hidden');
+        statusMsg.textContent = 'You are already logged in.';
+        statusMsg.classList.remove('hidden');
       } else {
-        statusMsg.textContent = "";
-        statusMsg.classList.add("hidden");
+        loginHeading.textContent = 'Create or Log In to Your Account';
+        loginForm.classList.remove('hidden');
+        signupArea.classList.remove('hidden');
+        logoutButton.classList.add('hidden');
+        statusMsg.classList.add('hidden');
+      }
+    });
+
+    // Logout handler
+    logoutButton.addEventListener('click', async () => {
+      try {
+        await signOut();
+      } catch (err) {
+        console.error('Logout failed', err);
+        alert('Logout failed: ' + err.message);
       }
     });
   </script>
-
-  <script type="module" src="auth.js"></script>
-  <script type="module" src="login.js"></script>
 </body>
 </html>
