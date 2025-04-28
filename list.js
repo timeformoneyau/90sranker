@@ -2,6 +2,7 @@
 import {
   db,
   auth,
+  onAuth,
   collection,
   query,
   where,
@@ -27,19 +28,20 @@ window.addEventListener("load", async () => {
     return;
   }
 
-  // Wait for auth state
-  auth.onAuthStateChanged(async (user) => {
+  // Use the onAuth helper to react to login state
+  onAuth(async (user) => {
     if (user) {
       await renderPersonalStats(user.uid);
       await renderRecentVotes(user.uid);
     } else {
-      personalTbody.innerHTML = `<tr><td colspan="4">Log in to see your stats.</td></tr>`;
-      recentTbody.innerHTML  = `<tr><td colspan="3">Log in to see recent votes.</td></tr>`;
+      personalTbody.innerHTML = `<tr><td colspan=\"4\">Log in to see your stats.</td></tr>`;
+      recentTbody.innerHTML  = `<tr><td colspan=\"3\">Log in to see recent votes.</td></tr>`;
     }
     await renderGlobalStats();
   });
 });
 
+// — Personal Top 20 —
 async function renderPersonalStats(uid) {
   personalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
 
@@ -84,6 +86,7 @@ async function renderPersonalStats(uid) {
   });
 }
 
+// — Global Top 20 —
 async function renderGlobalStats() {
   globalTbody.innerHTML = "<tr><td colspan='2'>Loading…</td></tr>";
 
@@ -112,6 +115,7 @@ async function renderGlobalStats() {
   });
 }
 
+// — Recent Votes —
 async function renderRecentVotes(uid) {
   recentTbody.innerHTML = "<tr><td colspan='3'>Loading…</td></tr>";
 
