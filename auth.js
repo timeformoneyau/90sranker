@@ -31,6 +31,7 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
     }
     await updateDoc(userRef, { votes: arrayUnion(winnerKey) });
     console.info("[vote-write] ✅ User vote saved:", winnerKey);
+
     const globalRef = collection(db, "votes");
     await addDoc(globalRef, {
       winner:    winnerKey,
