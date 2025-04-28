@@ -66,23 +66,32 @@
     .hidden {
       display: none;
     }
+    #login-status {
+      display: inline-block;
+      margin-left: 1em;
+    }
   </style>
 </head>
+
 <body>
   <div class="bg-overlay"></div>
+
+  <!-- 🔲 Header -->
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
     <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
   </header>
+
+  <!-- 🔷 Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Results</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a href="my-stats.html">Your Profile</a></li>
-      <li><a href="login.html">Login</a></li>
+      <li><a href="my-stats.html">Your Stats</a></li>
+      <li><a href="account.html">Your Account</a></li>
     </ul>
+    <div id="login-status"></div>
   </nav>
 
   <div class="container">
@@ -96,15 +105,16 @@
       <div class="signup-link" id="signup-area">
         Don’t have an account? <a href="#" id="signup-trigger">Create one now</a>
       </div>
-      <div id="login-status" class="hidden" style="color:#ccc; margin-top: 1em; font-size: 0.9rem;"></div>
+      <div id="login-status-message" class="hidden" style="color:#ccc; margin-top: 1em; font-size: 0.9rem;"></div>
       <button id="logout-button" class="hidden">Log Out</button>
     </div>
   </div>
 
-  <!-- Load Firebase config and auth -->
+  <!-- 🧩 Scripts -->
+  <script type="module" src="auth.js"></script>
   <script type="module" src="firebase.js"></script>
+  <script type="module" src="loginStatus.js"></script>
 
-  <!-- Full login + create account logic -->
   <script type="module">
     import { signIn, signUp, onAuth, signOut } from './firebase.js';
 
@@ -115,17 +125,15 @@
     const logoutButton  = document.getElementById('logout-button');
     const emailInput    = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const statusMsg     = document.getElementById('login-status');
+    const statusMsg     = document.getElementById('login-status-message');
 
     // Autofocus email field on page load
     window.addEventListener('DOMContentLoaded', () => {
       emailInput.focus();
     });
 
-    // Immediate signup when clicking "Create one"
     signupTrigger.addEventListener("click", async (e) => {
       e.preventDefault();
-      
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
 
@@ -146,10 +154,8 @@
       }
     });
 
-    // Normal login on form submit
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
 
@@ -164,10 +170,9 @@
       }
     });
 
-    // Update UI on auth changes
     onAuth((user) => {
       if (user) {
-        loginHeading.textContent = `Welcome Back, ${user.email}`;
+        loginHeading.textContent = `Welcome Back!`;
         form.classList.add('hidden');
         signupTrigger.classList.add('hidden');
         logoutButton.classList.remove('hidden');
@@ -182,7 +187,6 @@
       }
     });
 
-    // Logout button
     logoutButton.addEventListener('click', async () => {
       try {
         await signOut();
