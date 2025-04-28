@@ -1,173 +1,141 @@
 // list.js
-import { db, doc, onSnapshot } from "./firebase.js";
+import {
+  db,
+  auth,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs
+} from "./firebase.js";
 import { fetchTMDBRating } from "./unseen.js";
 
 let moviesList = [];
-const statsList   = JSON.parse(localStorage.getItem("movieStats"))   || {};
-const ratingsList = JSON.parse(localStorage.getItem("movieRatings")) || {};
-const unseenList  = JSON.parse(localStorage.getItem("unseenMovies")) || [];
-const tagsList    = JSON.parse(localStorage.getItem("movieTags"))   || {};
 
-window.addEventListener("load", loadMovieList);
+// DOM references
+const personalTbody = document.getElementById("personal-list");
+const globalTbody   = document.getElementById("global-list");
+const recentTbody   = document.getElementById("recent-votes");
 
-async function loadMovieList() {
+window.addEventListener("load", async () => {
   try {
     const res = await fetch("movie_list_cleaned.json");
     moviesList = await res.json();
-    renderGlobalRankings();
-    renderRankings();
-    renderUnseen();
-    renderTags();
   } catch (e) {
-    console.error("Failed to load movie list:", e);
-    const tbl = document.getElementById("ranking-list");
-    if (tbl) {
-      tbl.innerHTML = "<tr><td colspan='6'>Error loading movies.</td></tr>";
-    }
+    console.error("Movie list load failed:", e);
+    return;
   }
-}
 
-function renderRankings() {
-  const tbl = document.getElementById("ranking-list");
-  if (!tbl) return;
-  tbl.innerHTML = "";
-  Object.entries(statsList)
-    .map(([title, r]) => {
-      const rating = ratingsList[title] || 1000;
-      const tot    = r.wins + r.losses;
+  // Wait for auth state
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      await renderPersonalStats(user.uid);
+      await renderRecentVotes(user.uid);
+    } else {
+      personalTbody.innerHTML = `<tr><td colspan="4">Log in to see your stats.</td></tr>`;
+      recentTbody.innerHTML  = `<tr><td colspan="3">Log in to see recent votes.</td></tr>`;
+    }
+    await renderGlobalStats();
+  });
+});
+
+async function renderPersonalStats(uid) {
+  personalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
+
+  const q = query(
+    collection(db, "votes"),
+    where("user", "==", uid)
+  );
+  const snap = await getDocs(q);
+
+  const stats = {};
+  snap.forEach(doc => {
+    const { winner, loser } = doc.data();
+    stats[winner] = stats[winner] || { wins: 0, losses: 0 };
+    stats[loser]  = stats[loser]  || { wins: 0, losses: 0 };
+    stats[winner].wins++;
+    stats[loser].losses++;
+  });
+
+  const rows = Object.entries(stats)
+    .map(([key, r]) => {
+      const total = r.wins + r.losses;
       return {
-        title,
-        year:  (moviesList.find(m => m.title === title) || {}).year || "",
-        wins:  r.wins,
-        losses:r.losses,
-        rating,
-        winPct: tot ? ((r.wins / tot) * 100).toFixed(1) : "0.0"
+        title: key.split("|")[0],
+        wins: r.wins,
+        losses: r.losses,
+        winPct: total ? ((r.wins/total)*100).toFixed(1) : "0.0"
       };
     })
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 20)
-    .forEach(m => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${m.title}</td>
-        <td>${m.year}</td>
-        <td>${m.rating}</td>
-        <td>${m.wins}</td>
-        <td>${m.losses}</td>
-        <td>${m.winPct}%</td>
-      `;
-      tbl.appendChild(tr);
-    });
-}
+    .sort((a,b) => b.wins - a.wins)
+    .slice(0,20);
 
-function renderGlobalRankings() {
-  const gt = document.getElementById("global-list");
-  if (!gt) return;
-  gt.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
-
-  const globalRef = doc(db, "stats", "global");
-  const unsubscribe = onSnapshot(
-    globalRef,
-    snap => {
-      const data = snap.data()?.stats || {};
-      gt.innerHTML = "";
-      const entries = Object.entries(data).map(([title, r]) => {
-        const tot = r.wins + r.losses;
-        return {
-          title,
-          year:  (moviesList.find(m => m.title === title) || {}).year || "",
-          wins:  r.wins,
-          losses:r.losses,
-          winPct: tot ? ((r.wins / tot) * 100).toFixed(1) : "0.0"
-        };
-      });
-      if (!entries.length) {
-        gt.innerHTML = "<tr><td colspan='5'>No data.</td></tr>";
-        return;
-      }
-      entries
-        .sort((a,b) => b.wins - a.wins)
-        .slice(0,20)
-        .forEach(m => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${m.title}</td>
-            <td>${m.year}</td>
-            <td>${m.wins}</td>
-            <td>${m.losses}</td>
-            <td>${m.winPct}%</td>
-          `;
-          gt.appendChild(tr);
-        });
-    },
-    err => {
-      console.error("Global snapshot error:", err);
-      gt.innerHTML = `<tr><td colspan='5'>Error: ${err.message}</td></tr>`;
-    }
-  );
-
-  // if you ever need to tear it down:
-  // window.addEventListener('beforeunload', () => unsubscribe());
-}
-
-async function renderUnseen() {
-  const ut = document.getElementById("unseen-list");
-  if (!ut) return;
-  ut.innerHTML = "";
-  const unseenMovies = moviesList.filter(m =>
-    unseenList.includes(`${m.title}|${m.year}`)
-  );
-  if (!unseenMovies.length) {
-    ut.innerHTML = "<tr><td colspan='4'>No unseen movies.</td></tr>";
-    return;
-  }
-  const scored = await Promise.all(
-    unseenMovies.map(async m => ({
-      ...m,
-      tmdbRating: (await fetchTMDBRating(m.title, m.year)) || 0
-    }))
-  );
-  scored
-    .sort((a,b) => b.tmdbRating - a.tmdbRating)
-    .slice(0,20)
-    .forEach(m => {
-      const tr = document.createElement("tr");
-      const key = `${m.title}|${m.year}`;
-      tr.setAttribute("data-key", key);
-      tr.innerHTML = `
-        <td>${m.title}</td>
-        <td>${m.year}</td>
-        <td>${m.tmdbRating.toFixed(1)}</td>
-        <td><button onclick="putBack('${key}')">Put Back</button></td>
-      `;
-      ut.appendChild(tr);
-    });
-}
-
-function renderTags() {
-  const tl = document.getElementById("tagged-list");
-  if (!tl) return;
-  tl.innerHTML = "";
-  const keys = Object.keys(tagsList);
-  if (!keys.length) {
-    tl.innerHTML = "<li>No tagged movies.</li>";
-    return;
-  }
-  keys.forEach(tag => {
-    const li = document.createElement("li");
-    li.textContent = `${tag} — ${tagsList[tag].join(", ")}`;
-    tl.appendChild(li);
+  personalTbody.innerHTML = "";
+  rows.forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${m.title}</td>
+      <td>${m.wins}</td>
+      <td>${m.losses}</td>
+      <td>${m.winPct}%</td>
+    `;
+    personalTbody.appendChild(tr);
   });
 }
 
-function putBack(key) {
-  const idx = unseenList.indexOf(key);
-  if (idx === -1) return;
-  unseenList.splice(idx,1);
-  localStorage.setItem("unseenMovies", JSON.stringify(unseenList));
-  const row = document.querySelector(`tr[data-key="${key}"]`);
-  if (row) row.remove();
+async function renderGlobalStats() {
+  globalTbody.innerHTML = "<tr><td colspan='2'>Loading…</td></tr>";
+
+  const snap = await getDocs(collection(db, "votes"));
+
+  const tally = {};
+  snap.forEach(doc => {
+    const { winner } = doc.data();
+    tally[winner] = (tally[winner] || 0) + 1;
+  });
+
+  const rows = Object.entries(tally)
+    .map(([key, wins]) => ({ title: key.split("|")[0], wins }))
+    .sort((a,b) => b.wins - a.wins)
+    .slice(0,20);
+
+  globalTbody.innerHTML = "";
+  if (!rows.length) {
+    globalTbody.innerHTML = "<tr><td colspan='2'>No votes yet.</td></tr>";
+    return;
+  }
+  rows.forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${m.title}</td><td>${m.wins}</td>`;
+    globalTbody.appendChild(tr);
+  });
 }
 
-// blank export to keep module context
+async function renderRecentVotes(uid) {
+  recentTbody.innerHTML = "<tr><td colspan='3'>Loading…</td></tr>";
+
+  const q = query(
+    collection(db, "votes"),
+    where("user","==",uid),
+    orderBy("timestamp","desc"),
+    limit(10)
+  );
+  const snap = await getDocs(q);
+
+  recentTbody.innerHTML = "";
+  if (snap.empty) {
+    recentTbody.innerHTML = "<tr><td colspan='3'>No recent votes.</td></tr>";
+    return;
+  }
+
+  snap.forEach(doc => {
+    const { winner, loser, timestamp } = doc.data();
+    const date = timestamp?.toDate().toLocaleString() || "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${date}</td><td>${winner.split("|")[0]}</td><td>${loser.split("|")[0]}</td>`;
+    recentTbody.appendChild(tr);
+  });
+}
+
 export {};
