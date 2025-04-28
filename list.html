@@ -7,12 +7,15 @@
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
+
 <body>
+  <!-- 🔲 Header -->
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
     <p class="site-subtitle">Your 90s movie showdowns, tallied and tracked.</p>
   </header>
 
+  <!-- 🔷 Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
@@ -21,6 +24,7 @@
       <li><a href="my-stats.html">Your Stats</a></li>
       <li><a href="account.html">Your Account</a></li>
     </ul>
+    <div id="login-status"></div>
   </nav>
 
   <div class="container">
@@ -84,7 +88,9 @@
     <a href="index.html" class="back-link">← Back to Home</a>
   </div>
 
+  <!-- 🧩 Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="list.js"></script>
+  <script type="module" src="loginStatus.js"></script>
 </body>
 </html>
