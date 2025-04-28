@@ -94,46 +94,95 @@
         <button type="submit" id="login-button">Log In</button>
       </form>
       <div class="signup-link" id="signup-area">
-        Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+        Don’t have an account? <a href="#" id="signup-trigger">Create one now</a>
       </div>
       <div id="login-status" class="hidden" style="color:#ccc; margin-top: 1em; font-size: 0.9rem;"></div>
       <button id="logout-button" class="hidden">Log Out</button>
     </div>
   </div>
 
-  <!-- Load Firebase config and auth, then login logic -->
+  <!-- Load Firebase config and auth -->
   <script type="module" src="firebase.js"></script>
-  <script type="module" src="login.js"></script>
 
-  <!-- Handle auth state UI and logout -->
+  <!-- Full login + create account logic -->
   <script type="module">
-    import { onAuth, signOut } from './firebase.js';
+    import { signIn, signUp, onAuth, signOut } from './firebase.js';
 
-    const loginHeading = document.getElementById('login-heading');
-    const loginForm    = document.getElementById('login-form');
-    const signupArea   = document.getElementById('signup-area');
-    const logoutButton = document.getElementById('logout-button');
-    const statusMsg    = document.getElementById('login-status');
+    const form          = document.getElementById("login-form");
+    const loginButton   = document.getElementById("login-button");
+    const loginHeading  = document.getElementById("login-heading");
+    const signupTrigger = document.getElementById("signup-trigger");
+    const logoutButton  = document.getElementById('logout-button');
+    const emailInput    = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const statusMsg     = document.getElementById('login-status');
 
-    // Update UI based on auth state
+    // Autofocus email field on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      emailInput.focus();
+    });
+
+    // Immediate signup when clicking "Create one"
+    signupTrigger.addEventListener("click", async (e) => {
+      e.preventDefault();
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        statusMsg.textContent = "Please enter your email and password first.";
+        statusMsg.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        await signUp(email, password);
+        statusMsg.textContent = "Account created successfully! You are now logged in.";
+        statusMsg.classList.remove('hidden');
+      } catch (err) {
+        console.error('Signup failed', err);
+        statusMsg.textContent = "Signup failed: " + err.message;
+        statusMsg.classList.remove('hidden');
+      }
+    });
+
+    // Normal login on form submit
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      try {
+        await signIn(email, password);
+        statusMsg.textContent = "Logged in successfully!";
+        statusMsg.classList.remove('hidden');
+      } catch (err) {
+        console.error('Login failed', err);
+        statusMsg.textContent = "Login failed: " + err.message;
+        statusMsg.classList.remove('hidden');
+      }
+    });
+
+    // Update UI on auth changes
     onAuth((user) => {
       if (user) {
         loginHeading.textContent = `Welcome Back, ${user.email}`;
-        loginForm.classList.add('hidden');
-        signupArea.classList.add('hidden');
+        form.classList.add('hidden');
+        signupTrigger.classList.add('hidden');
         logoutButton.classList.remove('hidden');
-        statusMsg.textContent = 'You are already logged in.';
+        statusMsg.textContent = "You are logged in.";
         statusMsg.classList.remove('hidden');
       } else {
         loginHeading.textContent = 'Create or Log In to Your Account';
-        loginForm.classList.remove('hidden');
-        signupArea.classList.remove('hidden');
+        form.classList.remove('hidden');
+        signupTrigger.classList.remove('hidden');
         logoutButton.classList.add('hidden');
         statusMsg.classList.add('hidden');
       }
     });
 
-    // Logout handler
+    // Logout button
     logoutButton.addEventListener('click', async () => {
       try {
         await signOut();
