@@ -23,19 +23,14 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
     console.warn("[vote-write] aborted – user not authenticated");
     return;
   }
-
   const userRef = doc(db, "users", user.uid);
   try {
     const snap = await getDoc(userRef);
     if (!snap.exists()) {
       await setDoc(userRef, { votes: [] }, { merge: true });
     }
-
-    await updateDoc(userRef, {
-      votes: arrayUnion(winnerKey)
-    });
+    await updateDoc(userRef, { votes: arrayUnion(winnerKey) });
     console.info("[vote-write] ✅ User vote saved:", winnerKey);
-
     const globalRef = collection(db, "votes");
     await addDoc(globalRef, {
       winner:    winnerKey,
@@ -44,7 +39,6 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
       timestamp: serverTimestamp()
     });
     console.info("[vote-write] ✅ Global vote saved:", { winnerKey, loserKey });
-
   } catch (err) {
     console.error("[vote-write] ❌ Firestore write failed", {
       code:    err.code,
@@ -56,30 +50,22 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
 // Export auth utilities
 export { auth, db, signIn, signUp, signOut, onAuth };
 
-// Grab DOM elements
-const loginForm          = document.getElementById("login-form");
-const logoutButton       = document.getElementById("logout-button");
-const accountLoggedOut   = document.getElementById("account-logged-out");
-const accountLoggedIn    = document.getElementById("account-logged-in");
-const welcomeMessage     = document.getElementById("welcome-message");
-const memberSince        = document.getElementById("member-since");
-const viewStatsButton    = document.getElementById("view-stats");
+// Cache DOM nodes
+const loginForm       = document.getElementById("login-form");
+const logoutButton    = document.getElementById("logout-button");
+const loggedOutDiv    = document.getElementById("account-logged-out");
+const loggedInDiv     = document.getElementById("account-logged-in");
 
 // Login handler
-eventListenerLogic: if (loginForm) {
+if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = document.getElementById("email").value.trim();
+    const email    = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     try {
       await signIn(email, password);
-      console.log("[auth] ✅ Login successful");
-      accountLoggedOut.classList.add("hidden");
-      accountLoggedIn.classList.remove("hidden");
-      welcomeMessage.textContent = `Welcome, ${email}!`;
-      memberSince.textContent = "";
     } catch (err) {
-      console.error("[auth] ❌ Login failed:", err.message);
+      console.error("[auth] ❌ Login failed:", err);
       alert("Login failed: " + err.message);
     }
   });
@@ -90,11 +76,8 @@ if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
     try {
       await signOut();
-      console.log("[auth] ✅ Logged out");
-      accountLoggedOut.classList.remove("hidden");
-      accountLoggedIn.classList.add("hidden");
     } catch (err) {
-      console.error("[auth] ❌ Logout failed:", err.message);
+      console.error("[auth] ❌ Logout failed:", err);
       alert("Logout failed: " + err.message);
     }
   });
@@ -103,17 +86,10 @@ if (logoutButton) {
 // Auth state listener
 onAuth((user) => {
   if (user) {
-    accountLoggedOut.classList.add("hidden");
-    accountLoggedIn.classList.remove("hidden");
-    welcomeMessage.textContent = `Welcome, ${user.email}!`;
-    memberSince.textContent = "";
-    if (viewStatsButton) {
-      viewStatsButton.addEventListener("click", () => {
-        window.location.href = "my-stats.html";
-      });
-    }
+    loggedOutDiv.classList.add("hidden");
+    loggedInDiv.classList.remove("hidden");
   } else {
-    accountLoggedOut.classList.remove("hidden");
-    accountLoggedIn.classList.add("hidden");
+    loggedOutDiv.classList.remove("hidden");
+    loggedInDiv.classList.add("hidden");
   }
 });
