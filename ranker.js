@@ -21,14 +21,16 @@ const stats        = JSON.parse(localStorage.getItem("movieStats"))    || {};
 const unseen       = JSON.parse(localStorage.getItem("unseenMovies"))  || [];
 const seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
+// Expose vote and unseen handlers globally
+window.vote       = vote;
+window.markUnseen = markUnseen;
+
 // Utility to build the consistent key format
-function getMovieKey(m) {
+tfunction getMovieKey(m) {
   return `${m.title.trim()}|${m.year}`;
 }
 
 window.addEventListener("load", loadMovies);
-window.vote       = vote;
-window.markUnseen = markUnseen;
 
 async function loadMovies() {
   try {
@@ -54,6 +56,9 @@ function chooseTwoMovies() {
     return;
   }
   [movieA, movieB] = avail.sort(() => 0.5 - Math.random()).slice(0, 2);
+  // Expose current movies to global scope for inline event handlers
+  window.movieA = movieA;
+  window.movieB = movieB;
   displayMovies();
 }
 
@@ -147,11 +152,14 @@ function updateStats(winner, loser) {
 }
 
 function markUnseen(m) {
-  const key = getMovieKey(m);
-  if (!m || unseen.includes(key)) return;
+  const movie = typeof m === 'string'
+    ? (m === 'A' ? window.movieA : window.movieB)
+    : m;
+  const key = getMovieKey(movie);
+  if (!movie || unseen.includes(key)) return;
   unseen.push(key);
   localStorage.setItem("unseenMovies", JSON.stringify(unseen));
-  replaceMovie(m);
+  replaceMovie(movie);
 }
 
 async function replaceMovie(oldMovie) {
@@ -162,6 +170,9 @@ async function replaceMovie(oldMovie) {
   const repl = avail[Math.floor(Math.random() * avail.length)];
   if (oldMovie.title === movieA.title) movieA = repl;
   else movieB = repl;
+  // update globals
+  window.movieA = movieA;
+  window.movieB = movieB;
   await displayMovies();
 }
 
