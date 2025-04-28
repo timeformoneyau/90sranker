@@ -10,8 +10,8 @@
 
 <body>
   <div class="user-bar">
-  <div id="user-indicator" class="user-indicator"></div>
-</div>
+    <div id="user-indicator" class="user-indicator"></div>
+  </div>
   <div class="bg-overlay"></div>
 
   <!-- 🔲 Header -->
@@ -21,16 +21,15 @@
   </header>
 
   <!-- 🔷 Navigation Bar -->
-<nav class="nav-bar">
-  <ul class="nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="list.html">Results</a></li>
-    <li><a href="unseen.html">Haven't Seen</a></li>
-    <li><a href="my-stats.html">Your Stats</a></li>
-    <li><a href="account.html">Your Account</a></li>
-  </ul>
-</nav>
-
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="my-stats.html">Your Stats</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+  </nav>
 
   <div class="container">
     <!-- 🎥 Compare Section -->
@@ -45,7 +44,7 @@
           <button class="primary" onclick="vote('A')" aria-label="Pick this movie as the winner">
             SELECT
           </button>
-          <button class="tertiary" onclick="markUnseen('A')">🙈 Haven't Seen</button>
+          <button class="tertiary" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
         </div>
       </div>
 
@@ -62,7 +61,7 @@
           <button class="primary" onclick="vote('B')" aria-label="Pick this movie as the winner">
             SELECT
           </button>
-          <button class="tertiary" onclick="markUnseen('B')">🙈 Haven't Seen</button>
+          <button class="tertiary" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
         </div>
       </div>
     </section>
