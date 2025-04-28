@@ -1,4 +1,3 @@
-// auth.js
 import {
   auth,
   db,
@@ -86,11 +85,13 @@ if (logoutButton) {
 
 // Auth state listener
 onAuth((user) => {
-  if (user) {
-    loggedOutDiv.classList.add("hidden");
-    loggedInDiv.classList.remove("hidden");
-  } else {
-    loggedOutDiv.classList.remove("hidden");
-    loggedInDiv.classList.add("hidden");
+  if (loggedOutDiv && loggedInDiv) {
+    if (user) {
+      loggedOutDiv.classList.add("hidden");
+      loggedInDiv.classList.remove("hidden");
+    } else {
+      loggedOutDiv.classList.remove("hidden");
+      loggedInDiv.classList.add("hidden");
+    }
   }
 });
