@@ -75,34 +75,55 @@ async function renderPersonalStats(uid) {
 // — Global Top 20 —
 async function renderGlobalStats() {
   if (!globalTbody) return;
-  globalTbody.innerHTML = "<tr><td colspan='2'>Loading…</td></tr>";
+  globalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
 
   try {
     const snap = await getDocs(collection(db, "votes"));
-    const tally = {};
+    const wins = {};
+    const losses = {};
+
     snap.forEach(doc => {
-      const { winner } = doc.data();
-      tally[winner] = (tally[winner] || 0) + 1;
+      const { winner, loser } = doc.data();
+      wins[winner] = (wins[winner] || 0) + 1;
+      losses[loser] = (losses[loser] || 0) + 1;
+      // Ensure every key appears in both maps
+      wins[loser] = wins[loser] || 0;
+      losses[winner] = losses[winner] || 0;
     });
 
-    const rows = Object.entries(tally)
-      .map(([key, wins]) => ({ title: key.split("|")[0], wins }))
+    const rows = Object.keys(wins)
+      .map(key => {
+        const winCount = wins[key] || 0;
+        const lossCount = losses[key] || 0;
+        const total = winCount + lossCount;
+        return {
+          title: key.split("|")[0],
+          wins: winCount,
+          losses: lossCount,
+          winPct: total ? ((winCount / total) * 100).toFixed(1) : "0.0"
+        };
+      })
       .sort((a, b) => b.wins - a.wins)
       .slice(0, 20);
 
     globalTbody.innerHTML = "";
     if (!rows.length) {
-      globalTbody.innerHTML = "<tr><td colspan='2'>No votes yet.</td></tr>";
+      globalTbody.innerHTML = "<tr><td colspan='4'>No votes yet.</td></tr>";
       return;
     }
     rows.forEach(m => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${m.title}</td><td>${m.wins}</td>`;
+      tr.innerHTML = `
+        <td>${m.title}</td>
+        <td>${m.wins}</td>
+        <td>${m.losses}</td>
+        <td>${m.winPct}%</td>
+      `;
       globalTbody.appendChild(tr);
     });
   } catch (err) {
     console.error("renderGlobalStats error:", err);
-    globalTbody.innerHTML = "<tr><td colspan='2'>Failed to load global stats.</td></tr>";
+    globalTbody.innerHTML = "<tr><td colspan='4'>Failed to load global stats.</td></tr>";
   }
 }
 
@@ -153,7 +174,6 @@ window.addEventListener("load", async () => {
   }
 
   onAuth(async (user) => {
-    // Only run if tables exist and renderer functions are defined
     if (!personalTbody && !globalTbody && !recentTbody) return;
 
     if (user) {
