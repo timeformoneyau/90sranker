@@ -20,7 +20,12 @@ import {
   serverTimestamp,
   runTransaction,
   onSnapshot,
-  arrayUnion
+  arrayUnion,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 // Firebase config
@@ -45,7 +50,7 @@ export const signUp  = (email, password) => createUserWithEmailAndPassword(auth,
 export const signOut = () => firebaseSignOut(auth);
 export const onAuth  = (cb) => onAuthStateChanged(auth, cb);
 
-// Re-export Firestore functions
+// Firestore exports
 export {
   doc,
   getDoc,
@@ -58,5 +63,10 @@ export {
   serverTimestamp,
   runTransaction,
   onSnapshot,
-  arrayUnion
+  arrayUnion,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs
 };
