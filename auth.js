@@ -1,3 +1,5 @@
+// auth.js (COMPLETE and FINAL)
+
 import {
   auth,
   db,
@@ -15,7 +17,7 @@ import {
   serverTimestamp
 } from "./firebase.js";
 
-// Helper – save a vote for the signed-in user
+// ✅ Helper – save a vote for the signed-in user
 export async function recordVoteToFirestore(winnerKey, loserKey) {
   const user = auth.currentUser;
   if (!user) {
@@ -47,51 +49,82 @@ export async function recordVoteToFirestore(winnerKey, loserKey) {
   }
 }
 
-// Export auth utilities
-export { auth, db, signIn, signUp, signOut, onAuth };
+// Cache DOM elements
+const form           = document.getElementById('login-form');
+const loginButton    = document.getElementById('login-button');
+const signupTrigger  = document.getElementById('signup-trigger');
+const logoutButton   = document.getElementById('logout-button');
+const loggedOutView  = document.getElementById('account-logged-out');
+const loggedInView   = document.getElementById('account-logged-in');
+const emailInput     = document.getElementById('email');
+const passwordInput  = document.getElementById('password');
 
-// Cache DOM nodes
-const loginForm       = document.getElementById("login-form");
-const logoutButton    = document.getElementById("logout-button");
-const loggedOutDiv    = document.getElementById("account-logged-out");
-const loggedInDiv     = document.getElementById("account-logged-in");
+// Autofocus email field on page load
+window.addEventListener('DOMContentLoaded', () => {
+  emailInput.focus();
+});
 
-// Login handler
-if (loginForm) {
-  loginForm.addEventListener("submit", async (e) => {
+// Immediate signup when clicking "Create one"
+signupTrigger.addEventListener('click', async (e) => {
+  e.preventDefault();
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    alert('Please enter your email and password first.');
+    return;
+  }
+
+  try {
+    await signUp(email, password);
+    alert('Account created successfully! You are now logged in.');
+  } catch (err) {
+    console.error('Signup failed', err);
+    alert('Signup failed: ' + err.message);
+  }
+});
+
+// Normal login on form submit
+if (form) {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email    = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
     try {
       await signIn(email, password);
     } catch (err) {
-      console.error("[auth] ❌ Login failed:", err);
-      alert("Login failed: " + err.message);
+      console.error('Login failed', err);
+      alert('Login failed: ' + err.message);
     }
   });
 }
 
 // Logout handler
 if (logoutButton) {
-  logoutButton.addEventListener("click", async () => {
+  logoutButton.addEventListener('click', async () => {
     try {
       await signOut();
+      emailInput.value = "";
+      passwordInput.value = "";
     } catch (err) {
-      console.error("[auth] ❌ Logout failed:", err);
-      alert("Logout failed: " + err.message);
+      console.error('Logout failed', err);
+      alert('Logout failed: ' + err.message);
     }
   });
 }
 
 // Auth state listener
 onAuth((user) => {
-  if (loggedOutDiv && loggedInDiv) {
+  if (loggedOutView && loggedInView) {
     if (user) {
-      loggedOutDiv.classList.add("hidden");
-      loggedInDiv.classList.remove("hidden");
+      loggedOutView.classList.add("hidden");
+      loggedInView.classList.remove("hidden");
     } else {
-      loggedOutDiv.classList.remove("hidden");
-      loggedInDiv.classList.add("hidden");
+      loggedOutView.classList.remove("hidden");
+      loggedInView.classList.add("hidden");
     }
   }
 });
