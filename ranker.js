@@ -1,6 +1,7 @@
 // ranker.js
 import {
   db,
+  auth,
   collection,
   addDoc,
   writeBatch,
@@ -20,6 +21,11 @@ const stats        = JSON.parse(localStorage.getItem("movieStats"))    || {};
 const unseen       = JSON.parse(localStorage.getItem("unseenMovies"))  || [];
 const seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
 
+// Utility to build the consistent key format
+function getMovieKey(m) {
+  return `${m.title.trim()}|${m.year}`;
+}
+
 window.addEventListener("load", loadMovies);
 window.vote       = vote;
 window.markUnseen = markUnseen;
@@ -32,10 +38,6 @@ async function loadMovies() {
   } catch (err) {
     console.error("Error loading movies:", err);
   }
-}
-
-function getMovieKey(m) {
-  return `${m.title.trim()}|${m.year}`;
 }
 
 function getAvailableMovies(exclude = []) {
@@ -88,35 +90,35 @@ async function vote(winnerKey) {
 
   console.log("Vote:", winner.title, "beats", loser.title);
 
-  // 1) Raw vote
+  // 1) Write to Firestore votes collection with user and consistent key
   try {
     await addDoc(collection(db, "votes"), {
-      winner:    winner.title,
-      loser:     loser.title,
-      timestamp: serverTimestamp(),
-      userAgent: navigator.userAgent
+      winner:    getMovieKey(winner),
+      loser:     getMovieKey(loser),
+      user:      auth.currentUser?.uid,
+      timestamp: serverTimestamp()
     });
   } catch (err) {
     console.error("Global vote write failed:", err);
   }
 
-  // 2) Aggregate stats
+  // 2) (Optional) Update your aggregate stats document if you still use it
   try {
     const batch = writeBatch(db);
     const ref   = doc(db, "stats", "global");
     batch.set(ref, {
-      [`stats.${winner.title}.wins`]:   increment(1),
-      [`stats.${loser.title}.losses`]:  increment(1)
+      [`stats.${getMovieKey(winner)}.wins`]:   increment(1),
+      [`stats.${getMovieKey(loser)}.losses`]:  increment(1)
     }, { merge: true });
     await batch.commit();
   } catch (err) {
     console.error("Stats update failed:", err);
   }
 
-  // 3) Confetti!
+  // 3) Confetti celebration
   confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-  // 4) Local Elo & stats
+  // 4) Update local Elo & win/loss stats
   updateElo(winner.title, loser.title);
   updateStats(winner.title, loser.title);
   seenMatchups.push([movieA.title, movieB.title].sort().join("|"));
