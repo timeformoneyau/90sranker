@@ -7,17 +7,29 @@ let fullData = [];
 
 window.onload = async () => {
   try {
-    // Load all movies from JSON
+    // Load movie list from static file
     const res = await fetch("movie_list_cleaned.json");
     allMovies = await res.json();
 
-    // Load global usage counts from Firestore
-    const statsSnap = await getDoc(doc(db, "global_stats", "movie_stats"));
+    // Load global stats from Firestore
+    const statsSnap = await getDoc(doc(db, "stats", "global"));
     if (!statsSnap.exists()) {
-      console.error("No movie_stats doc found in global_stats");
+      console.error("No global doc found in stats");
       return;
     }
-    movieStats = statsSnap.data();
+
+    const rawStats = statsSnap.data();
+    movieStats = {};
+
+    // Combine wins + losses into total appearances
+    for (const key in rawStats) {
+      const match = key.match(/^stats\.(.+)\.(wins|losses)$/);
+      if (!match) continue;
+
+      const movieKey = match[1];
+      const count = rawStats[key];
+      movieStats[movieKey] = (movieStats[movieKey] || 0) + count;
+    }
 
     // Setup filter and export buttons
     document.getElementById("filter-unseen").addEventListener("click", () => {
@@ -39,6 +51,7 @@ window.onload = async () => {
 
     // Initial render
     renderCoverage();
+
   } catch (err) {
     console.error("Error loading data:", err);
   }
