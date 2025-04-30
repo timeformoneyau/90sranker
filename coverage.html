@@ -5,12 +5,46 @@
   <title>Movie Coverage | Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    main {
+      padding: 2rem;
+    }
+    .controls {
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.5rem;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    tr.faded {
+      opacity: 0.4;
+    }
+    tr.unseen {
+      background-color: #3b0a0a;
+      color: #ffcccc;
+    }
+    button {
+      margin-right: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
-    <h1>Movie Coverage</h1>
+    <h1>Movie Coverage Overview</h1>
   </header>
+
   <main>
+    <div class="controls">
+      <button id="filter-unseen">Show Only Unseen</button>
+      <button id="filter-gt5">Seen > 5</button>
+      <button id="reset-filter">Reset Filter</button>
+    </div>
     <table id="coverage-table">
       <thead>
         <tr>
@@ -22,6 +56,7 @@
       <tbody></tbody>
     </table>
   </main>
+
   <script type="module" src="coverage.js"></script>
 </body>
 </html>
