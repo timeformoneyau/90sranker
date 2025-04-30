@@ -2,10 +2,27 @@ const movieStats = JSON.parse(localStorage.getItem("movieStats")) || {};
 const unseen     = JSON.parse(localStorage.getItem("unseenMovies")) || [];
 
 let allMovies = [];
+let currentFilter = null;
 
 window.onload = async () => {
   const res = await fetch("movie_list_cleaned.json");
   allMovies = await res.json();
+
+  document.getElementById("filter-unseen").addEventListener("click", () => {
+    currentFilter = m => m.count === 0;
+    renderCoverage();
+  });
+
+  document.getElementById("filter-gt5").addEventListener("click", () => {
+    currentFilter = m => m.count > 5;
+    renderCoverage();
+  });
+
+  document.getElementById("reset-filter").addEventListener("click", () => {
+    currentFilter = null;
+    renderCoverage();
+  });
+
   renderCoverage();
 };
 
@@ -24,16 +41,22 @@ function renderCoverage() {
       ...movie,
       key,
       count,
-      unseen: unseen.includes(key)
+      unseen: unseen.includes(key),
     };
   });
 
-  // Sort: most seen first
-  rows.sort((a, b) => b.count - a.count);
+  // Apply filter if set
+  const filtered = currentFilter ? rows.filter(currentFilter) : rows;
 
-  for (const movie of rows) {
+  // Sort by most seen
+  filtered.sort((a, b) => b.count - a.count);
+
+  for (const movie of filtered) {
     const row = document.createElement("tr");
-    if (movie.count === 0) row.style.opacity = 0.4;
+
+    if (movie.count === 0) row.classList.add("faded");
+    if (movie.unseen) row.classList.add("unseen");
+
     row.innerHTML = `
       <td>${movie.title}</td>
       <td>${movie.year}</td>
