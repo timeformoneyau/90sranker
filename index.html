@@ -1,18 +1,27 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
-</head><body>
+</head>
+
+<body>
   <div class="user-bar">
     <div id="user-indicator" class="user-indicator"></div>
   </div>
-  <div class="bg-overlay"></div>  <!-- 🔲 Header -->  <header class="site-header">
+  <div class="bg-overlay"></div>
+
+  <!-- 🔲 Header -->
+  <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
     <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
-  </header>  <!-- 🔷 Navigation Bar -->  <nav class="nav-bar">
+  </header>
+
+  <!-- 🔷 Navigation Bar -->
+  <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Results</a></li>
@@ -21,30 +30,38 @@
       <li><a href="account.html">Your Account</a></li>
     </ul>
     <div id="login-status"></div>
-  </nav>  <div class="container">
+  </nav>
+
+  <div class="container">
     <!-- 🎥 Compare Section -->
-    <section id="compare-section">
+    <section id="compare-section" class="flex flex-col sm:flex-row sm:justify-around items-center gap-8">
       <!-- Movie A -->
-      <div class="movie-block relative flex flex-col items-center space-y-1 sm:space-y-4 w-full max-w-xs mx-auto" id="movieA-block">
+      <div class="movie-block relative flex flex-col items-center w-full max-w-xs mx-auto" id="movieA-block">
         <div class="confetti-container" id="confetti-container-a"></div>
-        <img src="" alt="Movie Poster 1" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px]" id="posterA">
-        <div class="movie-title" id="movieA">Movie A</div>
-        <div class="movie-year" id="movieA-year">199X</div>
-        <button class="primary absolute bottom-2 left-1/2 transform -translate-x-1/2 sm:static sm:mt-2" onclick="vote('A')" aria-label="Pick this movie as the winner">SELECT</button>
-        <button class="tertiary mt-2 sm:mt-0" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
-      </div><!-- VS Badge -->
-  <div class="vs-badge">VS</div>
+        <img src="" alt="Movie Poster A" id="posterA" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px] mb-4" />
+        <div class="movie-title text-center" id="movieA">Movie A</div>
+        <!-- Static year removed --><!-- Year can be included in title or added separately via JS if desired -->
+        <button class="primary w-32 mb-2" onclick="vote('A')" aria-label="Select Movie A">SELECT</button>
+        <button class="tertiary w-32" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
+      </div>
 
-  <!-- Movie B -->
-  <div class="movie-block relative flex flex-col items-center space-y-1 sm:space-y-4 w-full max-w-xs mx-auto" id="movieB-block">
-    <div class="confetti-container" id="confetti-container-b"></div>
-    <img src="" alt="Movie Poster 2" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px]" id="posterB">
-    <div class="movie-title" id="movieB">Movie B</div>
-    <div class="movie-year" id="movieB-year">199X</div>
-    <button class="primary absolute bottom-2 left-1/2 transform -translate-x-1/2 sm:static sm:mt-2" onclick="vote('B')" aria-label="Pick this movie as the winner">SELECT</button>
-    <button class="tertiary mt-2 sm:mt-0" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
+      <!-- VS Badge -->
+      <div class="vs-badge my-4 sm:my-0">VS</div>
+
+      <!-- Movie B -->
+      <div class="movie-block relative flex flex-col items-center w-full max-w-xs mx-auto" id="movieB-block">
+        <div class="confetti-container" id="confetti-container-b"></div>
+        <img src="" alt="Movie Poster B" id="posterB" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px] mb-4" />
+        <div class="movie-title text-center" id="movieB">Movie B</div>
+        <button class="primary w-32 mb-2" onclick="vote('B')" aria-label="Select Movie B">SELECT</button>
+        <button class="tertiary w-32" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
+      </div>
+    </section>
   </div>
-</section>
 
-  </div>  <!-- 🧩 Scripts -->  <script type="module" src="auth.js"></script>  <script type="module" src="ranker.js"></script>  <script type="module" src="loginStatus.js"></script></body>
+  <!-- 🧩 Scripts -->
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="ranker.js"></script>
+  <script type="module" src="loginStatus.js"></script>
+</body>
 </html>
