@@ -150,6 +150,9 @@ body::before {
   text-align: center;
   margin-top: 0.5em;
   text-shadow: 0 3px 12px #1fd2ea33, 0 2px 6px #d946ef21;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .movie-year {
   font-size: 0.92rem;
@@ -197,7 +200,7 @@ body::before {
   letter-spacing: 0.2px;
   box-shadow: 0 2px 12px #1fd2ea66, 0 4px 20px #8b5cf655;
   transition: all 0.2s ease;
-  width: auto;
+  width: 14rem;
 }
 .primary:hover {
   transform: scale(1.07);
@@ -217,7 +220,7 @@ body::before {
   box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3);
   transition: all 0.2s ease;
   margin-top: 0.25rem;
-  width: auto;
+  width: 14rem;
 }
 .tertiary:hover {
   transform: scale(1.07);
