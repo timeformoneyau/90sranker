@@ -123,8 +123,6 @@ body::before {
   align-items: center;
   width: 100%;
   max-width: 260px;
-  position: relative;
-  padding-bottom: 3.5rem; /* space for overlaid select button */
 }
 
 /* --- Poster Styling --- */
@@ -200,9 +198,7 @@ body::before {
   box-shadow: 0 2px 12px #1fd2ea66, 0 4px 20px #8b5cf655;
   transition: all 0.2s ease;
   width: auto;
-  /* Removed absolute positioning so button flows inline */
 }
-
 .primary:hover {
   transform: scale(1.07);
   background: linear-gradient(91deg, #1fd2ea 10%, #8b5cf6 85%);
@@ -210,24 +206,23 @@ body::before {
 }
 
 .tertiary {
-  background: #2b2b38;
-  color: #ddd;
+  background: linear-gradient(91deg, #555 9%, #888 75%);
+  color: #fff;
   font-size: 0.9em;
   font-weight: 600;
-  padding: 0.55em 1.3em;
-  border-radius: 8px;
-  border: 1px dashed #8b5cf6aa;
+  padding: 0.7em 1.5em;
+  border-radius: 10px;
+  border: none;
   cursor: pointer;
-  box-shadow: 0 1px 4px #1fd2ea33;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3);
   transition: all 0.2s ease;
-  margin-top: 2.5rem;
-  position: static;
+  margin-top: 0.25rem;
+  width: auto;
 }
 .tertiary:hover {
-  color: #1fd2ea;
-  border-color: #1fd2ea;
-  background: #333646;
-  transform: scale(1.05);
+  transform: scale(1.07);
+  background: linear-gradient(91deg, #888 10%, #aaa 85%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
 }
 
 /* --- Shake Animation --- */
