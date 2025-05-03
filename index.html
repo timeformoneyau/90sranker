@@ -35,14 +35,15 @@
   <div class="container">
     <!-- 🎥 Compare Section -->
     <section id="compare-section" class="flex flex-col sm:flex-row sm:justify-around items-center gap-8">
+
       <!-- Movie A -->
       <div class="movie-block relative flex flex-col items-center w-full max-w-xs mx-auto" id="movieA-block">
         <div class="confetti-container" id="confetti-container-a"></div>
-        <img src="" alt="Movie Poster A" id="posterA" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px] mb-4" />
+        <img src="" alt="Movie Poster A" id="posterA" class="poster aspect-[2/3] w-full sm:w-auto mb-4" />
         <div class="movie-title text-center" id="movieA">Movie A</div>
-        <!-- Year displayed in title via JS -->
-        <button class="primary w-32 mb-2" onclick="vote('A')" aria-label="Select Movie A">SELECT</button>
-        <button class="tertiary w-32" onclick="markUnseen(movieA)">🙈 Haven't Seen</button>
+        <div class="movie-year" id="movieA-year"></div>
+        <button class="primary w-32 mb-1" onclick="vote('A')" aria-label="Select Movie A">SELECT</button>
+        <button class="tertiary w-32" onclick="markUnseen(movieA)">Haven't Seen</button>
       </div>
 
       <!-- VS Badge -->
@@ -51,11 +52,13 @@
       <!-- Movie B -->
       <div class="movie-block relative flex flex-col items-center w-full max-w-xs mx-auto" id="movieB-block">
         <div class="confetti-container" id="confetti-container-b"></div>
-        <img src="" alt="Movie Poster B" id="posterB" class="poster h-[200px] w-auto sm:h-[300px] md:h-[400px] mb-4" />
+        <img src="" alt="Movie Poster B" id="posterB" class="poster aspect-[2/3] w-full sm:w-auto mb-4" />
         <div class="movie-title text-center" id="movieB">Movie B</div>
-        <button class="primary w-32 mb-2" onclick="vote('B')" aria-label="Select Movie B">SELECT</button>
-        <button class="tertiary w-32" onclick="markUnseen(movieB)">🙈 Haven't Seen</button>
+        <div class="movie-year" id="movieB-year"></div>
+        <button class="primary w-32 mb-1" onclick="vote('B')" aria-label="Select Movie B">SELECT</button>
+        <button class="tertiary w-32" onclick="markUnseen(movieB)">Haven't Seen</button>
       </div>
+
     </section>
   </div>
 
