@@ -78,10 +78,13 @@ async function fetchPosterUrl(title, year) {
   }
 }
 
+// Display movie title and year in separate elements
 async function displayMovies() {
   try {
-    document.getElementById("movieA").textContent = `${movieA.title} (${movieA.year})`;
-    document.getElementById("movieB").textContent = `${movieB.title} (${movieB.year})`;
+    document.getElementById("movieA").textContent = movieA.title;
+    document.getElementById("movieA-year").textContent = movieA.year;
+    document.getElementById("movieB").textContent = movieB.title;
+    document.getElementById("movieB-year").textContent = movieB.year;
     document.getElementById("posterA").src = await fetchPosterUrl(movieA.title, movieA.year);
     document.getElementById("posterB").src = await fetchPosterUrl(movieB.title, movieB.year);
   } catch (err) {
