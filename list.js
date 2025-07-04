@@ -171,73 +171,86 @@ async function renderRecentVotes(uid) {
   recentTbody.innerHTML = '<tr class="loading-row"><td colspan="3">Loading recent votes...</td></tr>';
 
   try {
-    // Try to get recent votes with proper ordering
-    let votesQuery;
-    try {
-      // First try with orderBy (requires composite index)
-      votesQuery = query(
-        collection(db, "votes"),
-        where("user", "==", uid),
-        orderBy("timestamp", "desc"),
-        limit(10)
-      );
-    } catch (indexError) {
-      // Fallback: get votes without ordering if index doesn't exist
-      console.info("Using fallback query (no composite index)");
-      votesQuery = query(
-        collection(db, "votes"),
-        where("user", "==", uid),
-        limit(20) // Get more to account for potential missing timestamps
-      );
-    }
+    console.log("Attempting to load recent votes for user:", uid);
+    
+    // Simplified query - just get user's votes without ordering first
+    const votesQuery = query(
+      collection(db, "votes"),
+      where("user", "==", uid),
+      limit(50) // Get more to account for sorting and filtering
+    );
 
     const snap = await getDocs(votesQuery);
+    console.log("Retrieved votes:", snap.size);
     
     recentTbody.innerHTML = "";
     if (snap.empty) {
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No recent votes found.</td></tr>';
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No votes found. Start voting to see your history!</td></tr>';
       return;
     }
 
-    // Convert to array and sort by timestamp if we used fallback query
+    // Convert to array and filter valid votes
     let votes = [];
     snap.forEach(doc => {
       const data = doc.data();
-      votes.push(data);
+      // Only include votes with valid winner/loser data
+      if (data.winner && data.loser) {
+        votes.push({
+          ...data,
+          id: doc.id
+        });
+      }
     });
 
-    // Sort by timestamp (most recent first) and take top 10
-    votes.sort((a, b) => {
-      const timeA = a.timestamp?.toDate?.() || new Date(0);
-      const timeB = b.timestamp?.toDate?.() || new Date(0);
-      return timeB - timeA;
-    });
-    votes = votes.slice(0, 10);
+    console.log("Valid votes found:", votes.length);
 
     if (votes.length === 0) {
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No recent votes found.</td></tr>';
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No valid votes found.</td></tr>';
       return;
     }
+
+    // Sort by timestamp (most recent first), handle missing timestamps
+    votes.sort((a, b) => {
+      const timeA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+      const timeB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+      return timeB - timeA;
+    });
+
+    // Take top 10
+    votes = votes.slice(0, 10);
 
     votes.forEach(({ winner, loser, timestamp }) => {
       const tr = document.createElement("tr");
       const formattedDate = formatDate(timestamp);
+      
+      // Extract movie titles, handle different formats
+      const winnerTitle = typeof winner === 'string' ? winner.split("|")[0] : (winner.title || 'Unknown Movie');
+      const loserTitle = typeof loser === 'string' ? loser.split("|")[0] : (loser.title || 'Unknown Movie');
+      
       tr.innerHTML = `
         <td>${formattedDate}</td>
-        <td>${winner.split("|")[0]}</td>
-        <td>${loser.split("|")[0]}</td>
+        <td>${winnerTitle}</td>
+        <td>${loserTitle}</td>
       `;
       recentTbody.appendChild(tr);
     });
 
   } catch (err) {
     console.error("renderRecentVotes error:", err);
-    recentTbody.innerHTML = '<tr class="error-row"><td colspan="3">Unable to load recent votes.</td></tr>';
+    console.error("Error details:", {
+      code: err.code,
+      message: err.message
+    });
     
-    // If it's a permissions error, show a helpful message
+    let errorMessage = "Unable to load recent votes.";
+    
     if (err.code === 'permission-denied') {
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">Recent votes require proper authentication.</td></tr>';
+      errorMessage = "Authentication required to view recent votes.";
+    } else if (err.code === 'failed-precondition') {
+      errorMessage = "Database index required. Recent votes temporarily unavailable.";
     }
+    
+    recentTbody.innerHTML = `<tr class="error-row"><td colspan="3">${errorMessage}</td></tr>`;
   }
 }
 
