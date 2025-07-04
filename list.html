@@ -6,9 +6,171 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* Results page specific styles */
+    .results-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .tables-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .tables-wrapper {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .table-container {
+      background: rgba(20, 20, 25, 0.3);
+      border: 1px solid rgba(31, 210, 234, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .table-container h2 {
+      color: #e0e0e0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      text-align: center;
+    }
+
+    .count-display {
+      color: #1fd2ea;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-table, .recent-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(15, 15, 20, 0.4);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .results-table th, .recent-table th {
+      background: rgba(31, 210, 234, 0.15);
+      color: #1fd2ea;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(31, 210, 234, 0.3);
+    }
+
+    .results-table th:nth-child(2),
+    .results-table th:nth-child(3),
+    .results-table th:nth-child(4) {
+      text-align: center;
+      width: 80px;
+    }
+
+    .recent-table th:nth-child(1) {
+      width: 120px;
+    }
+
+    .results-table td, .recent-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e0e0e0;
+      font-size: 0.9rem;
+    }
+
+    .results-table td:first-child, .recent-table td:first-child {
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .results-table td:nth-child(2),
+    .results-table td:nth-child(3),
+    .results-table td:nth-child(4) {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .recent-table td:nth-child(1) {
+      font-size: 0.8rem;
+      color: #bbb;
+    }
+
+    .results-table tbody tr:hover, .recent-table tbody tr:hover {
+      background: rgba(31, 210, 234, 0.05);
+    }
+
+    .results-table tbody tr:last-child td, .recent-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Win percentage coloring */
+    .win-pct-high { color: #4ade80; }
+    .win-pct-medium { color: #fbbf24; }
+    .win-pct-low { color: #f87171; }
+
+    .recent-container {
+      background: rgba(20, 20, 25, 0.3);
+      border: 1px solid rgba(31, 210, 234, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      margin-bottom: 2rem;
+    }
+
+    .recent-container h2 {
+      color: #e0e0e0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0 0 1.5rem 0;
+      text-align: center;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #1fd2ea;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      background: rgba(31, 210, 234, 0.1);
+      border: 1px solid rgba(31, 210, 234, 0.3);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    .back-link:hover {
+      background: rgba(31, 210, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .loading-row, .empty-row {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+    }
+
+    .error-row {
+      text-align: center;
+      color: #f87171;
+    }
+  </style>
 </head>
 
 <body>
+  <div class="bg-overlay"></div>
+
   <!-- 🔲 Header -->
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
@@ -22,12 +184,12 @@
       <li><a href="list.html" class="active">Results</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="my-stats.html">Your Stats</a></li>
-      <li><a href="account.html">Your Account</a></li>
+      <li><a href="account.html">Log In</a></li>
     </ul>
     <div id="login-status"></div>
   </nav>
 
-  <div class="container">
+  <div class="results-container">
     <div class="tables-wrapper">
       <!-- Personal Top 20 -->
       <div class="table-container">
@@ -43,7 +205,7 @@
             </tr>
           </thead>
           <tbody id="personal-list">
-            <!-- rows inserted here by list.js -->
+            <tr class="loading-row"><td colspan="4">Loading your rankings...</td></tr>
           </tbody>
         </table>
       </div>
@@ -62,14 +224,14 @@
             </tr>
           </thead>
           <tbody id="global-list">
-            <!-- rows inserted here by list.js -->
+            <tr class="loading-row"><td colspan="4">Loading global rankings...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
     <!-- Recent Votes -->
-    <div class="table-container">
+    <div class="recent-container">
       <h2>🕒 Recent Votes</h2>
       <table class="recent-table">
         <thead>
@@ -80,7 +242,7 @@
           </tr>
         </thead>
         <tbody id="recent-votes">
-          <!-- rows inserted here by list.js -->
+          <tr class="loading-row"><td colspan="3">Loading recent votes...</td></tr>
         </tbody>
       </table>
     </div>
@@ -91,6 +253,9 @@
   <!-- 🧩 Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="list.js"></script>
-  <script type="module" src="loginStatus.js"></script>
+  <script type="module">
+    import { updateLoginStatus } from "./loginStatus.js";
+    updateLoginStatus();
+  </script>
 </body>
 </html>
