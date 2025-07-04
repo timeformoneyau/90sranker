@@ -16,11 +16,36 @@ const personalTbody   = document.getElementById("personal-list");
 const globalTbody     = document.getElementById("global-list");
 const recentTbody     = document.getElementById("recent-votes");
 
+// Helper function to get win percentage color class
+function getWinPctClass(winPct) {
+  const pct = parseFloat(winPct);
+  if (pct >= 80) return 'win-pct-high';
+  if (pct >= 60) return 'win-pct-medium';
+  return 'win-pct-low';
+}
+
+// Helper function to format date
+function formatDate(timestamp) {
+  if (!timestamp) return 'Unknown';
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (err) {
+    console.warn('Date formatting error:', err);
+    return 'Unknown';
+  }
+}
+
 // — Personal Top 20 —
 async function renderPersonalStats(uid) {
   if (!personalTbody) return;
   personalCountEl.textContent = "Total Votes: Loading…";
-  personalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
+  personalTbody.innerHTML = '<tr class="loading-row"><td colspan="4">Loading your rankings...</td></tr>';
 
   try {
     const snap = await getDocs(query(
@@ -48,27 +73,33 @@ async function renderPersonalStats(uid) {
           winPct: total ? ((r.wins / total) * 100).toFixed(1) : "0.0"
         };
       })
-      .sort((a, b) => b.wins - a.wins)
+      .sort((a, b) => {
+        // Sort by wins first, then by win percentage
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        return parseFloat(b.winPct) - parseFloat(a.winPct);
+      })
       .slice(0, 20);
 
     personalTbody.innerHTML = "";
     if (!rows.length) {
-      personalTbody.innerHTML = "<tr><td colspan='4'>No votes yet.</td></tr>";
+      personalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">No votes yet. Start ranking movies!</td></tr>';
       return;
     }
-    rows.forEach(m => {
+    
+    rows.forEach((m, index) => {
       const tr = document.createElement("tr");
+      const winPctClass = getWinPctClass(m.winPct);
       tr.innerHTML = `
-        <td>${m.title}</td>
+        <td><strong>#${index + 1}</strong> ${m.title}</td>
         <td>${m.wins}</td>
         <td>${m.losses}</td>
-        <td>${m.winPct}%</td>
+        <td class="${winPctClass}">${m.winPct}%</td>
       `;
       personalTbody.appendChild(tr);
     });
   } catch (err) {
     console.error("renderPersonalStats error:", err);
-    personalTbody.innerHTML = "<tr><td colspan='4'>Failed to load personal stats.</td></tr>";
+    personalTbody.innerHTML = '<tr class="error-row"><td colspan="4">Failed to load personal stats.</td></tr>';
     personalCountEl.textContent = "Total Votes: 0";
   }
 }
@@ -77,7 +108,7 @@ async function renderPersonalStats(uid) {
 async function renderGlobalStats() {
   if (!globalTbody) return;
   globalCountEl.textContent = "Total Votes: Loading…";
-  globalTbody.innerHTML = "<tr><td colspan='4'>Loading…</td></tr>";
+  globalTbody.innerHTML = '<tr class="loading-row"><td colspan="4">Loading global rankings...</td></tr>';
 
   try {
     const snap = await getDocs(collection(db, "votes"));
@@ -103,62 +134,110 @@ async function renderGlobalStats() {
           winPct: total ? ((w / total) * 100).toFixed(1) : "0.0"
         };
       })
-      .sort((a,b) => b.wins - a.wins)
+      .sort((a, b) => {
+        // Sort by wins first, then by win percentage
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        return parseFloat(b.winPct) - parseFloat(a.winPct);
+      })
       .slice(0, 20);
 
     globalTbody.innerHTML = "";
     if (!rows.length) {
-      globalTbody.innerHTML = "<tr><td colspan='4'>No votes yet.</td></tr>";
+      globalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">No global votes yet.</td></tr>';
       return;
     }
-    rows.forEach(m => {
+    
+    rows.forEach((m, index) => {
       const tr = document.createElement("tr");
+      const winPctClass = getWinPctClass(m.winPct);
       tr.innerHTML = `
-        <td>${m.title}</td>
+        <td><strong>#${index + 1}</strong> ${m.title}</td>
         <td>${m.wins}</td>
         <td>${m.losses}</td>
-        <td>${m.winPct}%</td>
+        <td class="${winPctClass}">${m.winPct}%</td>
       `;
       globalTbody.appendChild(tr);
     });
   } catch (err) {
     console.error("renderGlobalStats error:", err);
-    globalTbody.innerHTML = "<tr><td colspan='4'>Failed to load global stats.</td></tr>";
+    globalTbody.innerHTML = '<tr class="error-row"><td colspan="4">Failed to load global stats.</td></tr>';
     globalCountEl.textContent = "Total Votes: 0";
   }
 }
 
-// — Recent Votes —
+// — Recent Votes (Fixed) —
 async function renderRecentVotes(uid) {
   if (!recentTbody) return;
-  recentTbody.innerHTML = "<tr><td colspan='3'>Loading…</td></tr>";
+  recentTbody.innerHTML = '<tr class="loading-row"><td colspan="3">Loading recent votes...</td></tr>';
 
   try {
-    const snap = await getDocs(query(
-      collection(db, "votes"),
-      where("user","==",uid),
-      orderBy("timestamp","desc"),
-      limit(10)
-    ));
+    // Try to get recent votes with proper ordering
+    let votesQuery;
+    try {
+      // First try with orderBy (requires composite index)
+      votesQuery = query(
+        collection(db, "votes"),
+        where("user", "==", uid),
+        orderBy("timestamp", "desc"),
+        limit(10)
+      );
+    } catch (indexError) {
+      // Fallback: get votes without ordering if index doesn't exist
+      console.info("Using fallback query (no composite index)");
+      votesQuery = query(
+        collection(db, "votes"),
+        where("user", "==", uid),
+        limit(20) // Get more to account for potential missing timestamps
+      );
+    }
+
+    const snap = await getDocs(votesQuery);
+    
     recentTbody.innerHTML = "";
     if (snap.empty) {
-      recentTbody.innerHTML = "<tr><td colspan='3'>No recent votes.</td></tr>";
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No recent votes found.</td></tr>';
       return;
     }
+
+    // Convert to array and sort by timestamp if we used fallback query
+    let votes = [];
     snap.forEach(doc => {
-      const { winner, loser, timestamp } = doc.data();
-      const date = timestamp?.toDate().toLocaleString() || "";
+      const data = doc.data();
+      votes.push(data);
+    });
+
+    // Sort by timestamp (most recent first) and take top 10
+    votes.sort((a, b) => {
+      const timeA = a.timestamp?.toDate?.() || new Date(0);
+      const timeB = b.timestamp?.toDate?.() || new Date(0);
+      return timeB - timeA;
+    });
+    votes = votes.slice(0, 10);
+
+    if (votes.length === 0) {
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No recent votes found.</td></tr>';
+      return;
+    }
+
+    votes.forEach(({ winner, loser, timestamp }) => {
       const tr = document.createElement("tr");
+      const formattedDate = formatDate(timestamp);
       tr.innerHTML = `
-        <td>${date}</td>
+        <td>${formattedDate}</td>
         <td>${winner.split("|")[0]}</td>
         <td>${loser.split("|")[0]}</td>
       `;
       recentTbody.appendChild(tr);
     });
+
   } catch (err) {
     console.error("renderRecentVotes error:", err);
-    recentTbody.innerHTML = "<tr><td colspan='3'>Failed to load recent votes.</td></tr>";
+    recentTbody.innerHTML = '<tr class="error-row"><td colspan="3">Unable to load recent votes.</td></tr>';
+    
+    // If it's a permissions error, show a helpful message
+    if (err.code === 'permission-denied') {
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">Recent votes require proper authentication.</td></tr>';
+    }
   }
 }
 
@@ -169,9 +248,9 @@ window.addEventListener("load", () => {
       await renderPersonalStats(user.uid);
       await renderRecentVotes(user.uid);
     } else {
-      personalTbody.innerHTML = `<tr><td colspan="4">Log in to see your stats.</td></tr>`;
+      personalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">Log in to see your personal rankings.</td></tr>';
       personalCountEl.textContent = "Total Votes: 0";
-      recentTbody.innerHTML  = `<tr><td colspan="3">Log in to see recent votes.</td></tr>`;
+      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">Log in to see your recent votes.</td></tr>';
     }
     await renderGlobalStats();
   });
