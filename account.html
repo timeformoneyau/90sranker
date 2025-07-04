@@ -31,6 +31,7 @@
       background-color: #1a1a1f;
       color: #fff;
       font-family: 'Space Grotesk', sans-serif;
+      box-sizing: border-box;
     }
     .account-container button {
       width: 100%;
@@ -48,6 +49,14 @@
       background-color: #8b5cf6;
       color: #fff;
     }
+    .account-container button.secondary {
+      background-color: #444;
+      color: #fff;
+      margin-top: 0.5em;
+    }
+    .account-container button.secondary:hover {
+      background-color: #666;
+    }
     .signup-link {
       margin-top: 1em;
       font-size: 0.9rem;
@@ -57,9 +66,41 @@
       color: #1fd2ea;
       text-decoration: none;
       font-weight: 600;
+      cursor: pointer;
+    }
+    .signup-link a:hover {
+      text-decoration: underline;
     }
     .hidden {
       display: none;
+    }
+    .status-message {
+      margin-top: 1em;
+      padding: 0.75em;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .status-success {
+      background-color: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .status-error {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .forgot-password {
+      margin-top: 0.5em;
+      font-size: 0.85rem;
+    }
+    .forgot-password a {
+      color: #1fd2ea;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .forgot-password a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -68,7 +109,7 @@
 
   <header class="site-header">
     <div class="site-title">SHELF LIFE</div>
-    <p class="site-subtitle">Ranking the 90’s, one movie at a time.</p>
+    <p class="site-subtitle">Ranking the 90's, one movie at a time.</p>
   </header>
 
   <nav class="nav-bar">
@@ -77,9 +118,9 @@
       <li><a href="list.html">Results</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="my-stats.html">Your Stats</a></li>
-      <li><a href="account.html">Your Account</a></li>
+      <li><a href="account.html">Log In</a></li>
     </ul>
-  <div id="login-status"></div>
+    <div id="login-status"></div>
   </nav>
 
   <div class="container">
@@ -87,30 +128,54 @@
 
       <!-- Logged-out state -->
       <div id="account-logged-out">
-        <h2>Your Account</h2>
-        <p class="subtext">Log in or create a new account to access your rankings.</p>
+        <h2>Welcome to Shelf Life</h2>
+        <p class="subtext">Log in or create a new account to save your movie rankings.</p>
+        
         <form id="login-form">
           <input type="email" id="email" placeholder="Email" required>
           <input type="password" id="password" placeholder="Password" required>
           <button type="submit" id="login-button">Log In</button>
         </form>
+        
+        <div class="forgot-password">
+          <a href="#" id="forgot-password-link">Forgot your password?</a>
+        </div>
+        
         <p class="signup-link">
-          Don’t have an account? <a href="#" id="signup-trigger">Create one</a>
+          Don't have an account? <a href="#" id="signup-trigger">Create one</a>
         </p>
+
+        <!-- Password Reset Form (hidden by default) -->
+        <div id="reset-password-form" class="hidden">
+          <h2>Reset Password</h2>
+          <p class="subtext">Enter your email address and we'll send you a password reset link.</p>
+          <form id="reset-form">
+            <input type="email" id="reset-email" placeholder="Email" required>
+            <button type="submit">Send Reset Email</button>
+          </form>
+          <p class="signup-link">
+            <a href="#" id="back-to-login">Back to Login</a>
+          </p>
+        </div>
       </div>
 
-      <!-- Logged-in state (simplified) -->
+      <!-- Logged-in state -->
       <div id="account-logged-in" class="hidden">
-        <h2>You are logged in</h2>
+        <h2>Your Account</h2>
+        <p id="user-email" class="subtext"></p>
         <button id="logout-button">Log Out</button>
       </div>
 
+      <!-- Status Messages -->
+      <div id="status-message" class="status-message hidden"></div>
+
     </div>
   </div>
+
   <script type="module" src="auth.js"></script>
   <script type="module">
-  import { updateLoginStatus } from "./loginStatus.js";
-  updateLoginStatus();
-</script>
+    import { updateLoginStatus } from "./loginStatus.js";
+    updateLoginStatus();
+  </script>
 </body>
 </html>
