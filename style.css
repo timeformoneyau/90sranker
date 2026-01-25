@@ -1,31 +1,42 @@
 /* =========================================================
-   SHELF LIFE — CSS v2 (System-first, maintainable, mobile-first)
-   - Tokens are enforced
-   - Components have clear APIs
-   - Page-specific styles are isolated at the end
-   - Legacy class aliases included to avoid breaking existing HTML
+   SHELF LIFE — CSS (v3)
+   Goals in this revision:
+   - Add controlled 90s-adjacent color (nav + accents) without competing with posters
+   - Punchier title treatment (typography-first, minimal effects)
+   - VS badge vertically centered between posters (structural fix)
+   - "Haven't Seen" reads like a real button (utility style + a touch of color)
+   - User bar (Welcome + Logout) sits cleanly in the top-right and aligns correctly
+   - Keep legacy class aliases to avoid breaking existing HTML
    ========================================================= */
+
 
 /* =========================================================
    1) TOKENS (Design System)
    ========================================================= */
 
 :root {
-  /* Brand palette */
-  --color-primary: #1fd2ea;
-  --color-secondary: #8b5cf6;
-  --color-accent: #d946ef;
+  /* 90s-adjacent structural gradient (deep indigo -> dark teal) */
+  --nav-grad-left: #1f2a44;
+  --nav-grad-right: #1f3b3a;
+
+  /* Brand accents (kept restrained) */
+  --color-primary: #1fd2ea;     /* cyan accent */
+  --color-secondary: #8b5cf6;   /* violet accent */
+  --color-accent: #7aa2f7;      /* periwinkle "90s digital" accent */
 
   /* Neutrals */
-  --color-bg-0: #0f0f12;     /* page */
-  --color-bg-1: #14141a;     /* surfaces */
-  --color-bg-2: #1b1b22;     /* elevated surfaces */
+  --color-bg-0: #0f0f12;        /* page */
+  --color-bg-1: #14141a;        /* surfaces */
+  --color-bg-2: #1b1b22;        /* elevated surfaces */
   --color-border: rgba(255, 255, 255, 0.10);
 
-  --color-text-0: #ffffff;   /* primary */
-  --color-text-1: #e6e6e6;   /* secondary */
-  --color-text-2: #b7b7b7;   /* muted */
-  --color-text-3: #8e8e8e;   /* dim */
+  --color-text-0: #ffffff;      /* primary */
+  --color-text-1: #e6e6e6;      /* secondary */
+  --color-text-2: #b7b7b7;      /* muted */
+  --color-text-3: #8e8e8e;      /* dim */
+
+  /* Title color (cool off-white) */
+  --color-title: #e6e9f2;
 
   /* Semantic */
   --color-success: #4ade80;
@@ -42,6 +53,7 @@
   --fs-4: 1.25rem;  /* 20 */
   --fs-5: 1.5rem;   /* 24 */
   --fs-6: 2rem;     /* 32 */
+  --fs-7: 2.5rem;   /* 40 */
 
   --fw-regular: 400;
   --fw-medium: 500;
@@ -49,7 +61,7 @@
   --fw-bold: 700;
   --fw-black: 900;
 
-  --lh-tight: 1.2;
+  --lh-tight: 1.15;
   --lh-normal: 1.5;
 
   /* Spacing (8px base) */
@@ -69,9 +81,9 @@
   --r-xl: 1rem;
   --r-full: 9999px;
 
-  /* Shadow (subtle by default; no glow as a foundation) */
+  /* Shadows (subtle foundation) */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 8px 22px rgba(0, 0, 0, 0.38);
 
   /* Motion */
   --t-fast: 150ms ease;
@@ -82,11 +94,17 @@
   --container-pad: var(--s-4);
 
   /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(31, 210, 234, 0.20);
+  --focus-ring: 0 0 0 3px rgba(31, 210, 234, 0.22);
 
   /* Tap target */
   --tap-min: 44px;
+
+  /* Layering */
+  --z-sticky: 200;
+  --z-overlay: 500;
+  --z-modal: 1000;
 }
+
 
 /* =========================================================
    2) RESET + BASE
@@ -94,9 +112,7 @@
 
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
 html {
   font-size: 16px;
@@ -116,14 +132,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Keep a restrained background treatment */
+/* restrained atmosphere (kept subtle) */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(800px 400px at 20% 0%, rgba(31, 210, 234, 0.07), transparent 60%),
-    radial-gradient(700px 400px at 85% 80%, rgba(139, 92, 246, 0.07), transparent 62%),
+    radial-gradient(900px 420px at 20% 0%, rgba(31, 210, 234, 0.07), transparent 60%),
+    radial-gradient(820px 440px at 85% 80%, rgba(139, 92, 246, 0.07), transparent 62%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 35%);
   pointer-events: none;
   z-index: 0;
@@ -134,10 +150,7 @@ body > * {
   z-index: 1;
 }
 
-img {
-  max-width: 100%;
-  display: block;
-}
+img { max-width: 100%; display: block; }
 
 a {
   color: var(--color-primary);
@@ -145,9 +158,7 @@ a {
   transition: color var(--t-fast);
 }
 
-a:hover {
-  color: var(--color-secondary);
-}
+a:hover { color: var(--color-secondary); }
 
 :focus-visible {
   outline: none;
@@ -155,7 +166,6 @@ a:hover {
   border-radius: var(--r-md);
 }
 
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 1ms !important;
@@ -164,6 +174,7 @@ a:hover {
     scroll-behavior: auto !important;
   }
 }
+
 
 /* =========================================================
    3) TYPOGRAPHY
@@ -175,7 +186,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: var(--lh-tight);
 }
 
-h1 { font-size: clamp(var(--fs-6), 6vw, 2.5rem); font-weight: var(--fw-black); }
+h1 { font-size: clamp(var(--fs-6), 6vw, var(--fs-7)); font-weight: var(--fw-black); }
 h2 { font-size: var(--fs-6); }
 h3 { font-size: var(--fs-5); }
 h4 { font-size: var(--fs-4); }
@@ -183,6 +194,7 @@ h5 { font-size: var(--fs-3); }
 h6 { font-size: var(--fs-2); }
 
 p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
+
 
 /* =========================================================
    4) LAYOUT PRIMITIVES
@@ -195,8 +207,8 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   padding: 0 var(--container-pad);
 }
 
-/* Stack utility: consistent vertical rhythm */
 .stack > * + * { margin-top: var(--s-4); }
+
 
 /* =========================================================
    5) SITE CHROME (Header / Nav / User Bar)
@@ -206,16 +218,32 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   text-align: center;
   padding: var(--s-6) var(--s-4) var(--s-5);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(20, 20, 26, 0.55);
+  background: rgba(20, 20, 26, 0.50);
   backdrop-filter: blur(10px);
+  position: relative;
+}
+
+/* subtle accent rule under header (personality, controlled) */
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(122, 162, 247, 0.0), rgba(122, 162, 247, 0.55), rgba(31, 210, 234, 0.45), rgba(122, 162, 247, 0.0));
+  opacity: 0.9;
 }
 
 .site-title {
-  letter-spacing: 0.14em;
+  color: var(--color-title);
+  letter-spacing: 0.12em;
   font-variant: small-caps;
   margin-bottom: var(--s-2);
-  color: var(--color-text-0);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+
+  /* Punch: heavier + slightly tighter line + subtle stroke simulation via shadow */
+  font-weight: var(--fw-black);
 }
 
 .site-subtitle {
@@ -225,12 +253,14 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   letter-spacing: 0.02em;
 }
 
+/* NAV: the intentional "color band" */
 .nav-bar {
   position: sticky;
   top: 0;
-  z-index: 200;
-  background: rgba(20, 20, 26, 0.70);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: var(--z-sticky);
+  background: linear-gradient(90deg, rgba(31, 42, 68, 0.92), rgba(31, 59, 58, 0.92));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30);
   backdrop-filter: blur(10px);
 }
 
@@ -251,63 +281,84 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   min-height: var(--tap-min);
   padding: var(--s-2) var(--s-4);
   border-radius: var(--r-full);
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.90);
   font-weight: var(--fw-semibold);
-  transition: background-color var(--t-base), color var(--t-base), transform var(--t-base);
+  letter-spacing: 0.02em;
+  transition: background-color var(--t-base), color var(--t-base), transform var(--t-base), box-shadow var(--t-base);
 }
 
+/* hover is clear but not loud */
 .nav-links li a:hover {
-  background: rgba(31, 210, 234, 0.12);
-  color: var(--color-primary);
+  background: rgba(122, 162, 247, 0.18);
+  color: #ffffff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
+/* active has a "90s digital" accent */
 .nav-links li a.active {
-  background: rgba(31, 210, 234, 0.18);
-  color: var(--color-primary);
+  background: rgba(31, 210, 234, 0.16);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(31, 210, 234, 0.22) inset,
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
+/* USER BAR: top-right, aligned and tidy */
 .user-bar {
   position: fixed;
-  top: var(--s-4);
-  right: var(--s-4);
-  z-index: 1000;
+  top: var(--s-3);
+  right: var(--s-3);
+  z-index: var(--z-modal);
 }
 
 .user-indicator {
   display: flex;
   align-items: center;
+  justify-content: flex-end;   /* ensures contents align to the right */
   gap: var(--s-3);
+
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-md);
+
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(10px);
+
   box-shadow: var(--shadow-1);
   color: var(--color-text-0);
   font-size: var(--fs-1);
   font-weight: var(--fw-medium);
+  text-align: right;
+  white-space: nowrap;
 }
 
 .user-indicator button {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 0, 102, 0.85);
-  color: var(--color-text-0);
+  min-height: 34px;
   border-radius: var(--r-sm);
   padding: 0.35rem 0.75rem;
-  min-height: 34px;
+
   cursor: pointer;
   font-weight: var(--fw-semibold);
-  transition: background-color var(--t-fast), transform var(--t-fast);
+  color: #fff;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(248, 113, 113, 0.18);
+  transition: background-color var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
 }
 
-.user-indicator button:hover { background: rgba(255, 0, 102, 1); }
+.user-indicator button:hover {
+  background: rgba(248, 113, 113, 0.28);
+  border-color: rgba(248, 113, 113, 0.40);
+}
+
 .user-indicator button:active { transform: translateY(1px); }
 
+
 /* =========================================================
-   6) COMPONENTS
+   6) COMPONENTS (Buttons / Cards / Forms / Tables)
    ========================================================= */
 
-/* Buttons — consistent API */
+/* Buttons: consistent API */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -334,11 +385,11 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 .btn:active { transform: translateY(1px); }
 
-/* Primary */
+/* Primary (for main CTAs if you use them) */
 .btn--primary {
   background: rgba(31, 210, 234, 0.18);
   border-color: rgba(31, 210, 234, 0.35);
-  color: var(--color-text-0);
+  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
@@ -358,19 +409,20 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 .btn--secondary:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.22);
-  color: var(--color-text-0);
+  color: #fff;
 }
 
-/* Danger (logout etc) */
-.btn--danger {
-  background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(248, 113, 113, 0.35);
-  color: var(--color-text-0);
+/* Utility accent button (used for "Haven't Seen") */
+.btn--utility {
+  background: rgba(122, 162, 247, 0.12);
+  border-color: rgba(122, 162, 247, 0.35);
+  color: #fff;
+  box-shadow: var(--shadow-1);
 }
 
-.btn--danger:hover {
-  background: rgba(248, 113, 113, 0.22);
-  border-color: rgba(248, 113, 113, 0.55);
+.btn--utility:hover {
+  background: rgba(122, 162, 247, 0.18);
+  border-color: rgba(122, 162, 247, 0.50);
 }
 
 /* Cards */
@@ -411,7 +463,7 @@ input:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
-/* Tables — kept but de-emphasized */
+/* Tables (kept, de-emphasized) */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -422,8 +474,8 @@ table {
 }
 
 th {
-  background: rgba(31, 210, 234, 0.10);
-  color: var(--color-text-0);
+  background: rgba(122, 162, 247, 0.12);
+  color: #fff;
   font-weight: var(--fw-bold);
   font-size: var(--fs-1);
   text-transform: uppercase;
@@ -443,6 +495,7 @@ td {
 tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
 tbody tr:last-child td { border-bottom: none; }
 
+
 /* =========================================================
    7) UTILITIES
    ========================================================= */
@@ -455,28 +508,33 @@ tbody tr:last-child td { border-bottom: none; }
 .win-pct-medium { color: var(--color-warning); }
 .win-pct-low { color: var(--color-error); }
 
+
 /* =========================================================
-   8) PAGE-SPECIFIC: RANKER / COMPARE
-   Keep this section as the only place for compare layout + poster styling
+   8) PAGE-SPECIFIC: COMPARE / RANKER
+   - Structural fix: VS is vertically centered between posters on desktop
+   - Mobile remains stacked (scroll is expected)
+   - "Haven't Seen" gets a real button treatment with a touch of color
    ========================================================= */
 
 #compare-section {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr; /* mobile default */
   gap: var(--s-8);
   justify-items: center;
   padding: var(--s-8) var(--s-4);
 }
 
+/* Each movie column */
 .movie-block {
   width: 100%;
-  max-width: 340px;
+  max-width: 360px;
   display: grid;
   gap: var(--s-4);
   justify-items: center;
   text-align: center;
 }
 
+/* Poster */
 .poster {
   width: 100%;
   aspect-ratio: 2 / 3;
@@ -495,9 +553,7 @@ tbody tr:last-child td { border-bottom: none; }
   border-color: rgba(31, 210, 234, 0.35);
 }
 
-.poster:active {
-  transform: translateY(0);
-}
+.poster:active { transform: translateY(0); }
 
 .movie-title {
   margin: 0;
@@ -513,13 +569,51 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: var(--fs-2);
 }
 
-/* Button placement: full width on mobile, constrained on larger */
-.movie-block .btn {
+/* Default buttons in movie block */
+.movie-block .btn,
+.movie-block .primary,
+.movie-block .tertiary {
   width: 100%;
   max-width: 320px;
 }
 
-/* VS Badge — static, subtle (no animation at system layer) */
+/* "Haven't Seen" specifically: looks like a real utility button */
+.movie-block .btn-haven-seen,
+.movie-block .tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  border-radius: var(--r-lg);
+  padding: 0.75rem 1rem;
+
+  font-size: var(--fs-2);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+
+  cursor: pointer;
+  user-select: none;
+
+  background: rgba(122, 162, 247, 0.12);
+  border: 1px solid rgba(122, 162, 247, 0.35);
+  color: #fff;
+  box-shadow: var(--shadow-1);
+
+  transition: transform var(--t-fast), background-color var(--t-base), border-color var(--t-base), box-shadow var(--t-base);
+}
+
+.movie-block .btn-haven-seen:hover,
+.movie-block .tertiary:hover {
+  background: rgba(122, 162, 247, 0.18);
+  border-color: rgba(122, 162, 247, 0.50);
+}
+
+.movie-block .btn-haven-seen:active,
+.movie-block .tertiary:active {
+  transform: translateY(1px);
+}
+
+/* VS Badge (mobile: sits between blocks naturally) */
 .vs-badge {
   width: 64px;
   height: 64px;
@@ -529,35 +623,75 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: center;
   font-weight: var(--fw-black);
   font-size: var(--fs-4);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.94);
 
-  background: linear-gradient(135deg, rgba(31, 210, 234, 0.40), rgba(139, 92, 246, 0.40));
+  background: linear-gradient(135deg, rgba(31, 210, 234, 0.35), rgba(122, 162, 247, 0.35));
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--shadow-1);
 }
 
+
 /* =========================================================
-   9) RESPONSIVE (Mobile-first)
+   9) RESPONSIVE
+   - Desktop: 3-column compare with VS vertically centered
    ========================================================= */
 
 @media (min-width: 768px) {
   :root { --container-pad: var(--s-6); }
 
+  /* Desktop compare grid with VS as the middle column */
   #compare-section {
     grid-template-columns: 1fr auto 1fr;
-    align-items: start;
-    gap: var(--s-10);
+    column-gap: var(--s-10);
+    row-gap: var(--s-6);
+    align-items: center;      /* critical: vertical centering for VS */
   }
 
-  .movie-block { max-width: 320px; }
-  .movie-block .btn { max-width: 260px; }
+  /* Ensure movie blocks align as columns */
+  .movie-block {
+    max-width: 340px;
+    align-self: start;        /* posters align naturally; VS centers via container align-items */
+  }
+
+  /* Center the badge vertically between the two posters */
+  .vs-badge {
+    align-self: center;       /* explicit */
+    justify-self: center;
+  }
+
+  .movie-block .btn,
+  .movie-block .primary,
+  .movie-block .tertiary {
+    max-width: 260px;
+  }
+
+  .user-bar {
+    top: var(--s-3);
+    right: var(--s-4);
+  }
 }
 
 @media (min-width: 1024px) {
   :root { --container-pad: var(--s-8); }
-  #compare-section { gap: var(--s-10); }
-  .movie-block { max-width: 360px; }
+  #compare-section { column-gap: var(--s-10); }
+  .movie-block { max-width: 380px; }
 }
+
+/* Small screens: keep user bar tighter */
+@media (max-width: 767px) {
+  .site-title {
+    font-size: clamp(var(--fs-6), 7vw, var(--fs-7));
+    letter-spacing: 0.10em;
+  }
+
+  .user-bar {
+    top: var(--s-2);
+    right: var(--s-2);
+  }
+
+  .nav-links { padding: var(--s-2) 0; }
+}
+
 
 /* =========================================================
    10) PRINT
@@ -584,31 +718,31 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
+
 /* =========================================================
    11) LEGACY ALIASES (to prevent breakage)
    Remove these once HTML is updated.
    ========================================================= */
 
-/* Old: .primary / .btn-primary -> new primary */
+/* Old: .primary / .btn-primary -> treat as primary button-like */
 .primary,
-.btn-primary { /* alias */
-  /* apply .btn--primary look, but don't assume .btn exists */
+.btn-primary {
   background: rgba(31, 210, 234, 0.18);
   border: 1px solid rgba(31, 210, 234, 0.35);
-  color: var(--color-text-0);
+  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
-/* Old: .tertiary / .btn-secondary -> new secondary */
+/* Old: .tertiary / .btn-secondary -> treat as utility ("Haven't Seen") */
 .tertiary,
-.btn-secondary { /* alias */
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--color-text-1);
+.btn-secondary {
+  background: rgba(122, 162, 247, 0.12);
+  border: 1px solid rgba(122, 162, 247, 0.35);
+  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
-/* Old: shake class kept for compatibility, but simplified */
+/* Shake kept for compatibility */
 @keyframes shake {
   0% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
@@ -618,5 +752,4 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .shake { animation: shake 320ms ease; }
 
-/* Confetti styles intentionally removed from the foundation layer.
-   If you still need them, put them in a separate page-specific file. */
+/* Confetti styles intentionally excluded from the core system layer. */
