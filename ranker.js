@@ -10,7 +10,7 @@ import {
   doc
 } from "./firebase.js";
 
-import confetti from "https://cdn.skypack.dev/canvas-confetti";
+import confetti from "https://esm.sh/canvas-confetti";
 
 // ==========================================
 // STATE MANAGEMENT
