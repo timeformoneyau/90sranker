@@ -539,6 +539,20 @@ tbody tr:last-child td { border-bottom: none; }
 
 .poster:active { transform: translateY(0); }
 
+@keyframes poster-dance {
+  0%   { transform: scale(1)    rotate(0deg); }
+  15%  { transform: scale(1.06) rotate(-4deg); }
+  30%  { transform: scale(1.04) rotate(4deg); }
+  45%  { transform: scale(1.06) rotate(-3deg); }
+  60%  { transform: scale(1.03) rotate(2deg); }
+  80%  { transform: scale(1.02) rotate(-1deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+
+.poster-dance {
+  animation: poster-dance 600ms ease-in-out;
+}
+
 .movie-title {
   margin: 0;
   font-weight: var(--fw-black);

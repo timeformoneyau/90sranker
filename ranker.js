@@ -192,7 +192,7 @@ async function handleVote(choice) {
   saveState();
   
   // 5. Celebrate!
-  triggerConfetti();
+  triggerConfetti(choice);
   
   // 6. Load next matchup
   setTimeout(() => chooseTwoMovies(), 1200);
@@ -264,14 +264,24 @@ function updateWinLossStats(winnerTitle, loserTitle) {
 }
 
 /**
- * Trigger confetti celebration
+ * Trigger confetti from winning poster + dance animation
  */
-function triggerConfetti() {
+function triggerConfetti(choice) {
+  const poster = document.getElementById(choice === "A" ? "posterA" : "posterB");
+  const rect = poster.getBoundingClientRect();
+  const x = (rect.left + rect.width / 2) / window.innerWidth;
+  const y = (rect.top + rect.height / 2) / window.innerHeight;
+
   confetti({
     particleCount: 100,
     spread: 70,
-    origin: { y: 0.6 }
+    origin: { x, y }
   });
+
+  poster.classList.add("poster-dance");
+  poster.addEventListener("animationend", () => {
+    poster.classList.remove("poster-dance");
+  }, { once: true });
 }
 
 // ==========================================
