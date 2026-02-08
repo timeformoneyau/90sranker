@@ -1,43 +1,38 @@
 /* =========================================================
-   SHELF LIFE — CSS (v4 · Video Store Edition)
-   90s rental store aesthetic: warm, tactile, analog.
-   Posters are the heroes. Everything else is the store.
+   SHELF LIFE — CSS (v5 · Video Rental Store)
+   Blockbuster-era retail: fluorescent, plastic, laminate.
+   Light interiors. Bold signage. Posters pop.
    ========================================================= */
 
 
 /* =========================================================
-   1) TOKENS (Design System)
+   1) TOKENS
    ========================================================= */
 
 :root {
-  /* Store palette */
-  --nav-grad-left: #3a2218;
-  --nav-grad-right: #2d1e16;
+  /* Accent — one strong retail blue */
+  --color-primary: #0072CE;
+  --color-primary-light: #338FDB;
+  --color-primary-dark: #005AA0;
+  --color-secondary: #0072CE;
+  --color-accent: #0072CE;
 
-  /* Accents */
-  --color-primary: #e8a93e;       /* price-sticker gold */
-  --color-secondary: #c4534a;     /* VHS rental red */
-  --color-accent: #d4a053;        /* warm amber */
+  /* Backgrounds — light retail interior */
+  --color-bg-0: #f0eeeb;          /* page — warm off-white */
+  --color-bg-1: #ffffff;          /* surfaces — clean white */
+  --color-bg-2: #e8e6e2;          /* elevated / alt surface */
+  --color-border: #d0cdc8;
 
-  /* Backgrounds — warm, not void */
-  --color-bg-0: #1a1712;          /* deep warm charcoal */
-  --color-bg-1: #231f1a;          /* surface */
-  --color-bg-2: #2a2520;          /* elevated surface */
-  --color-border: rgba(255, 220, 160, 0.12);
-
-  /* Text — cream and warm */
-  --color-text-0: #f0e8da;        /* primary (warm off-white) */
-  --color-text-1: #d4c8b0;        /* secondary (cream) */
-  --color-text-2: #a89880;        /* muted (warm grey) */
-  --color-text-3: #7a6e5e;        /* dim */
-
-  /* Title */
-  --color-title: #f5e6c8;
+  /* Text — dark on light */
+  --color-text-0: #1a1a1a;        /* primary */
+  --color-text-1: #3a3a3a;        /* secondary */
+  --color-text-2: #6b6b6b;        /* muted */
+  --color-text-3: #999999;        /* dim */
 
   /* Semantic */
-  --color-success: #6abf69;
-  --color-warning: #e8a93e;
-  --color-error: #c4534a;
+  --color-success: #1a8d1a;
+  --color-warning: #cc7700;
+  --color-error: #cc2222;
 
   /* Typography */
   --font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -79,10 +74,9 @@
   --r-xl: 0.75rem;
   --r-full: 9999px;
 
-  /* Shadows — warmer, heavier */
-  --shadow-1: 0 2px 4px rgba(0, 0, 0, 0.5);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.55);
-  --shadow-shelf: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 220, 160, 0.06);
+  /* Shadows — light, retail */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
 
   /* Motion */
   --t-fast: 150ms ease;
@@ -93,7 +87,7 @@
   --container-pad: var(--s-4);
 
   /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(232, 169, 62, 0.3);
+  --focus-ring: 0 0 0 3px rgba(0, 114, 206, 0.35);
 
   /* Tap target */
   --tap-min: 44px;
@@ -131,18 +125,21 @@ body {
   overflow-x: hidden;
 }
 
-/* Warm ambient light + film grain texture */
+/* Even retail lighting — no vignettes, no spotlights */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background:
-    url('film-grain.png'),
-    radial-gradient(ellipse 900px 500px at 50% 0%, rgba(232, 169, 62, 0.08), transparent 65%),
-    radial-gradient(ellipse 600px 400px at 80% 90%, rgba(196, 83, 74, 0.05), transparent 60%);
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.008) 2px,
+      rgba(0, 0, 0, 0.008) 4px
+    );
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
 }
 
 body > * {
@@ -158,7 +155,7 @@ a {
   transition: color var(--t-fast);
 }
 
-a:hover { color: #f0c060; }
+a:hover { color: var(--color-primary-dark); }
 
 :focus-visible {
   outline: none;
@@ -215,62 +212,57 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
    5) SITE CHROME (Header / Nav / User Bar)
    ========================================================= */
 
-/* HEADER — like the store's lit sign above the entrance */
+/* HEADER — store signage: bold color strip */
 .site-header {
   text-align: center;
-  padding: var(--s-6) var(--s-4) var(--s-5);
-  border-bottom: 3px solid rgba(196, 83, 74, 0.5);
-  background:
-    linear-gradient(180deg, #2a1f18 0%, #1e1812 100%);
+  padding: var(--s-5) var(--s-4) var(--s-4);
+  background: var(--color-primary);
   position: relative;
+  border-bottom: 4px solid var(--color-primary-dark);
 }
 
-/* warm neon-ish glow under header */
 .site-header::after {
   content: "";
   position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: -2px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(232, 169, 62, 0.6), rgba(196, 83, 74, 0.5), rgba(232, 169, 62, 0.6), transparent);
-  border-radius: 2px;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 4px;
+  background: var(--color-primary-dark);
 }
 
-/* TITLE — bold, iconic, signage-like */
+/* TITLE — store signage, boxed, dominant */
 .site-title {
   font-family: var(--font-display);
-  color: var(--color-primary);
+  color: #ffffff;
   font-size: clamp(2.5rem, 10vw, var(--fs-8));
-  font-weight: var(--fw-regular); /* Passion One only has 400/700/900 */
-  letter-spacing: 0.08em;
-  margin-bottom: var(--s-2);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.1em;
+  margin-bottom: var(--s-1);
   text-transform: uppercase;
-  text-shadow:
-    0 0 30px rgba(232, 169, 62, 0.3),
-    0 2px 0 #1a1008,
-    0 4px 8px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  padding: 0.1em 0.4em;
+  background: rgba(0, 0, 0, 0.15);
+  border: 3px solid rgba(255, 255, 255, 0.4);
 }
 
 .site-subtitle {
-  margin: 0;
-  color: var(--color-text-2);
+  margin: var(--s-2) 0 0;
+  color: rgba(255, 255, 255, 0.85);
   font-size: var(--fs-2);
-  letter-spacing: 0.04em;
-  font-style: italic;
+  letter-spacing: 0.02em;
+  font-weight: var(--fw-medium);
 }
 
-/* NAV — thick shelf/signage band */
+/* NAV — thick aisle signage strip */
 .nav-bar {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: linear-gradient(180deg, #302420, #251c16);
-  border-top: 1px solid rgba(255, 220, 160, 0.08);
-  border-bottom: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 220, 160, 0.06);
+  background: #ffffff;
+  border-bottom: 3px solid var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .nav-links {
@@ -278,8 +270,8 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--s-2);
-  padding: var(--s-3) 0;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-4);
   margin: 0;
 }
 
@@ -288,26 +280,27 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   align-items: center;
   justify-content: center;
   min-height: var(--tap-min);
-  padding: var(--s-2) var(--s-4);
-  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--r-sm);
   color: var(--color-text-1);
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
-  transition: background-color var(--t-base), color var(--t-base), border-color var(--t-base), box-shadow var(--t-base);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-2);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  border: 2px solid transparent;
+  transition: background-color var(--t-base), color var(--t-base), border-color var(--t-base);
 }
 
 .nav-links li a:hover {
-  background: rgba(232, 169, 62, 0.12);
+  background: rgba(0, 114, 206, 0.08);
   color: var(--color-primary);
-  border-color: rgba(232, 169, 62, 0.2);
+  border-color: rgba(0, 114, 206, 0.2);
 }
 
 .nav-links li a.active {
-  background: rgba(232, 169, 62, 0.15);
-  color: var(--color-primary);
-  border-color: rgba(232, 169, 62, 0.3);
-  box-shadow: inset 0 1px 0 rgba(255, 220, 160, 0.08);
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
 }
 
 /* USER BAR */
@@ -327,10 +320,10 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-md);
 
-  background: rgba(26, 23, 18, 0.9);
+  background: #ffffff;
   border: 1px solid var(--color-border);
 
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-2);
   color: var(--color-text-0);
   font-size: var(--fs-1);
   font-weight: var(--fw-medium);
@@ -344,17 +337,16 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   padding: 0.35rem 0.75rem;
 
   cursor: pointer;
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   color: #fff;
 
-  border: 1px solid rgba(196, 83, 74, 0.4);
-  background: rgba(196, 83, 74, 0.25);
-  transition: background-color var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
+  border: none;
+  background: var(--color-primary);
+  transition: background-color var(--t-fast), transform var(--t-fast);
 }
 
 .user-indicator button:hover {
-  background: rgba(196, 83, 74, 0.4);
-  border-color: rgba(196, 83, 74, 0.6);
+  background: var(--color-primary-dark);
 }
 
 .user-indicator button:active { transform: translateY(1px); }
@@ -376,7 +368,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
   padding: 0.85rem 1.25rem;
   border-radius: var(--r-md);
-  border: 1px solid transparent;
+  border: 2px solid transparent;
 
   font-family: inherit;
   font-size: var(--fs-3);
@@ -392,49 +384,46 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 .btn:active { transform: translateY(1px); }
 
 .btn--primary {
-  background: rgba(232, 169, 62, 0.2);
-  border-color: rgba(232, 169, 62, 0.4);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
 .btn--primary:hover {
-  background: rgba(232, 169, 62, 0.3);
-  border-color: rgba(232, 169, 62, 0.6);
+  background: var(--color-primary-dark);
 }
 
 .btn--secondary {
-  background: rgba(255, 220, 160, 0.08);
-  border-color: rgba(255, 220, 160, 0.15);
+  background: #ffffff;
+  border-color: var(--color-border);
   color: var(--color-text-1);
   box-shadow: var(--shadow-1);
 }
 
 .btn--secondary:hover {
-  background: rgba(255, 220, 160, 0.14);
-  border-color: rgba(255, 220, 160, 0.25);
-  color: var(--color-text-0);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn--utility {
-  background: rgba(196, 83, 74, 0.12);
-  border-color: rgba(196, 83, 74, 0.3);
-  color: var(--color-text-1);
+  background: #ffffff;
+  border-color: var(--color-border);
+  color: var(--color-text-2);
   box-shadow: var(--shadow-1);
 }
 
 .btn--utility:hover {
-  background: rgba(196, 83, 74, 0.2);
-  border-color: rgba(196, 83, 74, 0.45);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-/* Cards — solid, shelf-like */
+/* Cards — flat, plastic */
 .card {
-  background: var(--color-bg-1);
+  background: #ffffff;
   border: 1px solid var(--color-border);
-  border-radius: var(--r-xl);
+  border-radius: var(--r-lg);
   padding: var(--s-6);
-  box-shadow: var(--shadow-shelf);
+  box-shadow: var(--shadow-1);
 }
 
 .card-title {
@@ -451,8 +440,8 @@ input[type="text"] {
   width: 100%;
   min-height: var(--tap-min);
   padding: 0.85rem 0.95rem;
-  background: var(--color-bg-0);
-  border: 1px solid rgba(255, 220, 160, 0.15);
+  background: #ffffff;
+  border: 2px solid var(--color-border);
   border-radius: var(--r-md);
   color: var(--color-text-0);
   font-family: inherit;
@@ -461,40 +450,40 @@ input[type="text"] {
 }
 
 input:focus-visible {
-  border-color: rgba(232, 169, 62, 0.5);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
-/* Tables — warm wood-shelf feel */
+/* Tables — clean retail display */
 table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--color-bg-1);
+  background: #ffffff;
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   overflow: hidden;
 }
 
 th {
-  background: rgba(232, 169, 62, 0.1);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  color: #ffffff;
   font-weight: var(--fw-bold);
   font-size: var(--fs-1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: var(--s-3) var(--s-4);
   text-align: left;
-  border-bottom: 2px solid rgba(232, 169, 62, 0.2);
+  border-bottom: none;
 }
 
 td {
   padding: var(--s-3) var(--s-4);
-  border-bottom: 1px solid rgba(255, 220, 160, 0.06);
+  border-bottom: 1px solid #e8e6e2;
   color: var(--color-text-1);
   font-size: var(--fs-1);
 }
 
-tbody tr:hover { background: rgba(232, 169, 62, 0.04); }
+tbody tr:hover { background: rgba(0, 114, 206, 0.04); }
 tbody tr:last-child td { border-bottom: none; }
 
 
@@ -532,27 +521,23 @@ tbody tr:last-child td { border-bottom: none; }
   text-align: center;
 }
 
-/* Poster — the hero, sitting on a shelf */
+/* Poster — the hero, popping against light bg */
 .poster {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
   background: var(--color-bg-2);
-  border: 2px solid rgba(255, 220, 160, 0.15);
-  box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.5),
-    0 1px 0 rgba(255, 220, 160, 0.08);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-2);
   cursor: pointer;
   transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
 }
 
 .poster:hover {
   transform: translateY(-3px);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.6),
-    0 0 20px rgba(232, 169, 62, 0.1);
-  border-color: rgba(232, 169, 62, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border-color: var(--color-primary);
 }
 
 .poster:active { transform: translateY(0); }
@@ -578,7 +563,7 @@ tbody tr:last-child td { border-bottom: none; }
   max-width: 320px;
 }
 
-/* "Haven't Seen" — like a sticker label */
+/* "Haven't Seen" — flat retail button */
 .movie-block .btn-haven-seen,
 .movie-block .tertiary {
   display: inline-flex;
@@ -589,25 +574,25 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 0.75rem 1rem;
 
   font-size: var(--fs-2);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.01em;
 
   cursor: pointer;
   user-select: none;
 
-  background: rgba(196, 83, 74, 0.12);
-  border: 1px solid rgba(196, 83, 74, 0.35);
-  color: var(--color-text-1);
+  background: #ffffff;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-2);
   box-shadow: var(--shadow-1);
 
-  transition: transform var(--t-fast), background-color var(--t-base), border-color var(--t-base), box-shadow var(--t-base);
+  transition: transform var(--t-fast), background-color var(--t-base), border-color var(--t-base), color var(--t-base);
 }
 
 .movie-block .btn-haven-seen:hover,
 .movie-block .tertiary:hover {
-  background: rgba(196, 83, 74, 0.2);
-  border-color: rgba(196, 83, 74, 0.5);
-  color: var(--color-text-0);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(0, 114, 206, 0.04);
 }
 
 .movie-block .btn-haven-seen:active,
@@ -615,7 +600,7 @@ tbody tr:last-child td { border-bottom: none; }
   transform: translateY(1px);
 }
 
-/* VS Badge — warm, physical */
+/* VS Badge — bold retail accent */
 .vs-badge {
   width: 64px;
   height: 64px;
@@ -625,11 +610,11 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: center;
   font-weight: var(--fw-black);
   font-size: var(--fs-4);
-  color: var(--color-text-0);
+  color: #ffffff;
 
-  background: linear-gradient(135deg, rgba(232, 169, 62, 0.3), rgba(196, 83, 74, 0.3));
-  border: 2px solid rgba(232, 169, 62, 0.3);
-  box-shadow: var(--shadow-shelf);
+  background: var(--color-primary);
+  border: 3px solid var(--color-primary-dark);
+  box-shadow: var(--shadow-2);
 }
 
 
@@ -684,6 +669,7 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: clamp(2rem, 10vw, 3rem);
     margin-bottom: var(--s-1);
+    padding: 0.05em 0.3em;
   }
 
   .site-subtitle {
@@ -696,14 +682,14 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .nav-links {
-    padding: var(--s-2) 0;
+    padding: var(--s-2) var(--s-2);
     gap: var(--s-1);
   }
 
   .nav-links li a {
     min-height: 36px;
     padding: var(--s-1) var(--s-3);
-    font-size: var(--fs-1);
+    font-size: var(--fs-0);
   }
 
   #compare-section {
@@ -746,6 +732,7 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: var(--fs-5);
     margin-bottom: 0;
+    padding: 0.05em 0.2em;
   }
 
   .site-subtitle {
@@ -834,17 +821,17 @@ tbody tr:last-child td { border-bottom: none; }
 
 .primary,
 .btn-primary {
-  background: rgba(232, 169, 62, 0.2);
-  border: 1px solid rgba(232, 169, 62, 0.4);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
 .tertiary,
 .btn-secondary {
-  background: rgba(196, 83, 74, 0.12);
-  border: 1px solid rgba(196, 83, 74, 0.35);
-  color: var(--color-text-1);
+  background: #ffffff;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-2);
   box-shadow: var(--shadow-1);
 }
 

@@ -9,9 +9,12 @@
   <style>
     body {
       font-family: 'Space Grotesk', sans-serif;
+      padding: 0;
+    }
+    .stats-content {
       padding: 2rem;
-      background-color: #1a1712;
-      color: #f0e8da;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     table {
       width: 100%;
@@ -20,12 +23,7 @@
     }
     th, td {
       padding: 0.75rem;
-      border: 1px solid rgba(255, 220, 160, 0.1);
       text-align: left;
-    }
-    th {
-      background-color: rgba(232, 169, 62, 0.1);
-      color: #e8a93e;
     }
     h2, h3 {
       margin-top: 2rem;
@@ -42,7 +40,12 @@
     <div id="user-indicator" class="user-indicator"></div>
   </div>
 
-  <!-- 🔷 Navigation Bar -->
+  <header class="site-header">
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Your ranking stats at a glance.</p>
+  </header>
+
+  <!-- Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
@@ -56,10 +59,12 @@
 
   <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
 
-  <h1>My Movie Ranking Stats</h1>
-  <div id="stats-container">Loading stats...</div>
+  <div class="stats-content">
+    <h1>My Movie Ranking Stats</h1>
+    <div id="stats-container">Loading stats...</div>
+  </div>
 
-  <!-- 🧩 Scripts -->
+  <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="my_stats.js"></script>
   <script type="module" src="loginStatus.js"></script>

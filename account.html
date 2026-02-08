@@ -11,13 +11,14 @@
       max-width: 400px;
       margin: 10vh auto;
       padding: 2em;
-      background-color: rgba(35, 31, 26, 0.98);
-      border-radius: 12px;
-      box-shadow: 0 0 24px rgba(232, 169, 62, 0.2);
+      background-color: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #d0cdc8;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       text-align: center;
     }
     .account-container h2 {
-      color: #e0e0e0;
+      color: #1a1a1a;
       margin-bottom: 1.5em;
       font-size: 1.3rem;
       font-weight: 700;
@@ -26,44 +27,47 @@
       width: 100%;
       padding: 0.75em;
       margin-bottom: 1em;
-      border: none;
+      border: 2px solid #d0cdc8;
       border-radius: 6px;
-      background-color: #1a1712;
-      color: #fff;
+      background-color: #ffffff;
+      color: #1a1a1a;
       font-family: 'Space Grotesk', sans-serif;
       box-sizing: border-box;
+    }
+    .account-container input:focus {
+      border-color: #0072CE;
+      outline: none;
     }
     .account-container button {
       width: 100%;
       padding: 0.75em;
       margin-top: 0.6em;
       font-weight: bold;
-      background-color: #e8a93e;
-      color: #000;
+      background-color: #0072CE;
+      color: #fff;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-family: 'Space Grotesk', sans-serif;
     }
     .account-container button:hover {
-      background-color: #c4534a;
-      color: #fff;
+      background-color: #005AA0;
     }
     .account-container button.secondary {
-      background-color: #444;
-      color: #fff;
+      background-color: #e8e6e2;
+      color: #3a3a3a;
       margin-top: 0.5em;
     }
     .account-container button.secondary:hover {
-      background-color: #666;
+      background-color: #d0cdc8;
     }
     .signup-link {
       margin-top: 1em;
       font-size: 0.9rem;
-      color: #bbb;
+      color: #6b6b6b;
     }
     .signup-link a {
-      color: #e8a93e;
+      color: #0072CE;
       text-decoration: none;
       font-weight: 600;
       cursor: pointer;
@@ -81,26 +85,29 @@
       font-size: 0.9rem;
     }
     .status-success {
-      background-color: rgba(34, 197, 94, 0.2);
-      color: #4ade80;
+      background-color: rgba(34, 197, 94, 0.1);
+      color: #1a8d1a;
       border: 1px solid rgba(34, 197, 94, 0.3);
     }
     .status-error {
-      background-color: rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background-color: rgba(204, 34, 34, 0.08);
+      color: #cc2222;
+      border: 1px solid rgba(204, 34, 34, 0.2);
     }
     .forgot-password {
       margin-top: 0.5em;
       font-size: 0.85rem;
     }
     .forgot-password a {
-      color: #e8a93e;
+      color: #0072CE;
       text-decoration: none;
       cursor: pointer;
     }
     .forgot-password a:hover {
       text-decoration: underline;
+    }
+    .subtext {
+      color: #6b6b6b;
     }
   </style>
 </head>
@@ -130,17 +137,17 @@
       <div id="account-logged-out">
         <h2>Welcome to Shelf Life</h2>
         <p class="subtext">Log in or create a new account to save your movie rankings.</p>
-        
+
         <form id="login-form">
           <input type="email" id="email" placeholder="Email" required>
           <input type="password" id="password" placeholder="Password" required>
           <button type="submit" id="login-button">Log In</button>
         </form>
-        
+
         <div class="forgot-password">
           <a href="#" id="forgot-password-link">Forgot your password?</a>
         </div>
-        
+
         <p class="signup-link">
           Don't have an account? <a href="#" id="signup-trigger">Create one</a>
         </p>
