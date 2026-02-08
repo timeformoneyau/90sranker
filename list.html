@@ -29,15 +29,15 @@
     }
 
     .table-container {
-      background: #e2e2e2;
-      border: 1px solid #b8b8b8;
+      background: #152238;
+      border: 1px solid #243656;
       border-radius: 8px;
       padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
     .table-container h2 {
-      color: #2a2a2a;
+      color: #e8ecf2;
       font-size: 1.4rem;
       font-weight: 700;
       margin: 0 0 0.5rem 0;
@@ -45,7 +45,7 @@
     }
 
     .count-display {
-      color: #4a7fa5;
+      color: #3b82f6;
       font-size: 0.9rem;
       font-weight: 600;
       text-align: center;
@@ -55,21 +55,21 @@
     .results-table, .recent-table {
       width: 100%;
       border-collapse: collapse;
-      background: #e2e2e2;
+      background: #152238;
       border-radius: 6px;
       overflow: hidden;
     }
 
     .results-table th, .recent-table th {
-      background: #4a7fa5;
-      color: #e2e2e2;
+      background: #1c2d45;
+      color: #a8b8cc;
       font-weight: 700;
       font-size: 0.9rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       padding: 0.75rem 1rem;
       text-align: left;
-      border-bottom: none;
+      border-bottom: 2px solid #1d4ed8;
     }
 
     .results-table th:nth-child(2),
@@ -85,8 +85,8 @@
 
     .results-table td, .recent-table td {
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid #c8c8c8;
-      color: #404040;
+      border-bottom: 1px solid #243656;
+      color: #a8b8cc;
       font-size: 0.9rem;
     }
 
@@ -104,11 +104,11 @@
 
     .recent-table td:nth-child(1) {
       font-size: 0.8rem;
-      color: #6a6a6a;
+      color: #6a7a90;
     }
 
     .results-table tbody tr:hover, .recent-table tbody tr:hover {
-      background: rgba(0, 114, 206, 0.04);
+      background: rgba(37, 99, 235, 0.06);
     }
 
     .results-table tbody tr:last-child td, .recent-table tbody tr:last-child td {
@@ -116,21 +116,21 @@
     }
 
     /* Win percentage coloring */
-    .win-pct-high { color: #3a7a3a; }
-    .win-pct-medium { color: #9a6a1a; }
-    .win-pct-low { color: #a03030; }
+    .win-pct-high { color: #22c55e; }
+    .win-pct-medium { color: #eab308; }
+    .win-pct-low { color: #ef4444; }
 
     .recent-container {
-      background: #e2e2e2;
-      border: 1px solid #b8b8b8;
+      background: #152238;
+      border: 1px solid #243656;
       border-radius: 8px;
       padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
       margin-bottom: 2rem;
     }
 
     .recent-container h2 {
-      color: #2a2a2a;
+      color: #e8ecf2;
       font-size: 1.4rem;
       font-weight: 700;
       margin: 0 0 1.5rem 0;
@@ -139,32 +139,32 @@
 
     .back-link {
       display: inline-block;
-      color: #4a7fa5;
+      color: #3b82f6;
       text-decoration: none;
       font-weight: 600;
       padding: 0.75rem 1.5rem;
-      background: #e2e2e2;
-      border: 2px solid #4a7fa5;
+      background: transparent;
+      border: 2px solid #2563eb;
       border-radius: 6px;
       transition: all 0.3s ease;
       margin-top: 1rem;
     }
 
     .back-link:hover {
-      background: #4a7fa5;
-      color: #e2e2e2;
+      background: #2563eb;
+      color: #ffffff;
       transform: translateY(-2px);
     }
 
     .loading-row, .empty-row {
       text-align: center;
-      color: #999;
+      color: #6a7a90;
       font-style: italic;
     }
 
     .error-row {
       text-align: center;
-      color: #a03030;
+      color: #ef4444;
     }
   </style>
 </head>
@@ -185,7 +185,7 @@
       <li><a href="list.html" class="active">Results</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="my-stats.html">Your Stats</a></li>
-      <li><a href="account.html">Log In</a></li>
+      <li><a href="account.html">Your Account</a></li>
     </ul>
     <div id="login-status"></div>
   </nav>
