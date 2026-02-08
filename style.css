@@ -1,7 +1,7 @@
 /* =========================================================
-   SHELF LIFE — CSS (v5 · Video Rental Store)
-   Blockbuster-era retail: fluorescent, plastic, laminate.
-   Light interiors. Bold signage. Posters pop.
+   SHELF LIFE — CSS (v6 · Retail Grey)
+   Utilitarian video store: neutral greys, muted blue accent,
+   fluorescent lighting. Movies provide the color.
    ========================================================= */
 
 
@@ -10,29 +10,29 @@
    ========================================================= */
 
 :root {
-  /* Accent — one strong retail blue */
-  --color-primary: #0072CE;
-  --color-primary-light: #338FDB;
-  --color-primary-dark: #005AA0;
-  --color-secondary: #0072CE;
-  --color-accent: #0072CE;
+  /* Accent — muted, desaturated retail blue */
+  --color-primary: #4a7fa5;
+  --color-primary-light: #6494b5;
+  --color-primary-dark: #3a6585;
+  --color-secondary: #4a7fa5;
+  --color-accent: #4a7fa5;
 
-  /* Backgrounds — light retail interior */
-  --color-bg-0: #f0eeeb;          /* page — warm off-white */
-  --color-bg-1: #ffffff;          /* surfaces — clean white */
-  --color-bg-2: #e8e6e2;          /* elevated / alt surface */
-  --color-border: #d0cdc8;
+  /* Backgrounds — neutral greys, no white, no beige */
+  --color-bg-0: #d8d8d8;          /* page — light grey */
+  --color-bg-1: #e2e2e2;          /* surfaces — slightly lighter grey */
+  --color-bg-2: #cbcbcb;          /* elevated / alt surface */
+  --color-border: #b8b8b8;
 
-  /* Text — dark on light */
-  --color-text-0: #1a1a1a;        /* primary */
-  --color-text-1: #3a3a3a;        /* secondary */
-  --color-text-2: #6b6b6b;        /* muted */
-  --color-text-3: #999999;        /* dim */
+  /* Text — charcoal, not black */
+  --color-text-0: #2a2a2a;
+  --color-text-1: #404040;
+  --color-text-2: #6a6a6a;
+  --color-text-3: #8a8a8a;
 
   /* Semantic */
-  --color-success: #1a8d1a;
-  --color-warning: #cc7700;
-  --color-error: #cc2222;
+  --color-success: #3a7a3a;
+  --color-warning: #9a6a1a;
+  --color-error: #a03030;
 
   /* Typography */
   --font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -74,20 +74,20 @@
   --r-xl: 0.75rem;
   --r-full: 9999px;
 
-  /* Shadows — light, retail */
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
+  /* Shadows */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-2: 0 3px 10px rgba(0, 0, 0, 0.14);
 
   /* Motion */
-  --t-fast: 150ms ease;
-  --t-base: 220ms ease;
+  --t-fast: 120ms ease;
+  --t-base: 180ms ease;
 
   /* Layout */
   --container-max: 1200px;
   --container-pad: var(--s-4);
 
   /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(0, 114, 206, 0.35);
+  --focus-ring: 0 0 0 3px rgba(74, 127, 165, 0.35);
 
   /* Tap target */
   --tap-min: 44px;
@@ -125,7 +125,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Even retail lighting — no vignettes, no spotlights */
+/* Subtle synthetic laminate texture */
 body::before {
   content: "";
   position: fixed;
@@ -134,9 +134,9 @@ body::before {
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.008) 2px,
-      rgba(0, 0, 0, 0.008) 4px
+      transparent 1px,
+      rgba(0, 0, 0, 0.012) 1px,
+      rgba(0, 0, 0, 0.012) 2px
     );
   pointer-events: none;
   z-index: 0;
@@ -212,57 +212,53 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
    5) SITE CHROME (Header / Nav / User Bar)
    ========================================================= */
 
-/* HEADER — store signage: bold color strip */
+/* HEADER — installed sign on grey wall */
 .site-header {
   text-align: center;
   padding: var(--s-5) var(--s-4) var(--s-4);
-  background: var(--color-primary);
+  background: #3d3d3d;
   position: relative;
-  border-bottom: 4px solid var(--color-primary-dark);
+  border-bottom: 3px solid #2a2a2a;
 }
 
 .site-header::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -4px;
-  height: 4px;
-  background: var(--color-primary-dark);
+  display: none;
 }
 
-/* TITLE — store signage, boxed, dominant */
+/* TITLE — physical rectangular sign, installed */
 .site-title {
   font-family: var(--font-display);
-  color: #ffffff;
+  color: #e8e8e8;
   font-size: clamp(2.5rem, 10vw, var(--fs-8));
   font-weight: var(--fw-black);
   letter-spacing: 0.1em;
   margin-bottom: var(--s-1);
   text-transform: uppercase;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
   display: inline-block;
-  padding: 0.1em 0.4em;
-  background: rgba(0, 0, 0, 0.15);
-  border: 3px solid rgba(255, 255, 255, 0.4);
+  padding: 0.12em 0.5em;
+  background: var(--color-primary);
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .site-subtitle {
   margin: var(--s-2) 0 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: #a0a0a0;
   font-size: var(--fs-2);
   letter-spacing: 0.02em;
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-regular);
 }
 
-/* NAV — thick aisle signage strip */
+/* NAV — retail signage strip with faded shelf image */
 .nav-bar {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: #ffffff;
-  border-bottom: 3px solid var(--color-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background:
+    linear-gradient(180deg, rgba(50, 50, 50, 0.92), rgba(45, 45, 45, 0.95)),
+    url('theater-bg.png') center / cover no-repeat;
+  border-bottom: 2px solid var(--color-primary-dark);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .nav-links {
@@ -270,7 +266,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--s-1);
+  gap: var(--s-2);
   padding: var(--s-3) var(--s-4);
   margin: 0;
 }
@@ -282,24 +278,24 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   min-height: var(--tap-min);
   padding: var(--s-2) var(--s-5);
   border-radius: var(--r-sm);
-  color: var(--color-text-1);
+  color: #c0c0c0;
   font-weight: var(--fw-bold);
-  font-size: var(--fs-2);
-  letter-spacing: 0.01em;
+  font-size: var(--fs-1);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   transition: background-color var(--t-base), color var(--t-base), border-color var(--t-base);
 }
 
 .nav-links li a:hover {
-  background: rgba(0, 114, 206, 0.08);
-  color: var(--color-primary);
-  border-color: rgba(0, 114, 206, 0.2);
+  background: rgba(74, 127, 165, 0.15);
+  color: #e0e0e0;
+  border-color: rgba(74, 127, 165, 0.3);
 }
 
 .nav-links li a.active {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #e8e8e8;
   border-color: var(--color-primary);
 }
 
@@ -320,7 +316,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-md);
 
-  background: #ffffff;
+  background: var(--color-bg-1);
   border: 1px solid var(--color-border);
 
   box-shadow: var(--shadow-2);
@@ -338,7 +334,8 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
   cursor: pointer;
   font-weight: var(--fw-bold);
-  color: #fff;
+  font-size: var(--fs-0);
+  color: #e8e8e8;
 
   border: none;
   background: var(--color-primary);
@@ -368,7 +365,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
   padding: 0.85rem 1.25rem;
   border-radius: var(--r-md);
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 
   font-family: inherit;
   font-size: var(--fs-3);
@@ -385,7 +382,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 .btn--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: #e8e8e8;
   box-shadow: var(--shadow-1);
 }
 
@@ -394,7 +391,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 }
 
 .btn--secondary {
-  background: #ffffff;
+  background: var(--color-bg-1);
   border-color: var(--color-border);
   color: var(--color-text-1);
   box-shadow: var(--shadow-1);
@@ -402,11 +399,11 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 .btn--secondary:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
 .btn--utility {
-  background: #ffffff;
+  background: var(--color-bg-1);
   border-color: var(--color-border);
   color: var(--color-text-2);
   box-shadow: var(--shadow-1);
@@ -414,12 +411,12 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 .btn--utility:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
-/* Cards — flat, plastic */
+/* Cards */
 .card {
-  background: #ffffff;
+  background: var(--color-bg-1);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   padding: var(--s-6);
@@ -440,8 +437,8 @@ input[type="text"] {
   width: 100%;
   min-height: var(--tap-min);
   padding: 0.85rem 0.95rem;
-  background: #ffffff;
-  border: 2px solid var(--color-border);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   color: var(--color-text-0);
   font-family: inherit;
@@ -454,36 +451,36 @@ input:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
-/* Tables — clean retail display */
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: var(--color-bg-1);
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   overflow: hidden;
 }
 
 th {
-  background: var(--color-primary);
-  color: #ffffff;
+  background: #4a4a4a;
+  color: #d8d8d8;
   font-weight: var(--fw-bold);
   font-size: var(--fs-1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: var(--s-3) var(--s-4);
   text-align: left;
-  border-bottom: none;
+  border-bottom: 2px solid var(--color-primary-dark);
 }
 
 td {
   padding: var(--s-3) var(--s-4);
-  border-bottom: 1px solid #e8e6e2;
+  border-bottom: 1px solid var(--color-border);
   color: var(--color-text-1);
   font-size: var(--fs-1);
 }
 
-tbody tr:hover { background: rgba(0, 114, 206, 0.04); }
+tbody tr:hover { background: rgba(74, 127, 165, 0.06); }
 tbody tr:last-child td { border-bottom: none; }
 
 
@@ -521,22 +518,22 @@ tbody tr:last-child td { border-bottom: none; }
   text-align: center;
 }
 
-/* Poster — the hero, popping against light bg */
+/* Poster — the hero, popping against grey */
 .poster {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: var(--r-sm);
   background: var(--color-bg-2);
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-2);
   cursor: pointer;
   transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
 }
 
 .poster:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
   border-color: var(--color-primary);
 }
 
@@ -563,7 +560,7 @@ tbody tr:last-child td { border-bottom: none; }
   max-width: 320px;
 }
 
-/* "Haven't Seen" — flat retail button */
+/* "Haven't Seen" button */
 .movie-block .btn-haven-seen,
 .movie-block .tertiary {
   display: inline-flex;
@@ -574,14 +571,14 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 0.75rem 1rem;
 
   font-size: var(--fs-2);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.01em;
 
   cursor: pointer;
   user-select: none;
 
-  background: #ffffff;
-  border: 2px solid var(--color-border);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
   color: var(--color-text-2);
   box-shadow: var(--shadow-1);
 
@@ -591,8 +588,7 @@ tbody tr:last-child td { border-bottom: none; }
 .movie-block .btn-haven-seen:hover,
 .movie-block .tertiary:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(0, 114, 206, 0.04);
+  color: var(--color-primary-dark);
 }
 
 .movie-block .btn-haven-seen:active,
@@ -600,7 +596,7 @@ tbody tr:last-child td { border-bottom: none; }
   transform: translateY(1px);
 }
 
-/* VS Badge — bold retail accent */
+/* VS Badge */
 .vs-badge {
   width: 64px;
   height: 64px;
@@ -610,10 +606,10 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: center;
   font-weight: var(--fw-black);
   font-size: var(--fs-4);
-  color: #ffffff;
+  color: #e8e8e8;
 
   background: var(--color-primary);
-  border: 3px solid var(--color-primary-dark);
+  border: 2px solid var(--color-primary-dark);
   box-shadow: var(--shadow-2);
 }
 
@@ -660,7 +656,7 @@ tbody tr:last-child td { border-bottom: none; }
   .movie-block { max-width: 380px; }
 }
 
-/* Small screens: compact layout */
+/* Small screens */
 @media (max-width: 767px) {
   .site-header {
     padding: var(--s-3) var(--s-4) var(--s-2);
@@ -669,7 +665,7 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: clamp(2rem, 10vw, 3rem);
     margin-bottom: var(--s-1);
-    padding: 0.05em 0.3em;
+    padding: 0.08em 0.35em;
   }
 
   .site-subtitle {
@@ -723,7 +719,7 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
-/* Landscape: fit both posters + buttons on screen */
+/* Landscape */
 @media (max-height: 500px) and (orientation: landscape) {
   .site-header {
     padding: var(--s-2) var(--s-4) var(--s-1);
@@ -732,7 +728,7 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: var(--fs-5);
     margin-bottom: 0;
-    padding: 0.05em 0.2em;
+    padding: 0.05em 0.25em;
   }
 
   .site-subtitle {
@@ -822,15 +818,15 @@ tbody tr:last-child td { border-bottom: none; }
 .primary,
 .btn-primary {
   background: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  color: #fff;
+  border: 1px solid var(--color-primary);
+  color: #e8e8e8;
   box-shadow: var(--shadow-1);
 }
 
 .tertiary,
 .btn-secondary {
-  background: #ffffff;
-  border: 2px solid var(--color-border);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
   color: var(--color-text-2);
   box-shadow: var(--shadow-1);
 }
