@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mike's Picks | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="bg-overlay"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <!-- Membership Card -->
+    <div class="member-card">
+      <div class="member-card-inner">
+        <div class="member-card-avatar"></div>
+        <div class="member-card-details">
+          <div class="member-card-label">Official Membership</div>
+          <div class="member-card-brand">SHELF LIFE</div>
+          <div class="member-card-tier">Gold Tier Member</div>
+          <div class="member-card-name" id="member-name">GUEST</div>
+        </div>
+      </div>
+      <div class="member-card-barcode">*SL-1995-0422*</div>
+      <div class="member-card-footer">
+        <span class="member-card-exp">EXP 12/99</span>
+        <button class="member-card-logout" id="member-logout" style="display:none">Log Out</button>
+      </div>
+    </div>
+
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">Mike's personal top picks from the 90s.</p>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="mikes-picks.html" class="active">Mike's Picks</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
+
+  <div class="results-page">
+
+    <!-- Intro -->
+    <div class="results-intro">
+      <h1 class="results-headline">Mike's Top 15</h1>
+      <p class="results-desc">The 15 highest-ranked movies based on Mike's personal votes, scored using the same adjusted confidence system as the global rankings.</p>
+    </div>
+
+    <div class="results-meta">
+      <span id="picks-status">Loading Mike's picks...</span>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="results-table-wrap">
+      <table class="results-table" id="picks-table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-movie">Movie</th>
+            <th class="col-num" title="Total matchups played by Mike">Matchups</th>
+            <th class="col-num">Wins</th>
+            <th class="col-num">Losses</th>
+            <th class="col-num">Win %</th>
+            <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+            <th class="col-num" title="This movie's rank in the global rankings">Global #</th>
+            <th class="col-num" title="TMDB community rating">Rating</th>
+          </tr>
+        </thead>
+        <tbody id="picks-list"></tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="results-cards" id="picks-cards"></div>
+
+    <a href="index.html" class="back-link">Back to Home</a>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="mikes-picks.js"></script>
+  <script type="module" src="loginStatus.js"></script>
+</body>
+</html>
