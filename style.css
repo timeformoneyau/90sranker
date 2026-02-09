@@ -1,6 +1,6 @@
 /* =========================================================
-   SHELF LIFE — CSS (v7 · Video Store Marquee)
-   Deep navy base, signage blue accents, neon pink highlights.
+   SHELF LIFE — CSS (v8 · Iconic Store Signage)
+   Deep navy, signage blue + yellow marquee, neon pink accents.
    Movie posters are the color — everything else is atmosphere.
    ========================================================= */
 
@@ -10,29 +10,29 @@
    ========================================================= */
 
 :root {
-  /* Signage blue */
-  --color-primary: #2563eb;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1d4ed8;
+  /* Signage — rich deep blue */
+  --color-primary: #0033cc;
+  --color-primary-light: #0044ee;
+  --color-primary-dark: #002299;
 
-  /* Neon accent — used sparingly */
-  --color-accent: #e84393;
-  --color-accent-dim: rgba(232, 67, 147, 0.5);
+  /* Neon accent — bright pink, used sparingly */
+  --color-accent: #ff0099;
+  --color-accent-dim: rgba(255, 0, 153, 0.5);
 
-  /* Sign title text */
-  --color-sign-text: #ffffff;
+  /* Sign title text — warm yellow */
+  --color-sign-text: #ffcc00;
 
   /* Backgrounds — deep navy */
-  --color-bg-0: #0c1220;
-  --color-bg-1: #152238;
-  --color-bg-2: #1c2d45;
-  --color-border: #243656;
+  --color-bg-0: #0a1128;
+  --color-bg-1: #111d35;
+  --color-bg-2: #182844;
+  --color-border: #1e3355;
 
   /* Text — light on dark */
-  --color-text-0: #e8ecf2;
-  --color-text-1: #a8b8cc;
-  --color-text-2: #6a7a90;
-  --color-text-3: #4a5a70;
+  --color-text-0: #e5e5e5;
+  --color-text-1: #a0afc0;
+  --color-text-2: #607080;
+  --color-text-3: #3e5060;
 
   /* Semantic */
   --color-success: #22c55e;
@@ -42,6 +42,7 @@
   /* Typography */
   --font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: 'Passion One', Impact, 'Arial Black', sans-serif;
+  --font-barcode: 'Libre Barcode 39', cursive;
 
   --fs-0: 0.75rem;
   --fs-1: 0.875rem;
@@ -80,9 +81,10 @@
   --r-full: 9999px;
 
   /* Shadows */
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-poster: 0 20px 50px rgba(0, 0, 0, 0.8);
+  --shadow-sign-glow: 0 0 20px rgba(0, 51, 204, 0.6);
 
   /* Motion */
   --t-fast: 120ms ease;
@@ -93,7 +95,7 @@
   --container-pad: var(--s-4);
 
   /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.4);
+  --focus-ring: 0 0 0 3px rgba(0, 51, 204, 0.4);
 
   /* Tap target */
   --tap-min: 44px;
@@ -127,7 +129,12 @@ body {
   line-height: var(--lh-normal);
   color: var(--color-text-0);
   background: var(--color-bg-0);
-  background-image: radial-gradient(ellipse at 50% 0%, rgba(21, 34, 56, 0.8) 0%, var(--color-bg-0) 70%);
+  background-image:
+    linear-gradient(to bottom,
+      rgba(10, 17, 40, 0.7) 0%,
+      rgba(10, 17, 40, 0.95) 60%,
+      var(--color-bg-0) 100%
+    );
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -162,8 +169,10 @@ a:hover { color: var(--color-accent); }
   }
 }
 
-/* Hide legacy overlay */
+/* Hide legacy elements */
 .bg-overlay { display: none; }
+.user-bar { display: none !important; }
+#login-status { display: none !important; }
 
 
 /* =========================================================
@@ -202,7 +211,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 
 /* =========================================================
-   5) SITE CHROME (Header / Nav / User Bar / Member Card)
+   5) SITE CHROME (Header / Nav / Member Card)
    ========================================================= */
 
 /* HEADER */
@@ -214,51 +223,70 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   border-bottom: none;
 }
 
-/* No header pseudo-element */
 .site-header::after { display: none; }
 
-/* MARQUEE SIGN TITLE */
+/* MARQUEE SIGN — 3D perspective tilt */
 .site-title {
   font-family: var(--font-display);
   color: var(--color-sign-text);
   font-size: clamp(3rem, 12vw, var(--fs-8));
   font-weight: var(--fw-black);
   font-style: italic;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-shadow: 2px 2px 0px #000, 0 0 10px rgba(255, 204, 0, 0.5);
   display: inline-block;
   padding: 0.15em 0.6em;
   background: var(--color-primary);
-  border: 3px solid rgba(255, 255, 255, 0.45);
+  border: 4px solid #ffffff;
   box-shadow:
-    var(--shadow-2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 0 40px rgba(37, 99, 235, 0.3);
+    var(--shadow-sign-glow),
+    inset 0 0 30px rgba(255, 255, 255, 0.2),
+    0 0 40px rgba(0, 51, 204, 0.4);
   margin-bottom: var(--s-2);
+  transform: perspective(1000px) rotateX(5deg);
 }
 
 .site-subtitle {
   margin: var(--s-3) 0 0;
-  color: var(--color-text-2);
-  font-size: var(--fs-1);
-  letter-spacing: 0.15em;
+  color: var(--color-text-3);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  font-weight: var(--fw-regular);
+  font-weight: var(--fw-bold);
+  font-style: italic;
 }
+
 
 /* ----- MEMBERSHIP CARD ----- */
 .member-card {
   position: absolute;
-  top: var(--s-4);
-  left: var(--s-4);
-  width: 210px;
-  background: #f5f0e8;
+  top: var(--s-6);
+  left: var(--s-5);
+  width: 220px;
+  background: #ffffff;
   border-radius: var(--r-lg);
   padding: var(--s-3);
-  box-shadow: var(--shadow-2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
   font-size: var(--fs-0);
-  color: #2a2a2a;
+  color: #333333;
   z-index: 10;
+  overflow: hidden;
+}
+
+/* Glossy overlay */
+.member-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.member-card > * {
+  position: relative;
+  z-index: 2;
 }
 
 .member-card-inner {
@@ -268,9 +296,10 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 }
 
 .member-card-avatar {
-  width: 40px;
-  height: 48px;
-  background: #c8c0b4;
+  width: 42px;
+  height: 50px;
+  background: #e0ddd8;
+  border: 1px solid #ccc;
   border-radius: var(--r-sm);
   flex-shrink: 0;
 }
@@ -283,62 +312,91 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 }
 
 .member-card-label {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: var(--fw-bold);
-  color: var(--color-accent);
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .member-card-brand {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: var(--fw-black);
+  font-style: italic;
   color: var(--color-primary);
   line-height: 1.1;
 }
 
 .member-card-tier {
-  font-size: 0.6rem;
-  color: #6a6a6a;
+  font-size: 0.55rem;
+  color: #888;
   text-transform: uppercase;
+  font-weight: var(--fw-bold);
   letter-spacing: 0.03em;
 }
 
 .member-card-name {
   font-size: 0.7rem;
   font-weight: var(--fw-bold);
-  color: #2a2a2a;
+  color: #222;
   text-transform: uppercase;
   margin-top: 2px;
 }
 
 .member-card-barcode {
-  font-family: monospace;
-  font-size: 0.55rem;
-  letter-spacing: -0.5px;
-  color: #1a1a1a;
+  font-family: var(--font-barcode);
+  font-size: 1.8rem;
+  color: #111;
   text-align: center;
-  padding-top: var(--s-1);
-  border-top: 1px solid #d0cbc0;
   line-height: 1;
-  overflow: hidden;
+  padding-top: var(--s-1);
+  border-top: 1px solid #e8e5e0;
+}
+
+.member-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
 }
 
 .member-card-exp {
   font-size: 0.5rem;
-  color: #8a8a8a;
-  text-align: right;
-  margin-top: 2px;
+  color: #999;
+  font-family: monospace;
+}
+
+.member-card-logout {
+  font-size: 0.55rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  background: none;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.member-card-logout:hover {
+  background: var(--color-primary);
+  color: #fff;
 }
 
 
-/* ----- NAV — neon underline style ----- */
+/* ----- NAV — neon underline with glow ----- */
 .nav-bar {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(12, 18, 32, 0.92);
+  background: rgba(10, 17, 40, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--color-border);
@@ -359,76 +417,61 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   align-items: center;
   justify-content: center;
   min-height: var(--tap-min);
-  padding: var(--s-2) var(--s-1);
-  color: var(--color-text-1);
+  padding: var(--s-2) var(--s-3);
+  color: #ffffff;
   font-weight: var(--fw-bold);
-  font-size: var(--fs-1);
-  letter-spacing: 0.08em;
+  font-size: var(--fs-0);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
   border: none;
-  border-bottom: 2px solid var(--color-accent-dim);
   border-radius: 0;
   background: transparent;
-  transition: color var(--t-base), border-color var(--t-base);
+  position: relative;
+  transition: color var(--t-base);
+}
+
+/* Neon underline via pseudo-element */
+.nav-links li a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent), 0 0 15px var(--color-accent);
+  opacity: 0.7;
+  transition: width 0.3s ease, left 0.3s ease, opacity 0.3s ease;
+}
+
+.nav-links li a:hover::after {
+  width: 100%;
+  left: 0;
+  opacity: 1;
 }
 
 .nav-links li a:hover {
   color: #ffffff;
-  border-bottom-color: var(--color-accent);
   background: transparent;
+}
+
+.nav-links li a.active::after {
+  width: 100%;
+  left: 0;
+  opacity: 1;
 }
 
 .nav-links li a.active {
   color: #ffffff;
-  border-bottom-color: var(--color-accent);
   background: transparent;
 }
 
 
-/* ----- USER BAR ----- */
-.user-bar {
-  position: fixed;
-  top: var(--s-3);
-  right: var(--s-3);
-  z-index: var(--z-modal);
-}
-
+/* ----- USER BAR / USER INDICATOR (hidden, replaced by card) ----- */
 .user-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  border-radius: var(--r-md);
-  background: var(--color-bg-1);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-2);
-  color: var(--color-text-0);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-medium);
-  text-align: right;
-  white-space: nowrap;
+  display: none;
 }
-
-.user-indicator button {
-  min-height: 34px;
-  border-radius: var(--r-sm);
-  padding: 0.35rem 0.75rem;
-  cursor: pointer;
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-0);
-  color: #ffffff;
-  border: none;
-  background: var(--color-primary);
-  transition: background-color var(--t-fast), transform var(--t-fast);
-}
-
-.user-indicator button:hover {
-  background: var(--color-primary-dark);
-}
-
-.user-indicator button:active { transform: translateY(1px); }
 
 
 /* =========================================================
@@ -557,7 +600,7 @@ td {
   font-size: var(--fs-1);
 }
 
-tbody tr:hover { background: rgba(37, 99, 235, 0.06); }
+tbody tr:hover { background: rgba(0, 51, 204, 0.06); }
 tbody tr:last-child td { border-bottom: none; }
 
 
@@ -584,7 +627,7 @@ tbody tr:last-child td { border-bottom: none; }
   gap: var(--s-4);
   align-items: start;
   justify-items: center;
-  padding: var(--s-6) var(--s-4);
+  padding: var(--s-6) var(--s-4) var(--s-4);
 }
 
 .movie-block {
@@ -601,21 +644,21 @@ tbody tr:last-child td { border-bottom: none; }
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: var(--r-sm);
+  border-radius: 0;
   background: var(--color-bg-2);
-  border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-2), var(--shadow-glow);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-poster);
   cursor: pointer;
-  transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
+  transition: transform 0.7s ease, box-shadow var(--t-base), border-color var(--t-base);
 }
 
 .poster:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 30px rgba(37, 99, 235, 0.2);
-  border-color: var(--color-primary);
+  transform: scale(1.03);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.poster:active { transform: translateY(0); }
+.poster:active { transform: scale(1); }
 
 @keyframes poster-dance {
   0%   { transform: scale(1)    rotate(0deg); }
@@ -636,18 +679,19 @@ tbody tr:last-child td { border-bottom: none; }
   font-family: var(--font-display);
   font-weight: var(--fw-black);
   font-size: var(--fs-5);
-  color: var(--color-text-0);
+  color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   overflow-wrap: break-word;
 }
 
 .movie-year {
   margin: 0;
-  color: var(--color-text-2);
-  font-size: var(--fs-1);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.3em;
+  font-style: italic;
 }
 
 /* Rent button — primary vote action */
@@ -669,13 +713,13 @@ tbody tr:last-child td { border-bottom: none; }
   letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-1), var(--shadow-sign-glow);
   transition: transform var(--t-fast), background-color var(--t-base), box-shadow var(--t-base);
 }
 
 .btn-rent:hover {
   background: var(--color-primary-dark);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-2), 0 0 30px rgba(0, 51, 204, 0.5);
 }
 
 .btn-rent:active {
@@ -708,8 +752,8 @@ tbody tr:last-child td { border-bottom: none; }
 .btn-unseen:hover,
 .movie-block .tertiary:hover,
 .movie-block .btn-haven-seen:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .btn-unseen:active,
@@ -729,7 +773,17 @@ tbody tr:last-child td { border-bottom: none; }
   padding-top: 4rem;
 }
 
-/* VS Badge — hidden in v7, kept for compat */
+/* Shelf ledge */
+.shelf-ledge {
+  height: 12px;
+  background: linear-gradient(to bottom, #1a1a1a 0%, #050505 100%);
+  width: 100%;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.9);
+  border-top: 1px solid #444;
+  margin-top: var(--s-4);
+}
+
+/* VS Badge — hidden, kept for compat */
 .vs-badge {
   display: none;
 }
@@ -772,20 +826,16 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: clamp(1.8rem, 10vw, 2.8rem);
     padding: 0.1em 0.4em;
+    transform: none;
   }
 
   .site-subtitle {
-    font-size: var(--fs-0);
-    letter-spacing: 0.1em;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
   }
 
   .member-card {
     display: none;
-  }
-
-  .user-bar {
-    top: var(--s-2);
-    right: var(--s-2);
   }
 
   .nav-links {
@@ -796,8 +846,8 @@ tbody tr:last-child td { border-bottom: none; }
   .nav-links li a {
     min-height: 36px;
     padding: var(--s-1) var(--s-1);
-    font-size: var(--fs-0);
-    letter-spacing: 0.04em;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
   }
 
   #compare-section {
@@ -820,7 +870,7 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .movie-year {
-    font-size: var(--fs-0);
+    font-size: 0.5rem;
   }
 
   .btn-rent {
@@ -835,7 +885,7 @@ tbody tr:last-child td { border-bottom: none; }
   .movie-block .btn-haven-seen {
     min-height: 30px;
     padding: 0.35rem 0.5rem;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     max-width: 160px;
   }
 
@@ -854,6 +904,7 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: var(--fs-5);
     padding: 0.05em 0.3em;
+    transform: none;
   }
 
   .site-subtitle {
@@ -872,7 +923,7 @@ tbody tr:last-child td { border-bottom: none; }
   .nav-links li a {
     min-height: 32px;
     padding: var(--s-1) var(--s-2);
-    font-size: var(--fs-0);
+    font-size: 0.65rem;
   }
 
   #compare-section {
@@ -897,7 +948,7 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .movie-year {
-    font-size: var(--fs-0);
+    font-size: 0.5rem;
   }
 
   .btn-rent {
@@ -911,7 +962,7 @@ tbody tr:last-child td { border-bottom: none; }
   .movie-block .btn-haven-seen {
     min-height: 28px;
     padding: 0.3rem 0.5rem;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   .or-separator {

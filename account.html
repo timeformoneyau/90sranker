@@ -5,20 +5,20 @@
   <title>Your Account | Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     .account-container {
       max-width: 400px;
       margin: 10vh auto;
       padding: 2em;
-      background-color: #152238;
+      background-color: #111d35;
       border-radius: 8px;
-      border: 1px solid #243656;
+      border: 1px solid #1e3355;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
       text-align: center;
     }
     .account-container h2 {
-      color: #e8ecf2;
+      color: #e5e5e5;
       margin-bottom: 1.5em;
       font-size: 1.3rem;
       font-weight: 700;
@@ -27,15 +27,15 @@
       width: 100%;
       padding: 0.75em;
       margin-bottom: 1em;
-      border: 2px solid #243656;
+      border: 2px solid #1e3355;
       border-radius: 6px;
-      background-color: #1c2d45;
-      color: #e8ecf2;
+      background-color: #182844;
+      color: #e5e5e5;
       font-family: 'Space Grotesk', sans-serif;
       box-sizing: border-box;
     }
     .account-container input:focus {
-      border-color: #2563eb;
+      border-color: #0033cc;
       outline: none;
     }
     .account-container button {
@@ -43,7 +43,7 @@
       padding: 0.75em;
       margin-top: 0.6em;
       font-weight: bold;
-      background-color: #2563eb;
+      background-color: #0033cc;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -51,23 +51,23 @@
       font-family: 'Space Grotesk', sans-serif;
     }
     .account-container button:hover {
-      background-color: #1d4ed8;
+      background-color: #002299;
     }
     .account-container button.secondary {
-      background-color: #1c2d45;
-      color: #a8b8cc;
+      background-color: #182844;
+      color: #a0afc0;
       margin-top: 0.5em;
     }
     .account-container button.secondary:hover {
-      background-color: #243656;
+      background-color: #1e3355;
     }
     .signup-link {
       margin-top: 1em;
       font-size: 0.9rem;
-      color: #6a7a90;
+      color: #607080;
     }
     .signup-link a {
-      color: #3b82f6;
+      color: #0044ee;
       text-decoration: none;
       font-weight: 600;
       cursor: pointer;
@@ -99,7 +99,7 @@
       font-size: 0.85rem;
     }
     .forgot-password a {
-      color: #3b82f6;
+      color: #0044ee;
       text-decoration: none;
       cursor: pointer;
     }
@@ -107,7 +107,7 @@
       text-decoration: underline;
     }
     .subtext {
-      color: #6a7a90;
+      color: #607080;
     }
   </style>
 </head>
@@ -115,6 +115,24 @@
   <div class="bg-overlay"></div>
 
   <header class="site-header">
+    <!-- Membership Card -->
+    <div class="member-card">
+      <div class="member-card-inner">
+        <div class="member-card-avatar"></div>
+        <div class="member-card-details">
+          <div class="member-card-label">Official Membership</div>
+          <div class="member-card-brand">SHELF LIFE</div>
+          <div class="member-card-tier">Gold Tier Member</div>
+          <div class="member-card-name" id="member-name">GUEST</div>
+        </div>
+      </div>
+      <div class="member-card-barcode">*SL-1995-0422*</div>
+      <div class="member-card-footer">
+        <span class="member-card-exp">EXP 12/99</span>
+        <button class="member-card-logout" id="member-logout" style="display:none">Log Out</button>
+      </div>
+    </div>
+
     <div class="site-title">SHELF LIFE</div>
     <p class="site-subtitle">Ranking the 90's, one movie at a time.</p>
   </header>
@@ -180,9 +198,6 @@
   </div>
 
   <script type="module" src="auth.js"></script>
-  <script type="module">
-    import { updateLoginStatus } from "./loginStatus.js";
-    updateLoginStatus();
-  </script>
+  <script type="module" src="loginStatus.js"></script>
 </body>
 </html>

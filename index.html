@@ -5,7 +5,7 @@
   <title>Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -24,11 +24,14 @@
           <div class="member-card-label">Official Membership</div>
           <div class="member-card-brand">SHELF LIFE</div>
           <div class="member-card-tier">Gold Tier Member</div>
-          <div class="member-card-name" id="member-name">Member</div>
+          <div class="member-card-name" id="member-name">GUEST</div>
         </div>
       </div>
-      <div class="member-card-barcode">&#x2016;&#x2016;|&#x2016;&#x2016;&#x2016;|&#x2016;&#x2016;|&#x2016;&#x2016;&#x2016;&#x2016;|&#x2016;|&#x2016;&#x2016;&#x2016;|&#x2016;&#x2016;</div>
-      <div class="member-card-exp">EXP 12/99</div>
+      <div class="member-card-barcode">*SL-1995-0422*</div>
+      <div class="member-card-footer">
+        <span class="member-card-exp">EXP 12/99</span>
+        <button class="member-card-logout" id="member-logout" style="display:none">Log Out</button>
+      </div>
     </div>
 
     <div class="site-title">SHELF LIFE</div>
@@ -75,6 +78,9 @@
       </div>
 
     </section>
+
+    <!-- Shelf Ledge -->
+    <div class="shelf-ledge"></div>
   </div>
 
   <!-- Scripts -->
