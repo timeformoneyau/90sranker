@@ -7,7 +7,8 @@ import {
   writeBatch,
   increment,
   serverTimestamp,
-  doc
+  doc,
+  getDocs
 } from "./firebase.js";
 
 import confetti from "https://esm.sh/canvas-confetti";
@@ -341,11 +342,17 @@ async function initializeApp() {
 }
 
 /**
- * Update the vote counter on the home page
+ * Update the vote counter on the home page with global Firebase count
  */
-function updateVoteCounter() {
+async function updateVoteCounter() {
   const el = document.getElementById("home-vote-count");
-  if (el) {
+  if (!el) return;
+
+  try {
+    const snap = await getDocs(collection(db, "votes"));
+    el.textContent = snap.size.toLocaleString();
+  } catch (error) {
+    console.warn("Could not fetch global vote count:", error);
     el.textContent = state.seenMatchups.length.toLocaleString();
   }
 }
