@@ -97,17 +97,14 @@ function renderTable(tbody, rows) {
   }
   rows.forEach((m, i) => {
     const tr = document.createElement("tr");
-    if (m.confidence === "low") tr.classList.add("row-low-conf");
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
-    const confBadge = `<span class="conf-badge conf-${m.confidence}" title="${m.confidence === 'low' ? 'Not enough matchups yet — this rank may move a lot.' : ''}">${confidenceLabel(m.confidence)}</span>`;
-    const ineligible = m.n < 10 ? ' class="ineligible"' : "";
     tr.innerHTML = `
       <td class="col-rank">${i + 1}</td>
-      <td class="col-movie"><span class="movie-name">${m.title}</span>${m.year ? ` <span class="movie-yr">${m.year}</span>` : ""} ${confBadge}</td>
+      <td class="col-movie"><span class="movie-name">${m.title}</span>${m.year ? ` <span class="movie-yr">${m.year}</span>` : ""}</td>
       <td class="col-num">${m.n}</td>
       <td class="col-num">${m.wins}</td>
       <td class="col-num">${m.losses}</td>
-      <td class="col-num ${pctClass}"${ineligible}>${m.winPct.toFixed(1)}%</td>
+      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
       <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
     `;
     tbody.appendChild(tr);
@@ -123,7 +120,7 @@ function renderCards(container, rows) {
   rows.forEach((m, i) => {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     const card = document.createElement("div");
-    card.className = "result-card" + (m.confidence === "low" ? " row-low-conf" : "");
+    card.className = "result-card";
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
       <div class="result-card-body">
