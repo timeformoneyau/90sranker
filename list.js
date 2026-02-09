@@ -4,267 +4,359 @@ import {
   collection,
   query,
   where,
-  orderBy,
   limit,
   getDocs
 } from "./firebase.js";
 
-// DOM references
-const personalCountEl = document.getElementById("personal-count");
-const globalCountEl   = document.getElementById("global-count");
-const personalTbody   = document.getElementById("personal-list");
-const globalTbody     = document.getElementById("global-list");
-const recentTbody     = document.getElementById("recent-votes");
+// ==========================================
+// WILSON SCORE
+// ==========================================
 
-// Helper function to get win percentage color class
-function getWinPctClass(winPct) {
-  const pct = parseFloat(winPct);
-  if (pct >= 80) return 'win-pct-high';
-  if (pct >= 60) return 'win-pct-medium';
-  return 'win-pct-low';
+const Z = 1.96; // 95% confidence
+const MIN_MATCHUPS = 5;
+
+function wilsonScore(wins, losses) {
+  const n = wins + losses;
+  if (n === 0) return 0;
+  const p = wins / n;
+  const z2 = Z * Z;
+  const denominator = 1 + z2 / n;
+  const centre = p + z2 / (2 * n);
+  const spread = Z * Math.sqrt((p * (1 - p) + z2 / (4 * n)) / n);
+  return (centre - spread) / denominator;
 }
 
-// Helper function to format date
-function formatDate(timestamp) {
-  if (!timestamp) return 'Unknown';
-  try {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (err) {
-    console.warn('Date formatting error:', err);
-    return 'Unknown';
+function confidenceLevel(n) {
+  if (n < MIN_MATCHUPS) return "low";
+  if (n < 15) return "med";
+  return "high";
+}
+
+function confidenceLabel(level) {
+  if (level === "low") return "Low";
+  if (level === "med") return "Med";
+  return "High";
+}
+
+// ==========================================
+// BUILD RANKED DATA
+// ==========================================
+
+function buildRankedData(statsMap) {
+  return Object.entries(statsMap).map(([key, r]) => {
+    const title = key.split("|")[0];
+    const year = key.split("|")[1] || "";
+    const wins = r.wins || 0;
+    const losses = r.losses || 0;
+    const n = wins + losses;
+    const winPct = n ? (wins / n) * 100 : 0;
+    const ws = wilsonScore(wins, losses);
+    const conf = confidenceLevel(n);
+    return { key, title, year, wins, losses, n, winPct, wilsonScore: ws, displayScore: Math.round(ws * 1000) / 10, confidence: conf };
+  });
+}
+
+// ==========================================
+// SORT FUNCTIONS
+// ==========================================
+
+function sortRows(rows, mode) {
+  const cmp = (a, b) => a.title.localeCompare(b.title);
+  switch (mode) {
+    case "wins":
+      return rows.slice().sort((a, b) => b.wins - a.wins || b.n - a.n || cmp(a, b));
+    case "winpct":
+      return rows.slice().sort((a, b) => {
+        const aElig = a.n >= 10 ? 1 : 0;
+        const bElig = b.n >= 10 ? 1 : 0;
+        if (bElig !== aElig) return bElig - aElig;
+        return b.winPct - a.winPct || b.n - a.n || cmp(a, b);
+      });
+    case "played":
+      return rows.slice().sort((a, b) => b.n - a.n || b.wins - a.wins || cmp(a, b));
+    case "controversial":
+      return rows.slice().sort((a, b) => {
+        const aScore = a.n * (1 - Math.abs(0.5 - a.winPct / 100) * 2);
+        const bScore = b.n * (1 - Math.abs(0.5 - b.winPct / 100) * 2);
+        return bScore - aScore || cmp(a, b);
+      });
+    default: // adjusted
+      return rows.slice().sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n || b.wins - a.wins || cmp(a, b));
   }
 }
 
-// — Personal Top 20 —
-async function renderPersonalStats(uid) {
-  if (!personalTbody) return;
-  personalCountEl.textContent = "Total Votes: Loading…";
-  personalTbody.innerHTML = '<tr class="loading-row"><td colspan="4">Loading your rankings...</td></tr>';
+// ==========================================
+// RENDERING
+// ==========================================
+
+function renderTable(tbody, rows) {
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty">No results to display.</td></tr>';
+    return;
+  }
+  rows.forEach((m, i) => {
+    const tr = document.createElement("tr");
+    if (m.confidence === "low") tr.classList.add("row-low-conf");
+    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    const confBadge = `<span class="conf-badge conf-${m.confidence}" title="${m.confidence === 'low' ? 'Not enough matchups yet — this rank may move a lot.' : ''}">${confidenceLabel(m.confidence)}</span>`;
+    const ineligible = m.n < 10 ? ' class="ineligible"' : "";
+    tr.innerHTML = `
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-movie"><span class="movie-name">${m.title}</span>${m.year ? ` <span class="movie-yr">${m.year}</span>` : ""} ${confBadge}</td>
+      <td class="col-num">${m.n}</td>
+      <td class="col-num">${m.wins}</td>
+      <td class="col-num">${m.losses}</td>
+      <td class="col-num ${pctClass}"${ineligible}>${m.winPct.toFixed(1)}%</td>
+      <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCards(container, rows) {
+  container.innerHTML = "";
+  if (!rows.length) {
+    container.innerHTML = '<div class="results-empty">No results to display.</div>';
+    return;
+  }
+  rows.forEach((m, i) => {
+    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    const card = document.createElement("div");
+    card.className = "result-card" + (m.confidence === "low" ? " row-low-conf" : "");
+    card.innerHTML = `
+      <div class="result-card-rank">${i + 1}</div>
+      <div class="result-card-body">
+        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
+        <div class="result-card-stats">
+          <span>${m.n} matchups</span>
+          <span>${m.wins}W / ${m.losses}L</span>
+          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div class="result-card-score" title="Win rate adjusted for how many matchups the movie has played.">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ==========================================
+// TAB SWITCHING
+// ==========================================
+
+document.querySelectorAll(".results-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".results-tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".results-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ==========================================
+// WIRING: GLOBAL
+// ==========================================
+
+let globalAllRows = [];
+
+function applyGlobalFilters() {
+  const sort = document.getElementById("global-sort").value;
+  const showVal = document.getElementById("global-show").value;
+  const search = document.getElementById("global-search").value.toLowerCase().trim();
+  const hideLow = document.getElementById("global-hide-low").checked;
+
+  let filtered = globalAllRows;
+  if (hideLow) filtered = filtered.filter(r => r.n >= MIN_MATCHUPS);
+  if (search) filtered = filtered.filter(r => r.title.toLowerCase().includes(search));
+  let sorted = sortRows(filtered, sort);
+  if (showVal !== "all") sorted = sorted.slice(0, parseInt(showVal));
+
+  renderTable(document.getElementById("global-list"), sorted);
+  renderCards(document.getElementById("global-cards"), sorted);
+}
+
+document.getElementById("global-sort").addEventListener("change", applyGlobalFilters);
+document.getElementById("global-show").addEventListener("change", applyGlobalFilters);
+document.getElementById("global-search").addEventListener("input", applyGlobalFilters);
+document.getElementById("global-hide-low").addEventListener("change", applyGlobalFilters);
+
+async function loadGlobalStats() {
+  const countEl = document.getElementById("global-count");
+  const tbody = document.getElementById("global-list");
+  const cards = document.getElementById("global-cards");
+  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading global rankings...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
+
+  try {
+    const snap = await getDocs(collection(db, "votes"));
+    countEl.textContent = `${snap.size.toLocaleString()} total votes across all users`;
+
+    const stats = {};
+    snap.forEach(doc => {
+      const { winner, loser } = doc.data();
+      if (!winner || !loser) return;
+      stats[winner] = stats[winner] || { wins: 0, losses: 0 };
+      stats[loser] = stats[loser] || { wins: 0, losses: 0 };
+      stats[winner].wins++;
+      stats[loser].losses++;
+    });
+
+    globalAllRows = buildRankedData(stats);
+    applyGlobalFilters();
+  } catch (err) {
+    console.error("loadGlobalStats error:", err);
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load global rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
+    countEl.textContent = "Unable to load";
+  }
+}
+
+// ==========================================
+// WIRING: PERSONAL
+// ==========================================
+
+let personalAllRows = [];
+
+function applyPersonalFilters() {
+  const sort = document.getElementById("personal-sort").value;
+  const showVal = document.getElementById("personal-show").value;
+  const search = document.getElementById("personal-search").value.toLowerCase().trim();
+
+  let filtered = personalAllRows;
+  if (search) filtered = filtered.filter(r => r.title.toLowerCase().includes(search));
+  let sorted = sortRows(filtered, sort);
+  if (showVal !== "all") sorted = sorted.slice(0, parseInt(showVal));
+
+  renderTable(document.getElementById("personal-list"), sorted);
+  renderCards(document.getElementById("personal-cards"), sorted);
+}
+
+document.getElementById("personal-sort").addEventListener("change", applyPersonalFilters);
+document.getElementById("personal-show").addEventListener("change", applyPersonalFilters);
+document.getElementById("personal-search").addEventListener("input", applyPersonalFilters);
+
+async function loadPersonalStats(uid) {
+  const countEl = document.getElementById("personal-count");
+  const tbody = document.getElementById("personal-list");
+  const cards = document.getElementById("personal-cards");
+  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading your rankings...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
     const snap = await getDocs(query(
       collection(db, "votes"),
       where("user", "==", uid)
     ));
-    personalCountEl.textContent = `Total Votes: ${snap.size}`;
+    countEl.textContent = `${snap.size.toLocaleString()} votes`;
 
     const stats = {};
     snap.forEach(doc => {
       const { winner, loser } = doc.data();
+      if (!winner || !loser) return;
       stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-      stats[loser]  = stats[loser]  || { wins: 0, losses: 0 };
+      stats[loser] = stats[loser] || { wins: 0, losses: 0 };
       stats[winner].wins++;
       stats[loser].losses++;
     });
 
-    const rows = Object.entries(stats)
-      .map(([key, r]) => {
-        const total = r.wins + r.losses;
-        return {
-          title:  key.split("|")[0],
-          wins:    r.wins,
-          losses:  r.losses,
-          winPct: total ? ((r.wins / total) * 100).toFixed(1) : "0.0"
-        };
-      })
-      .sort((a, b) => {
-        // Sort by wins first, then by win percentage
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return parseFloat(b.winPct) - parseFloat(a.winPct);
-      })
-      .slice(0, 20);
-
-    personalTbody.innerHTML = "";
-    if (!rows.length) {
-      personalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">No votes yet. Start ranking movies!</td></tr>';
-      return;
-    }
-    
-    rows.forEach((m, index) => {
-      const tr = document.createElement("tr");
-      const winPctClass = getWinPctClass(m.winPct);
-      tr.innerHTML = `
-        <td><strong>#${index + 1}</strong> ${m.title}</td>
-        <td>${m.wins}</td>
-        <td>${m.losses}</td>
-        <td class="${winPctClass}">${m.winPct}%</td>
-      `;
-      personalTbody.appendChild(tr);
-    });
+    personalAllRows = buildRankedData(stats);
+    applyPersonalFilters();
   } catch (err) {
-    console.error("renderPersonalStats error:", err);
-    personalTbody.innerHTML = '<tr class="error-row"><td colspan="4">Failed to load personal stats.</td></tr>';
-    personalCountEl.textContent = "Total Votes: 0";
+    console.error("loadPersonalStats error:", err);
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load personal rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
+    countEl.textContent = "Error";
   }
 }
 
-// — Global Top 20 —
-async function renderGlobalStats() {
-  if (!globalTbody) return;
-  globalCountEl.textContent = "Total Votes: Loading…";
-  globalTbody.innerHTML = '<tr class="loading-row"><td colspan="4">Loading global rankings...</td></tr>';
+// ==========================================
+// WIRING: RECENT VOTES
+// ==========================================
 
+function formatDate(timestamp) {
+  if (!timestamp) return "Unknown";
   try {
-    const snap = await getDocs(collection(db, "votes"));
-    globalCountEl.textContent = `Total Votes: ${snap.size}`;
-
-    const wins = {}, losses = {};
-    snap.forEach(doc => {
-      const { winner, loser } = doc.data();
-      wins[winner]    = (wins[winner]    || 0) + 1;
-      losses[loser]   = (losses[loser]   || 0) + 1;
-      wins[loser]     = wins[loser]     || 0;
-      losses[winner]  = losses[winner]  || 0;
-    });
-
-    const rows = Object.keys(wins)
-      .map(key => {
-        const w = wins[key], l = losses[key];
-        const total = w + l;
-        return {
-          title:  key.split("|")[0],
-          wins:    w,
-          losses:  l,
-          winPct: total ? ((w / total) * 100).toFixed(1) : "0.0"
-        };
-      })
-      .sort((a, b) => {
-        // Sort by wins first, then by win percentage
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return parseFloat(b.winPct) - parseFloat(a.winPct);
-      })
-      .slice(0, 20);
-
-    globalTbody.innerHTML = "";
-    if (!rows.length) {
-      globalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">No global votes yet.</td></tr>';
-      return;
-    }
-    
-    rows.forEach((m, index) => {
-      const tr = document.createElement("tr");
-      const winPctClass = getWinPctClass(m.winPct);
-      tr.innerHTML = `
-        <td><strong>#${index + 1}</strong> ${m.title}</td>
-        <td>${m.wins}</td>
-        <td>${m.losses}</td>
-        <td class="${winPctClass}">${m.winPct}%</td>
-      `;
-      globalTbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error("renderGlobalStats error:", err);
-    globalTbody.innerHTML = '<tr class="error-row"><td colspan="4">Failed to load global stats.</td></tr>';
-    globalCountEl.textContent = "Total Votes: 0";
-  }
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch { return "Unknown"; }
 }
 
-// — Recent Votes (Fixed) —
-async function renderRecentVotes(uid) {
-  if (!recentTbody) return;
-  recentTbody.innerHTML = '<tr class="loading-row"><td colspan="3">Loading recent votes...</td></tr>';
+async function loadRecentVotes(uid) {
+  const tbody = document.getElementById("recent-votes");
+  const cards = document.getElementById("recent-cards");
+  tbody.innerHTML = '<tr><td colspan="3" class="results-empty">Loading recent votes...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
-    console.log("Attempting to load recent votes for user:", uid);
-    
-    // Simplified query - just get user's votes without ordering first
-    const votesQuery = query(
+    const snap = await getDocs(query(
       collection(db, "votes"),
       where("user", "==", uid),
-      limit(50) // Get more to account for sorting and filtering
-    );
+      limit(50)
+    ));
 
-    const snap = await getDocs(votesQuery);
-    console.log("Retrieved votes:", snap.size);
-    
-    recentTbody.innerHTML = "";
-    if (snap.empty) {
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No votes found. Start voting to see your history!</td></tr>';
-      return;
-    }
-
-    // Convert to array and filter valid votes
     let votes = [];
     snap.forEach(doc => {
       const data = doc.data();
-      // Only include votes with valid winner/loser data
-      if (data.winner && data.loser) {
-        votes.push({
-          ...data,
-          id: doc.id
-        });
-      }
+      if (data.winner && data.loser) votes.push(data);
     });
 
-    console.log("Valid votes found:", votes.length);
+    votes.sort((a, b) => {
+      const tA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+      const tB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+      return tB - tA;
+    });
+    votes = votes.slice(0, 10);
 
-    if (votes.length === 0) {
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">No valid votes found.</td></tr>';
+    tbody.innerHTML = "";
+    cards.innerHTML = "";
+    if (!votes.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="results-empty">No votes found. Start voting!</td></tr>';
+      cards.innerHTML = '<div class="results-empty">No votes found.</div>';
       return;
     }
 
-    // Sort by timestamp (most recent first), handle missing timestamps
-    votes.sort((a, b) => {
-      const timeA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
-      const timeB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
-      return timeB - timeA;
-    });
-
-    // Take top 10
-    votes = votes.slice(0, 10);
-
     votes.forEach(({ winner, loser, timestamp }) => {
-      const tr = document.createElement("tr");
-      const formattedDate = formatDate(timestamp);
-      
-      // Extract movie titles, handle different formats
-      const winnerTitle = typeof winner === 'string' ? winner.split("|")[0] : (winner.title || 'Unknown Movie');
-      const loserTitle = typeof loser === 'string' ? loser.split("|")[0] : (loser.title || 'Unknown Movie');
-      
-      tr.innerHTML = `
-        <td>${formattedDate}</td>
-        <td>${winnerTitle}</td>
-        <td>${loserTitle}</td>
-      `;
-      recentTbody.appendChild(tr);
-    });
+      const w = typeof winner === "string" ? winner.split("|")[0] : winner.title || "Unknown";
+      const l = typeof loser === "string" ? loser.split("|")[0] : loser.title || "Unknown";
+      const d = formatDate(timestamp);
 
-  } catch (err) {
-    console.error("renderRecentVotes error:", err);
-    console.error("Error details:", {
-      code: err.code,
-      message: err.message
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${d}</td><td>${w}</td><td>${l}</td>`;
+      tbody.appendChild(tr);
+
+      const card = document.createElement("div");
+      card.className = "result-card result-card--recent";
+      card.innerHTML = `
+        <div class="result-card-body">
+          <div class="result-card-title">${w} <span class="movie-yr">beat</span> ${l}</div>
+          <div class="result-card-stats"><span>${d}</span></div>
+        </div>
+      `;
+      cards.appendChild(card);
     });
-    
-    let errorMessage = "Unable to load recent votes.";
-    
-    if (err.code === 'permission-denied') {
-      errorMessage = "Authentication required to view recent votes.";
-    } else if (err.code === 'failed-precondition') {
-      errorMessage = "Database index required. Recent votes temporarily unavailable.";
-    }
-    
-    recentTbody.innerHTML = `<tr class="error-row"><td colspan="3">${errorMessage}</td></tr>`;
+  } catch (err) {
+    console.error("loadRecentVotes error:", err);
+    tbody.innerHTML = '<tr><td colspan="3" class="results-empty results-error">Unable to load recent votes.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Unable to load.</div>';
   }
 }
 
-// Initialize on load & auth
+// ==========================================
+// INIT
+// ==========================================
+
 window.addEventListener("load", () => {
   onAuth(async user => {
     if (user) {
-      await renderPersonalStats(user.uid);
-      await renderRecentVotes(user.uid);
+      await loadPersonalStats(user.uid);
+      await loadRecentVotes(user.uid);
     } else {
-      personalTbody.innerHTML = '<tr class="empty-row"><td colspan="4">Log in to see your personal rankings.</td></tr>';
-      personalCountEl.textContent = "Total Votes: 0";
-      recentTbody.innerHTML = '<tr class="empty-row"><td colspan="3">Log in to see your recent votes.</td></tr>';
+      document.getElementById("personal-list").innerHTML = '<tr><td colspan="7" class="results-empty">Log in to see your personal rankings.</td></tr>';
+      document.getElementById("personal-cards").innerHTML = '<div class="results-empty">Log in to see your rankings.</div>';
+      document.getElementById("personal-count").textContent = "Log in to view";
+      document.getElementById("recent-votes").innerHTML = '<tr><td colspan="3" class="results-empty">Log in to see your recent votes.</td></tr>';
+      document.getElementById("recent-cards").innerHTML = '<div class="results-empty">Log in to see votes.</div>';
     }
-    await renderGlobalStats();
+    await loadGlobalStats();
   });
 });

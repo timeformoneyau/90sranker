@@ -6,167 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    /* Results page specific styles */
-    .results-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    .tables-wrapper {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 3rem;
-    }
-
-    @media (max-width: 768px) {
-      .tables-wrapper {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-    }
-
-    .table-container {
-      background: #111d35;
-      border: 1px solid #1e3355;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    }
-
-    .table-container h2 {
-      color: #e5e5e5;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-      text-align: center;
-    }
-
-    .count-display {
-      color: #0044ee;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .results-table, .recent-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #111d35;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .results-table th, .recent-table th {
-      background: #182844;
-      color: #a0afc0;
-      font-weight: 700;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 2px solid #002299;
-    }
-
-    .results-table th:nth-child(2),
-    .results-table th:nth-child(3),
-    .results-table th:nth-child(4) {
-      text-align: center;
-      width: 80px;
-    }
-
-    .recent-table th:nth-child(1) {
-      width: 120px;
-    }
-
-    .results-table td, .recent-table td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid #1e3355;
-      color: #a0afc0;
-      font-size: 0.9rem;
-    }
-
-    .results-table td:first-child, .recent-table td:first-child {
-      font-weight: 600;
-      text-align: left;
-    }
-
-    .results-table td:nth-child(2),
-    .results-table td:nth-child(3),
-    .results-table td:nth-child(4) {
-      text-align: center;
-      font-weight: 600;
-    }
-
-    .recent-table td:nth-child(1) {
-      font-size: 0.8rem;
-      color: #607080;
-    }
-
-    .results-table tbody tr:hover, .recent-table tbody tr:hover {
-      background: rgba(0, 51, 204, 0.06);
-    }
-
-    .results-table tbody tr:last-child td, .recent-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    /* Win percentage coloring */
-    .win-pct-high { color: #22c55e; }
-    .win-pct-medium { color: #eab308; }
-    .win-pct-low { color: #ef4444; }
-
-    .recent-container {
-      background: #111d35;
-      border: 1px solid #1e3355;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-      margin-bottom: 2rem;
-    }
-
-    .recent-container h2 {
-      color: #e5e5e5;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 0 0 1.5rem 0;
-      text-align: center;
-    }
-
-    .back-link {
-      display: inline-block;
-      color: #0044ee;
-      text-decoration: none;
-      font-weight: 600;
-      padding: 0.75rem 1.5rem;
-      background: transparent;
-      border: 2px solid #0033cc;
-      border-radius: 6px;
-      transition: all 0.3s ease;
-      margin-top: 1rem;
-    }
-
-    .back-link:hover {
-      background: #0033cc;
-      color: #ffffff;
-      transform: translateY(-2px);
-    }
-
-    .loading-row, .empty-row {
-      text-align: center;
-      color: #607080;
-      font-style: italic;
-    }
-
-    .error-row {
-      text-align: center;
-      color: #ef4444;
-    }
-  </style>
 </head>
 
 <body>
@@ -208,62 +47,156 @@
     <div id="login-status"></div>
   </nav>
 
-  <div class="results-container">
-    <div class="tables-wrapper">
-      <!-- Personal Top 20 -->
-      <div class="table-container">
-        <h2>Your Top 20 Rankings</h2>
-        <div id="personal-count" class="count-display">Total Votes: 0</div>
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Movie</th>
-              <th>Wins</th>
-              <th>Losses</th>
-              <th>Win %</th>
-            </tr>
-          </thead>
-          <tbody id="personal-list">
-            <tr class="loading-row"><td colspan="4">Loading your rankings...</td></tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="results-page">
 
-      <!-- Global Top 20 -->
-      <div class="table-container">
-        <h2>Global Top 20 Movies</h2>
-        <div id="global-count" class="count-display">Total Votes: 0</div>
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Movie</th>
-              <th>Wins</th>
-              <th>Losses</th>
-              <th>Win %</th>
-            </tr>
-          </thead>
-          <tbody id="global-list">
-            <tr class="loading-row"><td colspan="4">Loading global rankings...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- Results Intro -->
+    <div class="results-intro">
+      <h1 class="results-headline">Rankings that get more accurate the more you vote.</h1>
+      <p class="results-desc">Movies are ranked using an Adjusted Score that balances win rate with the number of matchups, so a movie that's 1&ndash;0 doesn't outrank a movie that's 40&ndash;10.</p>
+      <details class="results-details">
+        <summary>How the Adjusted Score works</summary>
+        <p>The Adjusted Score is a confidence-weighted win rating. Movies with more matchups are ranked more reliably, while movies with only a few votes are shown as low confidence until they've been tested more.</p>
+      </details>
     </div>
 
-    <!-- Recent Votes -->
-    <div class="recent-container">
-      <h2>Recent Votes</h2>
-      <table class="recent-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Winner</th>
-            <th>Loser</th>
-          </tr>
-        </thead>
-        <tbody id="recent-votes">
-          <tr class="loading-row"><td colspan="3">Loading recent votes...</td></tr>
-        </tbody>
-      </table>
+    <!-- Tab Switcher -->
+    <div class="results-tabs">
+      <button class="results-tab active" data-tab="global">Global Rankings</button>
+      <button class="results-tab" data-tab="personal">Your Rankings</button>
+      <button class="results-tab" data-tab="recent">Recent Votes</button>
+    </div>
+
+    <!-- ===== GLOBAL TAB ===== -->
+    <div class="results-panel active" id="panel-global">
+      <div class="results-controls">
+        <div class="results-controls-row">
+          <div class="control-group">
+            <label for="global-sort">Sort</label>
+            <select id="global-sort">
+              <option value="adjusted" selected>Adjusted (Recommended)</option>
+              <option value="wins">Most Wins</option>
+              <option value="winpct">Win % (Min 10)</option>
+              <option value="played">Most Played</option>
+              <option value="controversial">Most Controversial</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="global-show">Show</label>
+            <select id="global-show">
+              <option value="20" selected>Top 20</option>
+              <option value="50">Top 50</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="control-group control-group--search">
+            <label for="global-search">Search</label>
+            <input type="text" id="global-search" placeholder="Filter by title..." />
+          </div>
+        </div>
+        <div class="results-controls-row">
+          <label class="control-checkbox">
+            <input type="checkbox" id="global-hide-low" />
+            <span>Hide low confidence (fewer than 5 matchups)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="results-meta">
+        <span id="global-count">Loading...</span>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="results-table-wrap">
+        <table class="results-table" id="global-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+            </tr>
+          </thead>
+          <tbody id="global-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="results-cards" id="global-cards"></div>
+    </div>
+
+    <!-- ===== PERSONAL TAB ===== -->
+    <div class="results-panel" id="panel-personal">
+      <div class="results-controls">
+        <div class="results-controls-row">
+          <div class="control-group">
+            <label for="personal-sort">Sort</label>
+            <select id="personal-sort">
+              <option value="adjusted" selected>Adjusted (Recommended)</option>
+              <option value="wins">Most Wins</option>
+              <option value="winpct">Win % (Min 10)</option>
+              <option value="played">Most Played</option>
+              <option value="controversial">Most Controversial</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="personal-show">Show</label>
+            <select id="personal-show">
+              <option value="20" selected>Top 20</option>
+              <option value="50">Top 50</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div class="control-group control-group--search">
+            <label for="personal-search">Search</label>
+            <input type="text" id="personal-search" placeholder="Filter by title..." />
+          </div>
+        </div>
+      </div>
+
+      <div class="results-meta">
+        <span id="personal-count">Loading...</span>
+      </div>
+
+      <div class="results-table-wrap">
+        <table class="results-table" id="personal-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+            </tr>
+          </thead>
+          <tbody id="personal-list"></tbody>
+        </table>
+      </div>
+
+      <div class="results-cards" id="personal-cards"></div>
+    </div>
+
+    <!-- ===== RECENT TAB ===== -->
+    <div class="results-panel" id="panel-recent">
+      <div class="results-table-wrap">
+        <table class="results-table recent-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Winner</th>
+              <th>Loser</th>
+            </tr>
+          </thead>
+          <tbody id="recent-votes">
+            <tr><td colspan="3" class="results-empty">Loading recent votes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="results-cards" id="recent-cards"></div>
     </div>
 
     <a href="index.html" class="back-link">Back to Home</a>
