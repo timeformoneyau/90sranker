@@ -190,11 +190,14 @@ async function handleVote(choice) {
   
   // 4. Save state
   saveState();
-  
-  // 5. Celebrate!
+
+  // 5. Update vote counter
+  updateVoteCounter();
+
+  // 6. Celebrate!
   triggerConfetti(choice);
   
-  // 6. Load next matchup
+  // 7. Load next matchup
   setTimeout(() => chooseTwoMovies(), 1200);
 }
 
@@ -328,11 +331,22 @@ async function initializeApp() {
     state.movies = await response.json();
     
     console.log(`Loaded ${state.movies.length} movies`);
-    
+
+    updateVoteCounter();
     chooseTwoMovies();
   } catch (error) {
     console.error("Failed to load movies:", error);
     alert("Failed to load movie database. Please refresh the page.");
+  }
+}
+
+/**
+ * Update the vote counter on the home page
+ */
+function updateVoteCounter() {
+  const el = document.getElementById("home-vote-count");
+  if (el) {
+    el.textContent = state.seenMatchups.length.toLocaleString();
   }
 }
 
