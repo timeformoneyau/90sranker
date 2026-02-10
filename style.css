@@ -1655,6 +1655,23 @@ tbody tr:last-child td { border-bottom: none; }
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
+/* "Haven't Seen" badge */
+.engine-card-unseen-badge {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  padding: 3px 8px;
+  font-size: 0.6rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: rgba(239, 68, 68, 0.85);
+  border-radius: var(--r-sm);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
 /* Card body */
 .engine-card-body {
   padding: var(--s-3);

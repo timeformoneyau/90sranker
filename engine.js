@@ -16,6 +16,7 @@ import {
   getDoc,
   setDoc,
   arrayUnion,
+  arrayRemove,
   query,
   where
 } from "./firebase.js";
@@ -56,6 +57,9 @@ let sessionSeenKeys = new Set();
 
 // Current user id
 let currentUid = null;
+
+// Set of movie keys the user marked "haven't seen" — used for badge display + removal
+let unseenMovieKeys = new Set();
 
 // ==========================================
 // UTILITY
@@ -273,6 +277,9 @@ async function getRecommendationsForUser(userId) {
   // Merge session-seen keys
   seenKeys.forEach(k => sessionSeenKeys.add(k));
 
+  // Store unseen keys at module level so cards can show badges
+  unseenMovieKeys = unseenKeys;
+
   const votesSnap = await getDocs(collection(db, "votes"));
   const votesByUser = {};
   const allVotes = [];
@@ -291,10 +298,10 @@ async function getRecommendationsForUser(userId) {
   const isSparse = userVotes.length < MIN_VOTES_FOR_PERSONALIZATION;
   const { prefs, votedKeys } = buildPreferenceVector(userVotes, movieMap);
 
-  // Exclude: voted + haven't-seen + seen-it
+  // Exclude: voted + seen-it (but NOT haven't-seen — those get a badge instead)
   const candidates = movies.filter(m => {
     const key = getMovieKey(m);
-    return !votedKeys.has(key) && !unseenKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key);
+    return !votedKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key);
   });
 
   let allScored;
@@ -387,6 +394,19 @@ async function markMovieSeen(movieKey) {
   }
 }
 
+async function removeUnseenDesignation(movieKey) {
+  if (!currentUid) return;
+  unseenMovieKeys.delete(movieKey);
+  try {
+    await setDoc(doc(db, "users", currentUid), {
+      seen: arrayRemove(movieKey)
+    }, { merge: true });
+    console.log(`Removed "haven't seen" designation: ${movieKey}`);
+  } catch (err) {
+    console.error("Failed to remove unseen designation:", err);
+  }
+}
+
 // ==========================================
 // UI — RENDER SINGLE CARD
 // ==========================================
@@ -394,14 +414,20 @@ async function markMovieSeen(movieKey) {
 function buildCardHTML(item, index) {
   const m = item.movie;
   const key = getMovieKey(m);
+  const isUnseen = unseenMovieKeys.has(key);
   const vibeChips = m.vibes
     ? m.vibes.split(",").slice(0, 2).map(v => `<span class="engine-tag">${v.trim()}</span>`).join("")
+    : "";
+
+  const unseenBadge = isUnseen
+    ? `<div class="engine-card-unseen-badge">Haven't Seen</div>`
     : "";
 
   return `
     <div class="engine-card-poster-wrap">
       <img class="engine-card-poster" id="engine-poster-${index}" src="" alt="${m.title}" />
       <div class="engine-card-rank">${index + 1}</div>
+      ${unseenBadge}
     </div>
     <div class="engine-card-body">
       <div class="engine-card-title">${m.title}</div>
@@ -433,9 +459,15 @@ async function handleSeenIt(index) {
   if (btn) btn.disabled = true;
 
   const movieKey = getMovieKey(item.movie);
+  const wasUnseen = unseenMovieKeys.has(movieKey);
 
   // Save to Firebase (non-blocking — animate immediately)
   markMovieSeen(movieKey);
+
+  // If this movie was marked "haven't seen", remove that designation so it goes back into voting
+  if (wasUnseen) {
+    removeUnseenDesignation(movieKey);
+  }
 
   // Animate the card out
   card.classList.add("engine-card-exit");
