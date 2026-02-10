@@ -14,6 +14,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
+  arrayUnion,
   query,
   where
 } from "./firebase.js";
@@ -25,7 +27,6 @@ import {
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
-// How much each attribute type contributes to preference scoring
 const ATTR_WEIGHTS = {
   genre: 1.0,
   vibe: 0.8,
@@ -35,9 +36,26 @@ const ATTR_WEIGHTS = {
 };
 
 const MIN_VOTES_FOR_PERSONALIZATION = 10;
+const DISPLAY_COUNT = 10;
 
-// Cache to avoid recomputing on every render
+// ==========================================
+// STATE
+// ==========================================
+
+// Cache the full engine output so we can pull replacements without re-fetching
 let cache = { uid: null, results: null };
+
+// The full ranked overflow list (everything beyond the visible 10)
+let overflowQueue = [];
+
+// The currently displayed 10 items
+let displayedItems = [];
+
+// Set of movie keys the user has marked "seen" this session (avoids re-showing before cache clears)
+let sessionSeenKeys = new Set();
+
+// Current user id
+let currentUid = null;
 
 // ==========================================
 // UTILITY
@@ -58,10 +76,6 @@ function getDecade(year) {
   return null;
 }
 
-/**
- * Extract all scoreable attributes from a movie, keyed by type.
- * Returns { "genre:Drama": 1.0, "tone:gritty": 0.75, ... }
- */
 function getMovieAttributes(movie) {
   const attrs = {};
   if (movie.genre) attrs[`genre:${movie.genre}`] = ATTR_WEIGHTS.genre;
@@ -93,13 +107,6 @@ async function fetchPosterUrl(title, year) {
 // PHASE 1 — PERSONAL PREFERENCE SCORING
 // ==========================================
 
-/**
- * Build a preference vector from the user's pairwise votes.
- * For each vote (winner beats loser), every attribute the winner has gets +weight,
- * every attribute the loser has gets -weight. Shared attributes cancel out.
- *
- * Returns { prefs: { "genre:Drama": +12, ... }, votedKeys: Set }
- */
 function buildPreferenceVector(userVotes, movieMap) {
   const prefs = {};
   const votedKeys = new Set();
@@ -131,13 +138,6 @@ function buildPreferenceVector(userVotes, movieMap) {
 // PHASE 2 — CANDIDATE SCORING
 // ==========================================
 
-/**
- * Score each candidate movie against the preference vector.
- * Score = sum(pref[attr] * weight) / sqrt(numAttrs)   (normalized so movies with
- * many tags don't automatically win).
- *
- * Also tracks which attributes contributed most, for generating reason strings.
- */
 function scoreCandidates(candidates, prefs) {
   return candidates.map(movie => {
     const attrs = getMovieAttributes(movie);
@@ -164,23 +164,16 @@ function scoreCandidates(candidates, prefs) {
 }
 
 // ==========================================
-// PHASE 3 — COMMUNITY BOOST (lightweight collaborative filtering)
+// PHASE 3 — COMMUNITY BOOST
 // ==========================================
 
-/**
- * Find users with similar voting patterns (Jaccard similarity on winner sets).
- * Boost candidate movies that similar users voted for but the current user hasn't seen.
- * Track which shared favorites explain the boost (for reason strings).
- */
 function applyCommunityBoost(scored, currentUserWinners, votesByUser, currentUid) {
-  // Build winner sets per user
   const userWinnerSets = {};
   for (const [uid, votes] of Object.entries(votesByUser)) {
     if (uid === currentUid) continue;
     userWinnerSets[uid] = new Set(votes.map(v => v.winner));
   }
 
-  // Compute Jaccard similarity: |intersection| / |union|
   const similarities = [];
   for (const [uid, winners] of Object.entries(userWinnerSets)) {
     let intersection = 0;
@@ -191,7 +184,6 @@ function applyCommunityBoost(scored, currentUserWinners, votesByUser, currentUid
     const union = currentUserWinners.size + winners.size - intersection;
     const sim = intersection / union;
     if (sim > 0.05) {
-      // Track the specific shared movies for reason strings
       const shared = [...currentUserWinners].filter(w => winners.has(w));
       similarities.push({ uid, sim, winners, shared });
     }
@@ -202,20 +194,17 @@ function applyCommunityBoost(scored, currentUserWinners, votesByUser, currentUid
 
   if (topSimilar.length === 0) return scored;
 
-  // Aggregate boost per movie key, and track which shared movies explain it
-  const boostMap = {}; // key -> { boost, sharedMovies }
+  const boostMap = {};
   for (const { sim, winners, shared } of topSimilar) {
     for (const key of winners) {
       if (!currentUserWinners.has(key)) {
         if (!boostMap[key]) boostMap[key] = { boost: 0, sharedMovies: new Set() };
         boostMap[key].boost += sim;
-        // Add up to 2 shared movies as explanation
         shared.slice(0, 2).forEach(s => boostMap[key].sharedMovies.add(s));
       }
     }
   }
 
-  // Apply boosts to scored candidates
   for (const item of scored) {
     const key = getMovieKey(item.movie);
     const entry = boostMap[key];
@@ -233,18 +222,12 @@ function applyCommunityBoost(scored, currentUserWinners, votesByUser, currentUid
 // REASON GENERATION
 // ==========================================
 
-/**
- * Generate a human-readable reason string for a recommendation.
- * Prioritizes community reasons (more interesting) then falls back to preference match.
- */
 function generateReason(item) {
-  // Community-based reason (if significant boost)
   if (item.communityBoost > 0.3 && item.similarMovies.length > 0) {
     const movieNames = item.similarMovies.join(" and ");
     return `Popular with voters who also liked ${movieNames}`;
   }
 
-  // Preference-based reason (top contributing attribute)
   const top = (item.contributions || [])[0];
   if (!top || top.value <= 0) return "A 90s classic worth checking out";
 
@@ -265,28 +248,31 @@ function generateReason(item) {
 // MAIN — getRecommendationsForUser
 // ==========================================
 
-async function getRecommendationsForUser(userId, limit = 10) {
-  // Return cached if same user
+async function getRecommendationsForUser(userId) {
   if (cache.uid === userId && cache.results) return cache.results;
 
-  // 1. Load movie list
   const moviesRes = await fetch("movie_list_cleaned.json");
   const movies = await moviesRes.json();
   const movieMap = {};
   for (const m of movies) movieMap[getMovieKey(m)] = m;
 
-  // 2. Load user's "haven't seen" list (these are excluded from recs)
+  // Load user's "haven't seen" list AND "seen it" list
   let unseenKeys = new Set();
+  let seenKeys = new Set();
   try {
     const userSnap = await getDoc(doc(db, "users", userId));
     if (userSnap.exists()) {
-      (userSnap.data().seen || []).forEach(k => unseenKeys.add(k));
+      const data = userSnap.data();
+      (data.seen || []).forEach(k => unseenKeys.add(k));
+      (data.seenMovies || []).forEach(k => seenKeys.add(k));
     }
   } catch (err) {
     console.warn("Could not load user data:", err);
   }
 
-  // 3. Load ALL votes (need all users for collaborative filtering)
+  // Merge session-seen keys
+  seenKeys.forEach(k => sessionSeenKeys.add(k));
+
   const votesSnap = await getDocs(collection(db, "votes"));
   const votesByUser = {};
   const allVotes = [];
@@ -303,31 +289,27 @@ async function getRecommendationsForUser(userId, limit = 10) {
 
   const userVotes = votesByUser[userId] || [];
   const isSparse = userVotes.length < MIN_VOTES_FOR_PERSONALIZATION;
-
-  // Phase 1: Preference vector
   const { prefs, votedKeys } = buildPreferenceVector(userVotes, movieMap);
 
-  // Build candidate pool: exclude voted movies + unseen movies
+  // Exclude: voted + haven't-seen + seen-it
   const candidates = movies.filter(m => {
     const key = getMovieKey(m);
-    return !votedKeys.has(key) && !unseenKeys.has(key);
+    return !votedKeys.has(key) && !unseenKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key);
   });
 
-  let results;
+  let allScored;
 
   if (isSparse) {
-    // ---- FALLBACK: Popular titles for new users ----
     const globalWins = {};
     for (const v of allVotes) {
       globalWins[v.winner] = (globalWins[v.winner] || 0) + 1;
     }
 
-    // Mix: some preference-based (if any votes), rest popular
     let prefPicks = [];
     if (userVotes.length > 0) {
       const scored = scoreCandidates(candidates, prefs);
       scored.sort((a, b) => b.score - a.score);
-      prefPicks = scored.slice(0, Math.floor(limit / 2));
+      prefPicks = scored.slice(0, Math.floor(DISPLAY_COUNT / 2));
       prefPicks.forEach(r => { r.reason = generateReason(r); });
     }
 
@@ -342,70 +324,155 @@ async function getRecommendationsForUser(userId, limit = 10) {
         similarMovies: [],
         reason: "A popular pick \u2014 vote more to personalize"
       }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit - prefPicks.length);
+      .sort((a, b) => b.score - a.score);
 
-    results = [...prefPicks, ...popular].slice(0, limit);
+    allScored = [...prefPicks, ...popular];
+    // Assign reasons to popular picks that don't have one yet
+    allScored.forEach(r => { if (!r.reason) r.reason = generateReason(r); });
   } else {
-    // ---- FULL ENGINE ----
-    // Phase 2: Score candidates
     let scored = scoreCandidates(candidates, prefs);
-
-    // Phase 3: Community boost
     const currentUserWinners = new Set(userVotes.map(v => v.winner));
     scored = applyCommunityBoost(scored, currentUserWinners, votesByUser, userId);
-
-    // Sort and take top N
     scored.sort((a, b) => b.score - a.score);
-    results = scored.slice(0, limit);
-    results.forEach(r => { r.reason = generateReason(r); });
+    scored.forEach(r => { r.reason = generateReason(r); });
+    allScored = scored;
   }
 
-  // Build taste profile for display (top liked / disliked attributes)
   const tasteProfile = buildTasteProfile(prefs);
+  const output = { allScored, tasteProfile, voteCount: userVotes.length, isSparse };
 
-  const output = { recommendations: results, tasteProfile, voteCount: userVotes.length, isSparse };
-
-  // Cache
   cache = { uid: userId, results: output };
   return output;
 }
 
 // ==========================================
-// TASTE PROFILE (for display)
+// TASTE PROFILE
 // ==========================================
 
-/**
- * Summarize the preference vector into a readable taste profile.
- * Returns { liked: [{ label, score }], disliked: [{ label, score }] }
- */
 function buildTasteProfile(prefs) {
   const entries = Object.entries(prefs)
     .map(([key, score]) => {
       const [type, value] = key.split(":");
       return { key, type, value, score };
     })
-    .filter(e => Math.abs(e.score) > 1); // only show meaningful signals
+    .filter(e => Math.abs(e.score) > 1);
 
   entries.sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
 
   const liked = entries.filter(e => e.score > 0).slice(0, 6).map(e => ({
-    label: e.value,
-    type: e.type,
-    score: Math.round(e.score * 10) / 10
+    label: e.value, type: e.type, score: Math.round(e.score * 10) / 10
   }));
 
   const disliked = entries.filter(e => e.score < 0).slice(0, 4).map(e => ({
-    label: e.value,
-    type: e.type,
-    score: Math.round(e.score * 10) / 10
+    label: e.value, type: e.type, score: Math.round(e.score * 10) / 10
   }));
 
   return { liked, disliked };
 }
 
 // ==========================================
-// UI RENDERING
+// FIREBASE — MARK SEEN
+// ==========================================
+
+async function markMovieSeen(movieKey) {
+  if (!currentUid) return;
+  sessionSeenKeys.add(movieKey);
+  try {
+    await setDoc(doc(db, "users", currentUid), {
+      seenMovies: arrayUnion(movieKey)
+    }, { merge: true });
+    console.log(`Marked as seen: ${movieKey}`);
+  } catch (err) {
+    console.error("Failed to save seen status:", err);
+  }
+}
+
+// ==========================================
+// UI — RENDER SINGLE CARD
+// ==========================================
+
+function buildCardHTML(item, index) {
+  const m = item.movie;
+  const key = getMovieKey(m);
+  const vibeChips = m.vibes
+    ? m.vibes.split(",").slice(0, 2).map(v => `<span class="engine-tag">${v.trim()}</span>`).join("")
+    : "";
+
+  return `
+    <div class="engine-card-poster-wrap">
+      <img class="engine-card-poster" id="engine-poster-${index}" src="" alt="${m.title}" />
+      <div class="engine-card-rank">${index + 1}</div>
+    </div>
+    <div class="engine-card-body">
+      <div class="engine-card-title">${m.title}</div>
+      <div class="engine-card-year">${m.year}</div>
+      <div class="engine-card-tags">
+        <span class="engine-tag engine-tag--genre">${m.genre || ""}</span>
+        ${m.tone ? `<span class="engine-tag">${m.tone}</span>` : ""}
+        ${vibeChips}
+      </div>
+      <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
+      ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
+      <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
+    </div>`;
+}
+
+// ==========================================
+// UI — HANDLE "SEEN IT"
+// ==========================================
+
+async function handleSeenIt(index) {
+  const item = displayedItems[index];
+  if (!item) return;
+
+  const card = document.getElementById(`engine-card-${index}`);
+  if (!card) return;
+
+  // Prevent double-clicks
+  const btn = card.querySelector(".engine-btn-seen");
+  if (btn) btn.disabled = true;
+
+  const movieKey = getMovieKey(item.movie);
+
+  // Save to Firebase (non-blocking — animate immediately)
+  markMovieSeen(movieKey);
+
+  // Animate the card out
+  card.classList.add("engine-card-exit");
+
+  // Wait for exit animation
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // Find replacement from overflow queue
+  const replacement = overflowQueue.shift();
+
+  if (replacement) {
+    // Swap content
+    displayedItems[index] = replacement;
+    card.classList.remove("engine-card-exit");
+    card.innerHTML = buildCardHTML(replacement, index);
+    card.classList.add("engine-card-enter");
+
+    // Fetch poster for replacement
+    fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+      const img = document.getElementById(`engine-poster-${index}`);
+      if (img && url) img.src = url;
+    });
+
+    // Clean up animation class
+    card.addEventListener("animationend", () => {
+      card.classList.remove("engine-card-enter");
+    }, { once: true });
+  } else {
+    // No replacement available — shrink the card away
+    card.classList.remove("engine-card-exit");
+    card.style.display = "none";
+    displayedItems[index] = null;
+  }
+}
+
+// ==========================================
+// UI — FULL RENDER
 // ==========================================
 
 function renderStatus(message, isWarning = false) {
@@ -438,43 +505,25 @@ function renderTasteProfile(profile, voteCount) {
   el.innerHTML = html;
 }
 
-function renderRecommendations(results) {
+function renderRecommendations(allScored) {
   const grid = document.getElementById("engine-grid");
   if (!grid) return;
 
-  if (!results || results.length === 0) {
+  if (!allScored || allScored.length === 0) {
     grid.innerHTML = '<div class="engine-empty">No recommendations available yet.</div>';
     return;
   }
 
-  grid.innerHTML = results.map((r, i) => {
-    const m = r.movie;
-    const vibeChips = m.vibes
-      ? m.vibes.split(",").slice(0, 2).map(v => `<span class="engine-tag">${v.trim()}</span>`).join("")
-      : "";
+  // Split into displayed (first 10) and overflow (the rest, for replacements)
+  displayedItems = allScored.slice(0, DISPLAY_COUNT);
+  overflowQueue = allScored.slice(DISPLAY_COUNT);
 
-    return `
-      <div class="engine-card" data-index="${i}" id="engine-card-${i}">
-        <div class="engine-card-poster-wrap">
-          <img class="engine-card-poster" id="engine-poster-${i}" src="" alt="${m.title}" />
-          <div class="engine-card-rank">${i + 1}</div>
-        </div>
-        <div class="engine-card-body">
-          <div class="engine-card-title">${m.title}</div>
-          <div class="engine-card-year">${m.year}</div>
-          <div class="engine-card-tags">
-            <span class="engine-tag engine-tag--genre">${m.genre || ""}</span>
-            ${m.tone ? `<span class="engine-tag">${m.tone}</span>` : ""}
-            ${vibeChips}
-          </div>
-          <div class="engine-card-reason">"${r.reason}"</div>
-          ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
-        </div>
-      </div>`;
+  grid.innerHTML = displayedItems.map((item, i) => {
+    return `<div class="engine-card" id="engine-card-${i}">${buildCardHTML(item, i)}</div>`;
   }).join("");
 
-  // Fetch posters in parallel (non-blocking — cards render immediately with placeholder)
-  results.forEach((r, i) => {
+  // Fetch posters in parallel
+  displayedItems.forEach((r, i) => {
     fetchPosterUrl(r.movie.title, r.movie.year).then(url => {
       const img = document.getElementById(`engine-poster-${i}`);
       if (img && url) img.src = url;
@@ -487,19 +536,20 @@ function renderRecommendations(results) {
 // ==========================================
 
 async function loadEngine(user) {
+  currentUid = user.uid;
   renderStatus("Analyzing your votes...");
 
   try {
     const data = await getRecommendationsForUser(user.uid);
 
     if (data.isSparse) {
-      renderStatus(`You've cast ${data.voteCount} vote${data.voteCount !== 1 ? "s" : ""}. Vote more to sharpen these picks.`, true);
+      renderStatus(`You\u2019ve cast ${data.voteCount} vote${data.voteCount !== 1 ? "s" : ""}. Vote more to sharpen these picks.`, true);
     } else {
       renderStatus(`Based on ${data.voteCount} votes. The more you vote, the smarter this gets.`);
     }
 
     renderTasteProfile(data.tasteProfile, data.voteCount);
-    renderRecommendations(data.recommendations);
+    renderRecommendations(data.allScored);
   } catch (err) {
     console.error("Engine error:", err);
     renderStatus("Something went wrong loading recommendations.", true);
@@ -511,6 +561,7 @@ window.addEventListener("load", () => {
     if (user) {
       loadEngine(user);
     } else {
+      currentUid = null;
       renderStatus("Log in to get personalized recommendations.", true);
       renderTasteProfile(null, 0);
       const grid = document.getElementById("engine-grid");
@@ -518,3 +569,6 @@ window.addEventListener("load", () => {
     }
   });
 });
+
+// Expose for inline onclick handlers
+window.handleSeenIt = handleSeenIt;
