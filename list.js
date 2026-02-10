@@ -198,6 +198,12 @@ async function loadGlobalStats() {
       stats[loser].losses++;
     });
 
+    // Debug: check specific movie stats
+    const debugKey = "Armageddon|1998";
+    if (stats[debugKey]) {
+      console.log(`[DEBUG] ${debugKey}:`, JSON.stringify(stats[debugKey]), `from ${snap.size} total vote docs`);
+    }
+
     globalAllRows = buildRankedData(stats);
     applyGlobalFilters();
   } catch (err) {

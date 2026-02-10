@@ -2,12 +2,16 @@
 import {
   db,
   auth,
+  onAuth,
   collection,
   addDoc,
   writeBatch,
   increment,
   serverTimestamp,
   doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
   getDocs
 } from "./firebase.js";
 
@@ -23,10 +27,10 @@ const state = {
     A: null,
     B: null
   },
-  ratings: JSON.parse(localStorage.getItem("movieRatings")) || {},
-  stats: JSON.parse(localStorage.getItem("movieStats")) || {},
-  unseenMovies: JSON.parse(localStorage.getItem("unseenMovies")) || [],
-  seenMatchups: JSON.parse(localStorage.getItem("seenMatchups")) || []
+  unseenMovies: [],
+  seenMatchups: [],
+  uid: null,
+  globalStats: null // { "Title|Year": { wins, losses }, ... }
 };
 
 // ==========================================
@@ -50,14 +54,59 @@ function getAvailableMovies(exclude = []) {
   );
 }
 
+// ==========================================
+// FIRESTORE USER DATA
+// ==========================================
+
 /**
- * Save state to localStorage
+ * Load user-specific data (unseenMovies, seenMatchups) from Firestore
  */
-function saveState() {
-  localStorage.setItem("movieRatings", JSON.stringify(state.ratings));
-  localStorage.setItem("movieStats", JSON.stringify(state.stats));
-  localStorage.setItem("unseenMovies", JSON.stringify(state.unseenMovies));
-  localStorage.setItem("seenMatchups", JSON.stringify(state.seenMatchups));
+async function loadUserData(uid) {
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      state.unseenMovies = data.seen || [];
+      state.seenMatchups = data.seenMatchups || [];
+    }
+    console.log(`Loaded user data: ${state.unseenMovies.length} unseen, ${state.seenMatchups.length} matchups`);
+  } catch (error) {
+    console.error("Failed to load user data from Firestore:", error);
+  }
+}
+
+/**
+ * Save unseen movie to Firestore (or localStorage for guests)
+ */
+async function saveUnseenToFirestore(movieKey) {
+  if (state.uid) {
+    try {
+      await updateDoc(doc(db, "users", state.uid), {
+        seen: arrayUnion(movieKey)
+      });
+    } catch (error) {
+      console.error("Failed to save unseen movie to Firestore:", error);
+    }
+  } else {
+    localStorage.setItem("unseenMovies", JSON.stringify(state.unseenMovies));
+  }
+}
+
+/**
+ * Save seen matchup to Firestore (or localStorage for guests)
+ */
+async function saveMatchupToFirestore(matchupKey) {
+  if (state.uid) {
+    try {
+      await updateDoc(doc(db, "users", state.uid), {
+        seenMatchups: arrayUnion(matchupKey)
+      });
+    } catch (error) {
+      console.error("Failed to save matchup to Firestore:", error);
+    }
+  } else {
+    localStorage.setItem("seenMatchups", JSON.stringify(state.seenMatchups));
+  }
 }
 
 // ==========================================
@@ -72,7 +121,7 @@ const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
  */
 async function fetchPosterUrl(title, year) {
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-  
+
   try {
     const response = await fetch(url);
     const data = await response.json();
@@ -89,22 +138,72 @@ async function fetchPosterUrl(title, year) {
 // ==========================================
 
 /**
- * Select two random movies for comparison
+ * Pick two distinct random items from an array
+ */
+function pickTwoRandom(arr) {
+  const i = Math.floor(Math.random() * arr.length);
+  let j = Math.floor(Math.random() * (arr.length - 1));
+  if (j >= i) j++;
+  return [arr[i], arr[j]];
+}
+
+/**
+ * Select two movies for comparison.
+ * ~30% of the time: competitive match (strong vs strong)
+ * ~70% of the time: pure random
  */
 function chooseTwoMovies() {
   const available = getAvailableMovies();
-  
+
   if (available.length < 2) {
     alert("Not enough movies available. Please un-mark some movies from 'Haven't Seen'.");
     return;
   }
-  
-  // Shuffle and pick first two
-  const shuffled = available.sort(() => 0.5 - Math.random());
-  state.currentMovies.A = shuffled[0];
-  state.currentMovies.B = shuffled[1];
-  
+
+  // Try competitive match ~30% of the time
+  if (state.globalStats && Math.random() < 0.3) {
+    const pair = pickCompetitiveMatch(available);
+    if (pair) {
+      [state.currentMovies.A, state.currentMovies.B] = pair;
+      displayMovies();
+      return;
+    }
+  }
+
+  // Default: pure random
+  [state.currentMovies.A, state.currentMovies.B] = pickTwoRandom(available);
   displayMovies();
+}
+
+/**
+ * Pick two movies from the stronger tier so top contenders face each other.
+ * Returns [movieA, movieB] or null if not enough data.
+ */
+function pickCompetitiveMatch(available) {
+  const MIN_MATCHUPS = 3;
+
+  // Score available movies using global stats
+  const scored = [];
+  for (const m of available) {
+    const s = state.globalStats[getMovieKey(m)];
+    if (!s) continue;
+    const wins = s.wins || 0;
+    const losses = s.losses || 0;
+    const n = wins + losses;
+    if (n < MIN_MATCHUPS) continue;
+    scored.push({ movie: m, wins, n, winRate: wins / n });
+  }
+
+  if (scored.length < 2) return null;
+
+  // Sort by win count descending, then win rate
+  scored.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate);
+
+  // Pick two from the top third
+  const topCount = Math.max(2, Math.ceil(scored.length / 3));
+  const top = scored.slice(0, topCount);
+  const [a, b] = pickTwoRandom(top);
+  return [a.movie, b.movie];
 }
 
 /**
@@ -112,25 +211,25 @@ function chooseTwoMovies() {
  */
 async function displayMovies() {
   const { A, B } = state.currentMovies;
-  
+
   if (!A || !B) {
     console.error("No movies to display");
     return;
   }
-  
+
   try {
     // Update titles and years
     document.getElementById("movieA").textContent = A.title;
     document.getElementById("movieA-year").textContent = A.year;
     document.getElementById("movieB").textContent = B.title;
     document.getElementById("movieB-year").textContent = B.year;
-    
+
     // Fetch and update posters
     const [posterA, posterB] = await Promise.all([
       fetchPosterUrl(A.title, A.year),
       fetchPosterUrl(B.title, B.year)
     ]);
-    
+
     document.getElementById("posterA").src = posterA;
     document.getElementById("posterB").src = posterB;
   } catch (error) {
@@ -146,22 +245,22 @@ async function replaceMovie(oldMovie) {
     state.currentMovies.A.title,
     state.currentMovies.B.title
   ]);
-  
+
   if (available.length === 0) {
     alert("No more movies available!");
     return;
   }
-  
+
   // Pick random replacement
   const replacement = available[Math.floor(Math.random() * available.length)];
-  
+
   // Update state
   if (oldMovie.title === state.currentMovies.A.title) {
     state.currentMovies.A = replacement;
   } else {
     state.currentMovies.B = replacement;
   }
-  
+
   await displayMovies();
 }
 
@@ -175,30 +274,24 @@ async function replaceMovie(oldMovie) {
 async function handleVote(choice) {
   const winner = choice === "A" ? state.currentMovies.A : state.currentMovies.B;
   const loser = choice === "A" ? state.currentMovies.B : state.currentMovies.A;
-  
+
   console.log(`Vote: ${winner.title} beats ${loser.title}`);
-  
+
   // 1. Save to Firestore (global votes)
   await saveVoteToFirestore(winner, loser);
-  
-  // 2. Update local stats
-  updateEloRatings(winner.title, loser.title);
-  updateWinLossStats(winner.title, loser.title);
-  
-  // 3. Track matchup
+
+  // 2. Track matchup
   const matchupKey = [state.currentMovies.A.title, state.currentMovies.B.title].sort().join("|");
   state.seenMatchups.push(matchupKey);
-  
-  // 4. Save state
-  saveState();
+  await saveMatchupToFirestore(matchupKey);
 
-  // 5. Update vote counter
+  // 3. Update vote counter
   updateVoteCounter();
 
-  // 6. Celebrate!
+  // 4. Celebrate!
   triggerConfetti(choice);
-  
-  // 7. Load next matchup
+
+  // 5. Load next matchup
   setTimeout(() => chooseTwoMovies(), 1200);
 }
 
@@ -214,57 +307,22 @@ async function saveVoteToFirestore(winner, loser) {
       user: auth.currentUser?.uid || null,
       timestamp: serverTimestamp()
     });
-    
+
     // Update aggregate stats
     const batch = writeBatch(db);
     const statsRef = doc(db, "stats", "global");
-    
+
     batch.set(statsRef, {
       [`stats.${getMovieKey(winner)}.wins`]: increment(1),
       [`stats.${getMovieKey(loser)}.losses`]: increment(1)
     }, { merge: true });
-    
+
     await batch.commit();
-    
+
     console.log("Vote saved to Firestore");
   } catch (error) {
     console.error("Failed to save vote to Firestore:", error);
   }
-}
-
-/**
- * Update ELO ratings
- */
-function updateEloRatings(winnerTitle, loserTitle) {
-  const ratingA = state.ratings[winnerTitle] || 1000;
-  const ratingB = state.ratings[loserTitle] || 1000;
-  
-  // Expected score for winner
-  const expectedScore = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-  
-  // K-factor of 32 (standard)
-  const K = 32;
-  
-  // Update ratings
-  state.ratings[winnerTitle] = Math.round(ratingA + K * (1 - expectedScore));
-  state.ratings[loserTitle] = Math.round(ratingB + K * (0 - (1 - expectedScore)));
-}
-
-/**
- * Update win/loss statistics
- */
-function updateWinLossStats(winnerTitle, loserTitle) {
-  // Initialize if needed
-  if (!state.stats[winnerTitle]) {
-    state.stats[winnerTitle] = { wins: 0, losses: 0 };
-  }
-  if (!state.stats[loserTitle]) {
-    state.stats[loserTitle] = { wins: 0, losses: 0 };
-  }
-  
-  // Update counts
-  state.stats[winnerTitle].wins++;
-  state.stats[loserTitle].losses++;
 }
 
 /**
@@ -293,30 +351,101 @@ function triggerConfetti(choice) {
 // ==========================================
 
 /**
- * Mark a movie as unseen
+ * Spawn smoke particles around an element
  */
-function handleMarkUnseen(movie) {
+function spawnSmokeParticles(block) {
+  const rect = block.getBoundingClientRect();
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 3; // bias toward poster area
+
+  const count = 12;
+  const particles = [];
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "smoke-particle";
+
+    // Random drift direction
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+    const dist = 40 + Math.random() * 80;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 30; // bias upward
+    const scale = 1.5 + Math.random() * 2;
+    const duration = 500 + Math.random() * 400;
+    const size = 20 + Math.random() * 25;
+
+    el.style.cssText = `
+      left: ${centerX - size / 2}px;
+      top: ${centerY - size / 2}px;
+      width: ${size}px;
+      height: ${size}px;
+      --smoke-x: ${dx}px;
+      --smoke-y: ${dy}px;
+      --smoke-scale: ${scale};
+      --smoke-duration: ${duration}ms;
+    `;
+
+    block.appendChild(el);
+    particles.push(el);
+  }
+
+  // Clean up after longest particle finishes
+  setTimeout(() => {
+    particles.forEach(p => p.remove());
+  }, 1000);
+}
+
+/**
+ * Mark a movie as unseen with poof animation
+ */
+async function handleMarkUnseen(movie) {
   if (!movie) {
     console.error("No movie provided to mark as unseen");
     return;
   }
-  
+
   const movieKey = getMovieKey(movie);
-  
+
   // Check if already marked
   if (state.unseenMovies.includes(movieKey)) {
     console.log("Movie already marked as unseen");
     return;
   }
-  
-  // Add to unseen list
+
+  // Determine which block to animate
+  const side = movie.title === state.currentMovies.A?.title ? "A" : "B";
+  const block = document.getElementById(`movie${side}-block`);
+
+  // Add to unseen list + save
   state.unseenMovies.push(movieKey);
-  saveState();
-  
+  await saveUnseenToFirestore(movieKey);
   console.log(`Marked as unseen: ${movie.title}`);
-  
-  // Replace with new movie
-  replaceMovie(movie);
+
+  // Animate: smoke particles + poof out, then swap + fade in
+  if (block) {
+    block.style.position = "relative";
+    block.style.overflow = "visible";
+    spawnSmokeParticles(block);
+    block.classList.add("poof-out");
+
+    // Wait for poof-out to finish
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Hold invisible while we swap content (prevent flash-back)
+    block.style.opacity = "0";
+    block.classList.remove("poof-out");
+
+    await replaceMovie(movie);
+
+    // Fade the new movie in
+    block.style.opacity = "";
+    block.classList.add("poof-in");
+    block.addEventListener("animationend", () => {
+      block.classList.remove("poof-in");
+    }, { once: true });
+  } else {
+    replaceMovie(movie);
+  }
 }
 
 // ==========================================
@@ -324,17 +453,49 @@ function handleMarkUnseen(movie) {
 // ==========================================
 
 /**
+ * Load global movie stats from the stats/global doc (single read).
+ * This powers competitive matchmaking.
+ */
+async function loadGlobalMovieStats() {
+  try {
+    const snap = await getDoc(doc(db, "stats", "global"));
+    state.globalStats = snap.exists() ? (snap.data().stats || {}) : {};
+    const count = Object.keys(state.globalStats).length;
+    console.log(`Loaded global stats for ${count} movies`);
+  } catch (error) {
+    console.warn("Could not load global movie stats:", error);
+    state.globalStats = {};
+  }
+}
+
+/**
  * Load movie database and start
  */
 async function initializeApp() {
   try {
-    const response = await fetch("movie_list_cleaned.json");
-    state.movies = await response.json();
-    
+    // Load movie list + global stats in parallel (no auth needed)
+    const [moviesRes] = await Promise.all([
+      fetch("movie_list_cleaned.json"),
+      loadGlobalMovieStats()
+    ]);
+    state.movies = await moviesRes.json();
     console.log(`Loaded ${state.movies.length} movies`);
 
-    updateVoteCounter();
-    chooseTwoMovies();
+    // Wait for auth state, then load user data
+    onAuth(async (user) => {
+      if (user) {
+        state.uid = user.uid;
+        await loadUserData(user.uid);
+      } else {
+        state.uid = null;
+        // Guest fallback: load from localStorage
+        state.unseenMovies = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+        state.seenMatchups = JSON.parse(localStorage.getItem("seenMatchups")) || [];
+      }
+
+      updateVoteCounter();
+      chooseTwoMovies();
+    });
   } catch (error) {
     console.error("Failed to load movies:", error);
     alert("Failed to load movie database. Please refresh the page.");

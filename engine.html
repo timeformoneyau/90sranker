@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Engine | Shelf Life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="bg-overlay"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="member-card">
+      <div class="member-card-inner">
+        <div class="member-card-avatar"></div>
+        <div class="member-card-details">
+          <div class="member-card-label">Official Membership</div>
+          <div class="member-card-brand">SHELF LIFE</div>
+          <div class="member-card-tier">Gold Tier Member</div>
+          <div class="member-card-name" id="member-name">GUEST</div>
+        </div>
+      </div>
+      <div class="member-card-barcode">*SL-1995-0422*</div>
+      <div class="member-card-footer">
+        <span class="member-card-exp">EXP 12/99</span>
+        <button class="member-card-logout" id="member-logout" style="display:none">Log Out</button>
+      </div>
+    </div>
+
+    <div class="site-title">SHELF LIFE</div>
+    <p class="site-subtitle">The clerk knows what you like.</p>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="mikes-picks.html">Mike's Picks</a></li>
+      <li><a href="engine.html" class="active">Engine</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="engine-page">
+
+    <div class="engine-intro">
+      <h1 class="engine-headline">The Engine</h1>
+      <p class="engine-desc">Movies picked for you, based on how you vote. The more you vote, the smarter it gets.</p>
+      <details class="results-details">
+        <summary>How this works</summary>
+        <p>
+          <strong>Phase 1 — Your Taste:</strong> Every time you pick a winner, the engine learns which genres, tones, vibes, and eras you prefer. Winners earn positive signal; losers earn negative. Over time, a preference profile emerges.
+        </p>
+        <p>
+          <strong>Phase 2 — Scoring:</strong> Every movie you haven't voted on yet is scored against your taste profile. Movies that match more of your preferred attributes rank higher.
+        </p>
+        <p>
+          <strong>Phase 3 — The Crowd:</strong> The engine finds other voters with similar taste (based on overlapping winners) and boosts movies they loved that you haven't seen yet. This is lightweight collaborative filtering — no black-box ML.
+        </p>
+        <p>
+          With fewer than 10 votes, you'll see popular picks. The recommendations get more personal as your vote count grows.
+        </p>
+      </details>
+    </div>
+
+    <!-- Status -->
+    <div class="engine-status" id="engine-status">Loading...</div>
+
+    <!-- Taste Profile -->
+    <div id="engine-profile"></div>
+
+    <!-- Recommendation Grid -->
+    <div class="engine-grid" id="engine-grid">
+      <div class="engine-empty">Loading recommendations...</div>
+    </div>
+
+    <a href="index.html" class="back-link">Back to voting</a>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="engine.js"></script>
+  <script type="module" src="loginStatus.js"></script>
+</body>
+</html>

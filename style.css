@@ -1441,3 +1441,330 @@ tbody tr:last-child td { border-bottom: none; }
   100% { transform: translateX(0); }
 }
 .shake { animation: shake 320ms ease; }
+
+
+/* =========================================================
+   12) POOF / SMOKE ANIMATION (Haven't Seen)
+   ========================================================= */
+
+/* Main poof-out on movie block */
+@keyframes poof-out {
+  0%   { opacity: 1; transform: scale(1);    filter: blur(0);   }
+  40%  { opacity: 0.7; transform: scale(1.08); filter: blur(2px); }
+  100% { opacity: 0; transform: scale(0.3);  filter: blur(12px); }
+}
+
+.poof-out {
+  animation: poof-out 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* Fade-in for replacement movie */
+@keyframes poof-in {
+  0%   { opacity: 0; transform: scale(0.85); filter: blur(4px); }
+  100% { opacity: 1; transform: scale(1);    filter: blur(0);   }
+}
+
+.poof-in {
+  animation: poof-in 400ms ease-out forwards;
+}
+
+/* Smoke particles */
+.smoke-particle {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(180, 170, 155, 0.7) 0%, rgba(140, 130, 120, 0) 70%);
+  pointer-events: none;
+  z-index: 20;
+  animation: smoke-drift var(--smoke-duration, 700ms) ease-out forwards;
+}
+
+@keyframes smoke-drift {
+  0% {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(0.5);
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--smoke-x, 30px), var(--smoke-y, -60px)) scale(var(--smoke-scale, 2.5));
+  }
+}
+
+
+/* =========================================================
+   13) ENGINE — RECOMMENDATION PAGE
+   ========================================================= */
+
+.engine-page {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--s-6) var(--container-pad) var(--s-8);
+}
+
+/* Intro */
+.engine-intro {
+  margin-bottom: var(--s-5);
+}
+
+.engine-headline {
+  font-size: clamp(var(--fs-5), 4vw, var(--fs-7));
+  font-weight: var(--fw-black);
+  color: var(--color-text-0);
+  margin: 0 0 var(--s-3);
+}
+
+.engine-desc {
+  color: var(--color-text-1);
+  font-size: var(--fs-2);
+  line-height: 1.6;
+  max-width: 640px;
+  margin: 0 0 var(--s-4);
+}
+
+/* Status bar */
+.engine-status {
+  font-size: var(--fs-1);
+  color: var(--color-accent);
+  margin-bottom: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: rgba(232, 163, 23, 0.06);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--r-sm);
+}
+
+.engine-status--warn {
+  color: var(--color-text-2);
+  border-left-color: var(--color-text-2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Taste Profile */
+#engine-profile {
+  margin-bottom: var(--s-5);
+}
+
+.engine-profile-header {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-1);
+  margin-bottom: var(--s-3);
+}
+
+.engine-profile-votes {
+  font-weight: var(--fw-regular);
+  color: var(--color-text-2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.engine-profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.engine-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 0.7rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+}
+
+.engine-chip--pos {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--color-success);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.engine-chip--neg {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Recommendation Grid */
+.engine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-5);
+  margin-bottom: var(--s-6);
+}
+
+.engine-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--color-text-2);
+  font-style: italic;
+  padding: var(--s-8) var(--s-4);
+}
+
+/* Card */
+.engine-card {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: transform var(--t-base), border-color var(--t-base), box-shadow var(--t-base);
+}
+
+.engine-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-accent-dim);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Poster */
+.engine-card-poster-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: var(--color-bg-2);
+  overflow: hidden;
+}
+
+.engine-card-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.engine-card-rank {
+  position: absolute;
+  top: var(--s-2);
+  left: var(--s-2);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  color: var(--color-bg-0);
+  font-size: var(--fs-0);
+  font-weight: var(--fw-black);
+  border-radius: var(--r-sm);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Card body */
+.engine-card-body {
+  padding: var(--s-3);
+}
+
+.engine-card-title {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-2);
+  color: var(--color-text-0);
+  margin-bottom: 2px;
+  line-height: var(--lh-tight);
+}
+
+.engine-card-year {
+  font-size: var(--fs-0);
+  color: var(--color-accent);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  margin-bottom: var(--s-2);
+}
+
+.engine-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: var(--s-2);
+}
+
+.engine-tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  font-size: 0.6rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-2);
+  border: 1px solid var(--color-border);
+  text-transform: lowercase;
+}
+
+.engine-tag--genre {
+  color: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}
+
+.engine-card-reason {
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--color-text-1);
+  line-height: 1.5;
+  margin-bottom: var(--s-2);
+}
+
+.engine-card-blurb {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  line-height: 1.5;
+}
+
+/* Back link (reuse results page pattern) */
+.engine-page .back-link {
+  display: inline-block;
+  color: var(--color-primary-light);
+  text-decoration: none;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-1);
+  padding: var(--s-3) var(--s-5);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  transition: border-color var(--t-base), color var(--t-base);
+  margin-top: var(--s-6);
+}
+
+.engine-page .back-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .engine-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-3);
+  }
+
+  .engine-card-title {
+    font-size: var(--fs-1);
+  }
+
+  .engine-card-reason {
+    font-size: 0.6rem;
+  }
+
+  .engine-card-blurb {
+    display: none;
+  }
+
+  .engine-headline {
+    font-size: var(--fs-4);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .engine-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .engine-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
