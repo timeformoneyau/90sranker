@@ -1,4 +1,10 @@
-import { db, collection, getDocs } from "./firebase.js";
+import { db, auth, onAuth, collection, getDocs } from "./firebase.js";
+
+// ==========================================
+// ADMIN GATE
+// ==========================================
+
+const ADMIN_EMAIL = "mjreardon62@gmail.com";
 
 // ==========================================
 // STATE
@@ -18,7 +24,21 @@ function getMovieKey(m) {
 // LOAD DATA
 // ==========================================
 
-window.onload = async () => {
+window.onload = () => {
+  const statusEl = document.getElementById("diag-status");
+  const pageEl = document.querySelector(".diag-page");
+
+  onAuth(user => {
+    if (!user || user.email !== ADMIN_EMAIL) {
+      statusEl.textContent = "";
+      pageEl.innerHTML = '<h1>Access Denied</h1><p style="color:var(--color-text-2)">This page is restricted to admin users. <a href="index.html">Back to Home</a></p>';
+      return;
+    }
+    loadDiagnostics();
+  });
+};
+
+async function loadDiagnostics() {
   const statusEl = document.getElementById("diag-status");
 
   try {
@@ -88,7 +108,7 @@ window.onload = async () => {
     console.error("Diagnostics error:", err);
     statusEl.textContent = "Error loading data: " + err.message;
   }
-};
+}
 
 // ==========================================
 // SUMMARY CARDS
