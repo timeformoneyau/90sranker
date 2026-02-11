@@ -593,8 +593,9 @@ async function initializeApp() {
       fetch("movie_list_cleaned.json"),
       loadGlobalMovieStats()
     ]);
-    state.movies = await moviesRes.json();
-    console.log(`Loaded ${state.movies.length} movies`);
+    const allMovies = await moviesRes.json();
+    state.movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+    console.log(`Loaded ${state.movies.length} movies (filtered ${allMovies.length - state.movies.length} junk)`);
 
     // Wait for auth state, then load user data
     onAuth(async (user) => {

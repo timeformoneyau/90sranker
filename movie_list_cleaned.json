@@ -422,16 +422,6 @@
     "category": "blockbuster"
   },
   {
-    "title": "title",
-    "year": "year",
-    "genre": "genre",
-    "blurb": "blurb",
-    "poster": "poster",
-    "vibes": "vibes",
-    "tone": "tone",
-    "category": "category"
-  },
-  {
     "title": "The Mod Squad",
     "year": "1999",
     "genre": "Action",

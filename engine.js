@@ -256,7 +256,8 @@ async function getRecommendationsForUser(userId) {
   if (cache.uid === userId && cache.results) return cache.results;
 
   const moviesRes = await fetch("movie_list_cleaned.json");
-  const movies = await moviesRes.json();
+  const allMovies = await moviesRes.json();
+  const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
   const movieMap = {};
   for (const m of movies) movieMap[getMovieKey(m)] = m;
 

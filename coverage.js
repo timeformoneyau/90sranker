@@ -9,7 +9,8 @@ window.onload = async () => {
   try {
     // Load movie list from static file
     const res = await fetch("movie_list_cleaned.json");
-    allMovies = await res.json();
+    const rawMovies = await res.json();
+    allMovies = rawMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
 
     // Load global stats from Firestore
     const statsSnap = await getDoc(doc(db, "stats", "global"));

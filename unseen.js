@@ -52,7 +52,8 @@ async function loadUnseenList() {
   // Load full movie list
   try {
     const res = await fetch("movie_list_cleaned.json");
-    movies = await res.json();
+    const allMovies = await res.json();
+    movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
   } catch (err) {
     console.error("Movie list fetch fail:", err);
     return;
