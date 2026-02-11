@@ -260,15 +260,17 @@ async function getRecommendationsForUser(userId) {
   const movieMap = {};
   for (const m of movies) movieMap[getMovieKey(m)] = m;
 
-  // Load user's "haven't seen" list AND "seen it" list
+  // Load user's "haven't seen" list, "seen it" list, and inferred-seen list
   let unseenKeys = new Set();
   let seenKeys = new Set();
+  let inferredSeenKeys = new Set();
   try {
     const userSnap = await getDoc(doc(db, "users", userId));
     if (userSnap.exists()) {
       const data = userSnap.data();
       (data.seen || []).forEach(k => unseenKeys.add(k));
       (data.seenMovies || []).forEach(k => seenKeys.add(k));
+      (data.inferredSeen || []).forEach(k => inferredSeenKeys.add(k));
     }
   } catch (err) {
     console.warn("Could not load user data:", err);
@@ -298,10 +300,10 @@ async function getRecommendationsForUser(userId) {
   const isSparse = userVotes.length < MIN_VOTES_FOR_PERSONALIZATION;
   const { prefs, votedKeys } = buildPreferenceVector(userVotes, movieMap);
 
-  // Exclude: voted + seen-it (but NOT haven't-seen — those get a badge instead)
+  // Exclude: voted + seen-it + inferred-seen (but NOT haven't-seen — those get a badge instead)
   const candidates = movies.filter(m => {
     const key = getMovieKey(m);
-    return !votedKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key);
+    return !votedKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key) && !inferredSeenKeys.has(key);
   });
 
   let allScored;

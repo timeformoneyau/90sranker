@@ -23,20 +23,31 @@ async function loadUnseenList() {
   unseenListEl.innerHTML = "";
 
   // Load unseen keys from Firestore or localStorage
+  let inferredSeen = [];
   if (auth.currentUser) {
     try {
       const ref = doc(db, "users", auth.currentUser.uid);
       const snap = await getDoc(ref);
-      unseen = snap.exists() && Array.isArray(snap.data().seen)
-        ? snap.data().seen
-        : [];
+      if (snap.exists()) {
+        const data = snap.data();
+        unseen = Array.isArray(data.seen) ? data.seen : [];
+        inferredSeen = Array.isArray(data.inferredSeen) ? data.inferredSeen : [];
+      } else {
+        unseen = [];
+      }
     } catch (err) {
       console.error("Load unseen fail:", err);
       unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+      inferredSeen = JSON.parse(localStorage.getItem("inferredSeenMovies")) || [];
     }
   } else {
     unseen = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+    inferredSeen = JSON.parse(localStorage.getItem("inferredSeenMovies")) || [];
   }
+
+  // Filter out any movies that have been inferred as seen (voted on)
+  const inferredSet = new Set(inferredSeen);
+  unseen = unseen.filter(k => !inferredSet.has(k));
 
   // Load full movie list
   try {

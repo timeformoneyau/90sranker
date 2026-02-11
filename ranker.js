@@ -11,7 +11,9 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   arrayUnion,
+  arrayRemove,
   getDocs
 } from "./firebase.js";
 
@@ -285,7 +287,12 @@ async function handleVote(choice) {
   state.seenMatchups.push(matchupKey);
   await saveMatchupToFirestore(matchupKey);
 
-  // 3. Update vote counter
+  // 3. Record both movies as inferred-seen
+  const movieAKey = getMovieKey(state.currentMovies.A);
+  const movieBKey = getMovieKey(state.currentMovies.B);
+  recordInferredSeen(movieAKey, movieBKey);
+
+  // 4. Update vote counter
   updateVoteCounter();
 
   // 4. Celebrate!
@@ -446,6 +453,52 @@ async function handleMarkUnseen(movie) {
   } else {
     replaceMovie(movie);
   }
+}
+
+// ==========================================
+// INFERRED SEEN TRACKING
+// ==========================================
+
+/**
+ * After every vote, mark both movies as inferred-seen.
+ * Also prune them from the unseen list if present.
+ */
+async function recordInferredSeen(movieAKey, movieBKey) {
+  const keys = [movieAKey, movieBKey];
+
+  if (state.uid) {
+    // Logged in: update Firestore user doc
+    try {
+      const updates = {
+        inferredSeen: arrayUnion(...keys)
+      };
+      // If either key is in the unseen list, remove it
+      const unseenToRemove = keys.filter(k => state.unseenMovies.includes(k));
+      if (unseenToRemove.length > 0) {
+        updates.seen = arrayRemove(...unseenToRemove);
+      }
+      await setDoc(doc(db, "users", state.uid), updates, { merge: true });
+    } catch (error) {
+      console.error("Failed to record inferred seen:", error);
+    }
+  } else {
+    // Guest: update localStorage
+    const inferredSeen = JSON.parse(localStorage.getItem("inferredSeenMovies")) || [];
+    for (const k of keys) {
+      if (!inferredSeen.includes(k)) inferredSeen.push(k);
+    }
+    localStorage.setItem("inferredSeenMovies", JSON.stringify(inferredSeen));
+
+    // Prune from unseen localStorage
+    const unseenMovies = JSON.parse(localStorage.getItem("unseenMovies")) || [];
+    const pruned = unseenMovies.filter(k => !keys.includes(k));
+    if (pruned.length !== unseenMovies.length) {
+      localStorage.setItem("unseenMovies", JSON.stringify(pruned));
+    }
+  }
+
+  // Also prune local state
+  state.unseenMovies = state.unseenMovies.filter(k => !keys.includes(k));
 }
 
 // ==========================================
