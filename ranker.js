@@ -14,7 +14,9 @@ import {
   setDoc,
   arrayUnion,
   arrayRemove,
-  getDocs
+  getDocs,
+  query,
+  where
 } from "./firebase.js";
 
 import confetti from "https://esm.sh/canvas-confetti";
@@ -501,6 +503,66 @@ async function recordInferredSeen(movieAKey, movieBKey) {
   state.unseenMovies = state.unseenMovies.filter(k => !keys.includes(k));
 }
 
+/**
+ * One-time backfill: populate inferredSeen from all historical votes.
+ * Skips if already done (checks inferredSeenBackfilled flag).
+ */
+async function backfillInferredSeen(uid) {
+  try {
+    const userRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists() && userSnap.data().inferredSeenBackfilled) return;
+
+    const snap = await getDocs(query(
+      collection(db, "votes"),
+      where("user", "==", uid)
+    ));
+
+    const seenKeys = new Set();
+    snap.forEach(d => {
+      const { winner, loser } = d.data();
+      if (winner) seenKeys.add(winner);
+      if (loser) seenKeys.add(loser);
+    });
+
+    if (seenKeys.size === 0) return;
+
+    const keysArray = [...seenKeys];
+
+    // Firestore arrayUnion has a limit of ~30 per call, batch in chunks
+    const CHUNK = 20;
+    for (let i = 0; i < keysArray.length; i += CHUNK) {
+      const chunk = keysArray.slice(i, i + CHUNK);
+      const updates = { inferredSeen: arrayUnion(...chunk) };
+
+      // On first chunk, also prune unseen list
+      if (i === 0) {
+        const unseenToRemove = chunk.filter(k => state.unseenMovies.includes(k));
+        if (unseenToRemove.length > 0) {
+          updates.seen = arrayRemove(...unseenToRemove);
+        }
+      } else {
+        const unseenToRemove = chunk.filter(k => state.unseenMovies.includes(k));
+        if (unseenToRemove.length > 0) {
+          updates.seen = arrayRemove(...unseenToRemove);
+        }
+      }
+
+      await setDoc(userRef, updates, { merge: true });
+    }
+
+    // Set flag so this doesn't run again
+    await setDoc(userRef, { inferredSeenBackfilled: true }, { merge: true });
+
+    // Prune local state
+    state.unseenMovies = state.unseenMovies.filter(k => !seenKeys.has(k));
+
+    console.log(`Backfilled inferredSeen with ${seenKeys.size} movies from ${snap.size} votes`);
+  } catch (error) {
+    console.error("Failed to backfill inferredSeen:", error);
+  }
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
@@ -539,6 +601,7 @@ async function initializeApp() {
       if (user) {
         state.uid = user.uid;
         await loadUserData(user.uid);
+        backfillInferredSeen(user.uid);
       } else {
         state.uid = null;
         // Guest fallback: load from localStorage
