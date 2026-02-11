@@ -2,58 +2,248 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Movie Coverage | Shelf Life</title>
+  <title>Movie Coverage Diagnostics | Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    main {
-      padding: 2rem;
+    .diag-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
     }
-    .controls {
+    .diag-page h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .diag-status {
+      color: var(--color-accent);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Summary cards */
+    .diag-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .diag-card {
+      background: var(--color-bg-1);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-lg);
+      padding: 1rem;
+    }
+    .diag-card-val {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--color-accent);
+    }
+    .diag-card-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-2);
+      margin-top: 2px;
+    }
+
+    /* Fairness gauge */
+    .diag-fairness {
+      background: var(--color-bg-1);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-lg);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .diag-fairness h3 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+    }
+    .diag-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .diag-bar-label {
+      font-size: 0.75rem;
+      color: var(--color-text-2);
+      min-width: 100px;
+    }
+    .diag-bar-track {
+      flex: 1;
+      height: 12px;
+      background: var(--color-bg-2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .diag-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+    .diag-bar-val {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--color-text-0);
+      min-width: 48px;
+      text-align: right;
+    }
+    .diag-verdict {
+      font-size: 0.875rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--r-sm);
+    }
+    .diag-verdict--good { background: rgba(34,197,94,0.1); color: var(--color-success); }
+    .diag-verdict--warn { background: rgba(234,179,8,0.1); color: var(--color-warning); }
+    .diag-verdict--bad { background: rgba(239,68,68,0.1); color: var(--color-error); }
+
+    /* Sections */
+    .diag-section {
+      margin-bottom: 2rem;
+    }
+    .diag-section h3 {
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      color: var(--color-text-0);
+    }
+
+    /* Controls */
+    .diag-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
       margin-bottom: 1rem;
     }
-    table {
+    .diag-controls button {
+      padding: 0.4rem 0.8rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--color-bg-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-sm);
+      color: var(--color-text-1);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .diag-controls button:hover,
+    .diag-controls button.active {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    /* Table */
+    .diag-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--color-border);
+    }
+    .diag-table {
       width: 100%;
       border-collapse: collapse;
+      background: var(--color-bg-1);
+      border: none;
     }
-    th, td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #1e3355;
+    .diag-table th {
+      background: var(--color-bg-2);
+      color: var(--color-text-0);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.6rem 0.75rem;
       text-align: left;
+      border-bottom: 2px solid var(--color-primary-dark);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
     }
-    tr.faded {
-      opacity: 0.4;
+    .diag-table th:hover { color: var(--color-accent); }
+    .diag-table td {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--color-text-0);
+      border-bottom: 1px solid var(--color-border);
     }
-    button {
-      margin-right: 0.5rem;
-      padding: 0.5rem 1rem;
-    }
+    .diag-table tbody tr:hover { background: rgba(232,163,23,0.04); }
+    tr.faded { opacity: 0.35; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .hot { color: var(--color-error); font-weight: 700; }
+    .cold { color: var(--color-text-2); }
   </style>
 </head>
 <body>
   <header class="site-header">
-    <h1>Movie Coverage Overview</h1>
+    <div class="site-title">SHELF LIFE</div>
   </header>
 
-  <main>
-    <div class="controls">
-      <button id="filter-unseen">Show Only Unseen</button>
-      <button id="filter-gt5">Seen > 5</button>
-      <button id="reset-filter">Reset Filter</button>
-      <button id="export-csv">Export CSV</button>
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Results</a></li>
+      <li><a href="mikes-picks.html">Mike's Picks</a></li>
+      <li><a href="engine.html">Engine</a></li>
+      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="account.html">Your Account</a></li>
+    </ul>
+  </nav>
+
+  <div class="diag-page">
+    <h1>Movie Coverage Diagnostics</h1>
+    <div class="diag-status" id="diag-status">Loading vote data from Firestore...</div>
+
+    <!-- Summary cards -->
+    <div class="diag-summary" id="diag-summary"></div>
+
+    <!-- Fairness gauge -->
+    <div class="diag-fairness" id="diag-fairness"></div>
+
+    <!-- Overexposed -->
+    <div class="diag-section" id="section-over">
+      <h3>Most Overexposed (shown way more than average)</h3>
+      <div id="over-list"></div>
     </div>
-    <table id="coverage-table">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Year</th>
-          <th>Times Shown</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </main>
+
+    <!-- Never shown -->
+    <div class="diag-section" id="section-never">
+      <h3>Never Shown (0 appearances across all votes)</h3>
+      <div id="never-list"></div>
+    </div>
+
+    <!-- Full table -->
+    <div class="diag-section">
+      <h3>Full Movie Appearance Table</h3>
+      <div class="diag-controls">
+        <button id="filter-all" class="active">All</button>
+        <button id="filter-zero">Never Shown</button>
+        <button id="filter-hot">Overexposed (&gt;2x avg)</button>
+        <button id="filter-cold">Underexposed (&lt;0.5x avg)</button>
+        <button id="export-csv">Export CSV</button>
+      </div>
+      <div class="diag-table-wrap">
+        <table class="diag-table" id="coverage-table">
+          <thead>
+            <tr>
+              <th data-sort="title">Title</th>
+              <th data-sort="year">Year</th>
+              <th data-sort="appearances" class="num">Appearances</th>
+              <th data-sort="wins" class="num">Wins</th>
+              <th data-sort="losses" class="num">Losses</th>
+              <th data-sort="winpct" class="num">Win %</th>
+              <th data-sort="ratio" class="num">vs Avg</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="coverage.js"></script>
 </body>
