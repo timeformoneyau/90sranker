@@ -1832,3 +1832,177 @@ tbody tr:last-child td { border-bottom: none; }
 .engine-card-enter {
   animation: engine-card-enter 0.45s ease-out forwards;
 }
+
+
+/* =========================================================
+   14) MATCHUP DETAIL MODAL
+   ========================================================= */
+
+.matchup-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+}
+
+.matchup-modal-backdrop.hidden {
+  display: none;
+}
+
+.matchup-modal {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-xl);
+  max-width: 560px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.matchup-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.matchup-modal-title {
+  margin: 0;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchup-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-text-2);
+  font-size: var(--fs-6);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--s-2);
+  flex-shrink: 0;
+  transition: color var(--t-fast);
+}
+
+.matchup-modal-close:hover {
+  color: var(--color-text-0);
+}
+
+.matchup-modal-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.matchup-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.matchup-stat-val {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--color-accent);
+}
+
+.matchup-stat-label {
+  font-size: 0.65rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-2);
+}
+
+.matchup-modal-list {
+  overflow-y: auto;
+  padding: var(--s-3) var(--s-5) var(--s-5);
+  flex: 1;
+  min-height: 0;
+}
+
+.matchup-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  margin-bottom: 2px;
+  font-size: var(--fs-1);
+}
+
+.matchup-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.matchup-row-result {
+  font-weight: var(--fw-black);
+  font-size: var(--fs-1);
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.matchup-row--win .matchup-row-result {
+  color: var(--color-success);
+}
+
+.matchup-row--loss .matchup-row-result {
+  color: var(--color-error);
+}
+
+.matchup-row-opponent {
+  flex: 1;
+  color: var(--color-text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchup-row-date {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  flex-shrink: 0;
+}
+
+/* Responsive: full-width on mobile */
+@media (max-width: 767px) {
+  .matchup-modal-backdrop {
+    padding: var(--s-2);
+    align-items: flex-end;
+  }
+
+  .matchup-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+  }
+
+  .matchup-modal-header {
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .matchup-modal-stats {
+    padding: var(--s-3) var(--s-4);
+    gap: var(--s-3);
+  }
+
+  .matchup-modal-list {
+    padding: var(--s-3) var(--s-4) var(--s-4);
+  }
+}

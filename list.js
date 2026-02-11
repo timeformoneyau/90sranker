@@ -9,6 +9,13 @@ import {
 } from "./firebase.js";
 
 // ==========================================
+// RAW VOTE STORAGE (for matchup modal)
+// ==========================================
+
+let globalVoteDocs = [];
+let personalVoteDocs = [];
+
+// ==========================================
 // WILSON SCORE
 // ==========================================
 
@@ -97,6 +104,8 @@ function renderTable(tbody, rows) {
   }
   rows.forEach((m, i) => {
     const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.addEventListener("click", () => showMatchupModal(m.key));
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     tr.innerHTML = `
       <td class="col-rank">${i + 1}</td>
@@ -121,6 +130,8 @@ function renderCards(container, rows) {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     const card = document.createElement("div");
     card.className = "result-card";
+    card.style.cursor = "pointer";
+    card.addEventListener("click", () => showMatchupModal(m.key));
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
       <div class="result-card-body">
@@ -189,20 +200,17 @@ async function loadGlobalStats() {
     countEl.textContent = `${snap.size.toLocaleString()} total votes across all users`;
 
     const stats = {};
+    globalVoteDocs = [];
     snap.forEach(doc => {
-      const { winner, loser } = doc.data();
+      const d = doc.data();
+      const { winner, loser } = d;
       if (!winner || !loser) return;
+      globalVoteDocs.push(d);
       stats[winner] = stats[winner] || { wins: 0, losses: 0 };
       stats[loser] = stats[loser] || { wins: 0, losses: 0 };
       stats[winner].wins++;
       stats[loser].losses++;
     });
-
-    // Debug: check specific movie stats
-    const debugKey = "Armageddon|1998";
-    if (stats[debugKey]) {
-      console.log(`[DEBUG] ${debugKey}:`, JSON.stringify(stats[debugKey]), `from ${snap.size} total vote docs`);
-    }
 
     globalAllRows = buildRankedData(stats);
     applyGlobalFilters();
@@ -253,9 +261,12 @@ async function loadPersonalStats(uid) {
     countEl.textContent = `${snap.size.toLocaleString()} votes`;
 
     const stats = {};
+    personalVoteDocs = [];
     snap.forEach(doc => {
-      const { winner, loser } = doc.data();
+      const d = doc.data();
+      const { winner, loser } = d;
       if (!winner || !loser) return;
+      personalVoteDocs.push(d);
       stats[winner] = stats[winner] || { wins: 0, losses: 0 };
       stats[loser] = stats[loser] || { wins: 0, losses: 0 };
       stats[winner].wins++;
@@ -343,6 +354,92 @@ async function loadRecentVotes(uid) {
     cards.innerHTML = '<div class="results-empty results-error">Unable to load.</div>';
   }
 }
+
+// ==========================================
+// MATCHUP MODAL
+// ==========================================
+
+function getActiveVoteDocs() {
+  const activeTab = document.querySelector(".results-tab.active");
+  const tab = activeTab ? activeTab.dataset.tab : "global";
+  return tab === "personal" ? personalVoteDocs : globalVoteDocs;
+}
+
+function showMatchupModal(key) {
+  const votes = getActiveVoteDocs();
+  const title = key.split("|")[0];
+  const year = key.split("|")[1] || "";
+
+  // Filter votes involving this movie
+  const matchups = votes
+    .filter(v => v.winner === key || v.loser === key)
+    .map(v => {
+      const won = v.winner === key;
+      const opponentKey = won ? v.loser : v.winner;
+      const opponentTitle = opponentKey.split("|")[0];
+      const ts = v.timestamp ? (v.timestamp.toDate ? v.timestamp.toDate() : new Date(v.timestamp)) : null;
+      return { won, opponentKey, opponentTitle, ts };
+    })
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+  // Aggregate stats
+  const wins = matchups.filter(m => m.won).length;
+  const losses = matchups.length - wins;
+  const winPct = matchups.length ? ((wins / matchups.length) * 100).toFixed(1) : "0.0";
+
+  // Win streak (current)
+  let streak = 0;
+  for (const m of matchups) {
+    if (m.won) streak++;
+    else break;
+  }
+
+  // Biggest rival (most frequent opponent)
+  const oppCounts = {};
+  matchups.forEach(m => {
+    oppCounts[m.opponentTitle] = (oppCounts[m.opponentTitle] || 0) + 1;
+  });
+  const rival = Object.entries(oppCounts).sort((a, b) => b[1] - a[1])[0];
+
+  // Render
+  document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
+
+  document.getElementById("matchup-modal-stats").innerHTML = `
+    <div class="matchup-stat"><span class="matchup-stat-val">${wins}W - ${losses}L</span><span class="matchup-stat-label">Record</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${winPct}%</span><span class="matchup-stat-label">Win Rate</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${streak}</span><span class="matchup-stat-label">Win Streak</span></div>
+    ${rival ? `<div class="matchup-stat"><span class="matchup-stat-val">${rival[0]}</span><span class="matchup-stat-label">Rival (${rival[1]}x)</span></div>` : ""}
+  `;
+
+  const listEl = document.getElementById("matchup-modal-list");
+  if (!matchups.length) {
+    listEl.innerHTML = '<div class="results-empty">No matchups found.</div>';
+  } else {
+    listEl.innerHTML = matchups.map(m => {
+      const dateStr = m.ts ? m.ts.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Unknown";
+      return `<div class="matchup-row ${m.won ? "matchup-row--win" : "matchup-row--loss"}">
+        <span class="matchup-row-result">${m.won ? "W" : "L"}</span>
+        <span class="matchup-row-opponent">${m.opponentTitle}</span>
+        <span class="matchup-row-date">${dateStr}</span>
+      </div>`;
+    }).join("");
+  }
+
+  document.getElementById("matchup-modal").classList.remove("hidden");
+}
+
+function closeMatchupModal() {
+  document.getElementById("matchup-modal").classList.add("hidden");
+}
+
+// Close on backdrop click or X button
+document.getElementById("matchup-modal").addEventListener("click", (e) => {
+  if (e.target.id === "matchup-modal") closeMatchupModal();
+});
+document.getElementById("matchup-modal-close").addEventListener("click", closeMatchupModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeMatchupModal();
+});
 
 // ==========================================
 // INIT
