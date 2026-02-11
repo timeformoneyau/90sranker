@@ -29,6 +29,10 @@ window.onload = () => {
   const pageEl = document.querySelector(".diag-page");
 
   onAuth(user => {
+    // Show admin nav link if admin
+    const adminNav = document.getElementById("admin-nav-link");
+    if (adminNav) adminNav.style.display = (user && user.email === ADMIN_EMAIL) ? "" : "none";
+
     if (!user || user.email !== ADMIN_EMAIL) {
       statusEl.textContent = "";
       pageEl.innerHTML = '<h1>Access Denied</h1><p style="color:var(--color-text-2)">This page is restricted to admin users. <a href="index.html">Back to Home</a></p>';
