@@ -119,6 +119,7 @@ async function saveMatchupToFirestore(matchupKey) {
 
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+const movieInfoCache = {}; // keyed by "Title|Year"
 
 /**
  * Fetch poster URL from TMDB
@@ -136,6 +137,119 @@ async function fetchPosterUrl(title, year) {
     return "./fallback.jpg";
   }
 }
+
+// ==========================================
+// MOVIE INFO (TMDB Details)
+// ==========================================
+
+/**
+ * Fetch detailed movie info from TMDB (with caching)
+ */
+async function fetchMovieInfo(title, year) {
+  const cacheKey = `${title.trim()}|${year}`;
+  if (movieInfoCache[cacheKey]) return movieInfoCache[cacheKey];
+
+  // Search for movie ID
+  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+  const searchRes = await fetch(searchUrl);
+  const searchData = await searchRes.json();
+  const movieId = searchData.results?.[0]?.id;
+  if (!movieId) throw new Error("Movie not found on TMDB");
+
+  // Fetch details and videos in parallel
+  const [detailRes, videosRes] = await Promise.all([
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`),
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`)
+  ]);
+
+  const detail = await detailRes.json();
+  const videos = await videosRes.json();
+
+  // Find YouTube trailer
+  const trailer = videos.results?.find(
+    v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+  );
+
+  const info = {
+    overview: detail.overview || null,
+    genres: (detail.genres || []).map(g => g.name),
+    runtime: detail.runtime || null,
+    rating: detail.vote_average || null,
+    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null
+  };
+
+  movieInfoCache[cacheKey] = info;
+  return info;
+}
+
+/**
+ * Show movie info modal
+ */
+async function showMovieInfo(choice) {
+  const movie = state.currentMovies[choice];
+  if (!movie) return;
+
+  const modal = document.getElementById("movie-info-modal");
+  const titleEl = document.getElementById("info-modal-title");
+  const bodyEl = document.getElementById("info-modal-body");
+
+  titleEl.textContent = `${movie.title} (${movie.year})`;
+  bodyEl.innerHTML = '<div class="info-modal-loading">Loading...</div>';
+  modal.classList.remove("hidden");
+
+  try {
+    const info = await fetchMovieInfo(movie.title, movie.year);
+
+    let html = '';
+
+    // Overview
+    html += `<p class="info-modal-overview">${info.overview || "No summary available."}</p>`;
+
+    // Meta row: genres, runtime, rating
+    html += '<div class="info-modal-meta">';
+    if (info.genres.length > 0) {
+      html += '<div class="info-modal-genres">';
+      info.genres.forEach(g => {
+        html += `<span class="info-genre-tag">${g}</span>`;
+      });
+      html += '</div>';
+    }
+    if (info.runtime) {
+      html += `<span class="info-modal-runtime">${info.runtime} min</span>`;
+    }
+    if (info.rating) {
+      html += `<span class="info-modal-rating">★ ${info.rating.toFixed(1)}</span>`;
+    }
+    html += '</div>';
+
+    // Trailer button
+    if (info.trailerUrl) {
+      html += `<a href="${info.trailerUrl}" target="_blank" rel="noopener noreferrer" class="info-modal-trailer-btn">▶ Watch Trailer</a>`;
+    }
+
+    bodyEl.innerHTML = html;
+  } catch (error) {
+    console.error("Failed to fetch movie info:", error);
+    bodyEl.innerHTML = '<p class="info-modal-error">Could not load movie info. Please try again.</p>';
+  }
+}
+
+/**
+ * Close movie info modal
+ */
+function closeMovieInfo() {
+  document.getElementById("movie-info-modal").classList.add("hidden");
+}
+
+// Close modal on backdrop click
+document.addEventListener("click", (e) => {
+  if (e.target.id === "movie-info-modal") closeMovieInfo();
+});
+
+// Close modal on Escape key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeMovieInfo();
+});
 
 // ==========================================
 // MOVIE SELECTION & DISPLAY
@@ -641,6 +755,8 @@ async function updateVoteCounter() {
 
 window.vote = handleVote;
 window.markUnseen = handleMarkUnseen;
+window.showMovieInfo = showMovieInfo;
+window.closeMovieInfo = closeMovieInfo;
 
 // Expose movie objects for backwards compatibility
 Object.defineProperty(window, 'movieA', {

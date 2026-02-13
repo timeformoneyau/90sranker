@@ -2006,3 +2006,225 @@ tbody tr:last-child td { border-bottom: none; }
     padding: var(--s-3) var(--s-4) var(--s-4);
   }
 }
+
+
+/* =========================================================
+   15) MOVIE INFO MODAL
+   ========================================================= */
+
+/* Info button on movie cards */
+.btn-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-2);
+  font-size: var(--fs-2);
+  cursor: pointer;
+  transition: border-color var(--t-base), color var(--t-base), background var(--t-base);
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-info:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(232, 163, 23, 0.1);
+}
+
+.btn-info:active {
+  transform: translateY(1px);
+}
+
+/* Info modal backdrop */
+.info-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+}
+
+.info-modal-backdrop.hidden {
+  display: none;
+}
+
+/* Info modal panel */
+.info-modal {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-xl);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.info-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.info-modal-title {
+  margin: 0;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-text-2);
+  font-size: var(--fs-6);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--s-2);
+  flex-shrink: 0;
+  transition: color var(--t-fast);
+}
+
+.info-modal-close:hover {
+  color: var(--color-text-0);
+}
+
+.info-modal-body {
+  overflow-y: auto;
+  padding: var(--s-4) var(--s-5);
+  flex: 1;
+  min-height: 0;
+}
+
+.info-modal-loading {
+  text-align: center;
+  color: var(--color-text-2);
+  padding: var(--s-6) 0;
+  font-style: italic;
+}
+
+.info-modal-overview {
+  color: var(--color-text-1);
+  font-size: var(--fs-1);
+  line-height: 1.7;
+  margin: 0 0 var(--s-4);
+}
+
+.info-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+
+.info-modal-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+
+.info-genre-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-full);
+  font-size: 0.7rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-dim);
+  background: rgba(232, 163, 23, 0.08);
+}
+
+.info-modal-runtime {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  font-weight: var(--fw-semibold);
+}
+
+.info-modal-rating {
+  font-size: var(--fs-0);
+  color: var(--color-accent);
+  font-weight: var(--fw-bold);
+}
+
+.info-modal-trailer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--r-md);
+  background: var(--color-primary);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--t-base);
+}
+
+.info-modal-trailer-btn:hover {
+  background: var(--color-primary-dark);
+  color: #ffffff;
+}
+
+.info-modal-error {
+  text-align: center;
+  color: var(--color-error);
+  font-style: italic;
+  padding: var(--s-4) 0;
+  margin: 0;
+}
+
+/* Responsive: mobile info modal */
+@media (max-width: 767px) {
+  .info-modal-backdrop {
+    padding: var(--s-2);
+    align-items: flex-end;
+  }
+
+  .info-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+  }
+
+  .info-modal-header {
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .info-modal-body {
+    padding: var(--s-3) var(--s-4) var(--s-4);
+  }
+
+  .btn-info {
+    width: 28px;
+    height: 28px;
+    font-size: var(--fs-1);
+  }
+}
+
+/* Landscape info button */
+@media (max-height: 500px) and (orientation: landscape) {
+  .btn-info {
+    width: 26px;
+    height: 26px;
+    font-size: var(--fs-0);
+  }
+}
