@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>The Engine | Shelf Life</title>
+  <title>Your Movie Profile | Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
@@ -40,7 +40,7 @@
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Results</a></li>
       <li><a href="mikes-picks.html">Mike's Picks</a></li>
-      <li><a href="engine.html" class="active">Engine</a></li>
+      <li><a href="engine.html" class="active">Movie Profile</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="account.html">Your Account</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
@@ -52,7 +52,7 @@
   <div class="engine-page">
 
     <div class="engine-intro">
-      <h1 class="engine-headline">The Engine</h1>
+      <h1 class="engine-headline">Your Movie Profile</h1>
       <p class="engine-desc">Movies picked for you, based on how you vote. The more you vote, the smarter it gets.</p>
       <details class="results-details">
         <summary>How this works</summary>
@@ -71,15 +71,30 @@
       </details>
     </div>
 
-    <!-- Status -->
-    <div class="engine-status" id="engine-status">Loading...</div>
+    <!-- Section 1: Recommendations -->
+    <div class="profile-section">
+      <h2 class="profile-section-heading">Recommendations</h2>
+      <div class="engine-status" id="engine-status">Loading...</div>
+      <div id="engine-profile"></div>
+      <div class="engine-grid" id="engine-grid">
+        <div class="engine-empty">Loading recommendations...</div>
+      </div>
+    </div>
 
-    <!-- Taste Profile -->
-    <div id="engine-profile"></div>
+    <!-- Section 2: Your Preferences (logged-in only) -->
+    <div class="profile-section" id="profile-preferences">
+      <h2 class="profile-section-heading">Your Preferences</h2>
+      <div id="profile-prefs-content">
+        <div class="engine-empty">Log in to build your Movie Profile.</div>
+      </div>
+    </div>
 
-    <!-- Recommendation Grid -->
-    <div class="engine-grid" id="engine-grid">
-      <div class="engine-empty">Loading recommendations...</div>
+    <!-- Section 3: Confidence (logged-in only) -->
+    <div class="profile-section" id="profile-confidence">
+      <h2 class="profile-section-heading">Confidence</h2>
+      <div id="profile-confidence-content">
+        <div class="engine-empty">Log in to see how well the engine knows your taste.</div>
+      </div>
     </div>
 
     <a href="index.html" class="back-link">Back to voting</a>

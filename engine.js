@@ -364,7 +364,18 @@ async function getRecommendationsForUser(userId) {
   }
 
   const tasteProfile = buildTasteProfile(prefs);
-  const output = { allScored, tasteProfile, voteCount: userVotes.length, isSparse };
+
+  // Compute genre stats, movie stats, and confidence for profile sections
+  const genreStats = computeGenreStats(userVotes, movieMap);
+  const movieStats = computeMovieStats(userVotes);
+  const distinctMovies = new Set();
+  for (const v of userVotes) { distinctMovies.add(v.winner); distinctMovies.add(v.loser); }
+  const confidence = computeConfidence(userVotes.length);
+
+  const output = {
+    allScored, tasteProfile, voteCount: userVotes.length, isSparse,
+    genreStats, movieStats, confidence, distinctMovieCount: distinctMovies.size
+  };
 
   cache = { uid: userId, results: output };
   return output;
@@ -393,6 +404,65 @@ function buildTasteProfile(prefs) {
   }));
 
   return { liked, disliked };
+}
+
+// ==========================================
+// PROFILE — GENRE STATS
+// ==========================================
+
+function computeGenreStats(userVotes, movieMap) {
+  const stats = {}; // genre → { wins, losses }
+  for (const vote of userVotes) {
+    const winner = movieMap[vote.winner];
+    const loser = movieMap[vote.loser];
+    if (winner?.genre) {
+      if (!stats[winner.genre]) stats[winner.genre] = { wins: 0, losses: 0 };
+      stats[winner.genre].wins++;
+    }
+    if (loser?.genre) {
+      if (!stats[loser.genre]) stats[loser.genre] = { wins: 0, losses: 0 };
+      stats[loser.genre].losses++;
+    }
+  }
+  return Object.entries(stats)
+    .map(([genre, s]) => ({
+      genre,
+      wins: s.wins,
+      losses: s.losses,
+      total: s.wins + s.losses,
+      winRate: Math.round(100 * s.wins / (s.wins + s.losses))
+    }))
+    .filter(g => g.total >= 3)
+    .sort((a, b) => b.winRate - a.winRate);
+}
+
+// ==========================================
+// PROFILE — MOVIE STATS (LOVED / REJECTED)
+// ==========================================
+
+function computeMovieStats(userVotes) {
+  const stats = {}; // movieKey → { wins, losses }
+  for (const vote of userVotes) {
+    if (!stats[vote.winner]) stats[vote.winner] = { wins: 0, losses: 0 };
+    stats[vote.winner].wins++;
+    if (!stats[vote.loser]) stats[vote.loser] = { wins: 0, losses: 0 };
+    stats[vote.loser].losses++;
+  }
+  const all = Object.entries(stats).map(([key, s]) => ({
+    key, title: keyToTitle(key), year: key.split("|")[1],
+    wins: s.wins, losses: s.losses, diff: s.wins - s.losses
+  }));
+  const loved = [...all].sort((a, b) => b.diff - a.diff || b.wins - a.wins).slice(0, 5);
+  const rejected = [...all].sort((a, b) => a.diff - b.diff || b.losses - a.losses).slice(0, 5);
+  return { loved, rejected };
+}
+
+// ==========================================
+// PROFILE — CONFIDENCE SCORE
+// ==========================================
+
+function computeConfidence(n) {
+  return Math.round(100 * (1 - Math.exp(-n / 50)));
 }
 
 // ==========================================
@@ -655,6 +725,156 @@ function renderRecommendations(allScored) {
 }
 
 // ==========================================
+// UI — RENDER PREFERENCES SECTION
+// ==========================================
+
+let activeGenreFilter = null;
+
+function renderPreferences(genreStats, movieStats, allScored) {
+  const el = document.getElementById("profile-prefs-content");
+  if (!el) return;
+
+  if (!genreStats || genreStats.length === 0) {
+    el.innerHTML = '<div class="engine-empty">Vote more to reveal your preferences.</div>';
+    return;
+  }
+
+  // Genre cards
+  let html = '<h3 class="profile-sub-heading">Top Genres (by win-rate)</h3>';
+  html += '<div class="profile-genre-cards">';
+  for (const g of genreStats.slice(0, 8)) {
+    html += `<button class="profile-genre-card" data-genre="${g.genre}">
+      <span class="profile-genre-name">${g.genre}</span>
+      <span class="profile-genre-rate">${g.winRate}%</span>
+      <span class="profile-genre-sample">${g.wins}&ndash;${g.losses}</span>
+    </button>`;
+  }
+  html += '</div>';
+
+  // Genre filter results area
+  html += '<div id="profile-genre-filtered" class="profile-genre-filtered"></div>';
+
+  // Loved / Rejected
+  html += '<div class="profile-loved-rejected">';
+  html += '<div class="profile-lr-col">';
+  html += '<h3 class="profile-sub-heading">Most Loved</h3>';
+  for (const m of movieStats.loved) {
+    html += `<div class="profile-movie-row profile-movie-loved">
+      <span class="profile-movie-title">${m.title}</span>
+      <span class="profile-movie-year">${m.year}</span>
+      <span class="profile-movie-record">${m.wins}W&ndash;${m.losses}L</span>
+    </div>`;
+  }
+  html += '</div><div class="profile-lr-col">';
+  html += '<h3 class="profile-sub-heading">Most Rejected</h3>';
+  for (const m of movieStats.rejected) {
+    html += `<div class="profile-movie-row profile-movie-rejected">
+      <span class="profile-movie-title">${m.title}</span>
+      <span class="profile-movie-year">${m.year}</span>
+      <span class="profile-movie-record">${m.wins}W&ndash;${m.losses}L</span>
+    </div>`;
+  }
+  html += '</div></div>';
+
+  el.innerHTML = html;
+
+  // Attach genre card click handlers
+  const cards = el.querySelectorAll(".profile-genre-card");
+  cards.forEach(card => {
+    card.addEventListener("click", () => {
+      const genre = card.dataset.genre;
+      // Toggle active state
+      cards.forEach(c => c.classList.remove("active"));
+      if (activeGenreFilter === genre) {
+        activeGenreFilter = null;
+        document.getElementById("profile-genre-filtered").innerHTML = "";
+        return;
+      }
+      activeGenreFilter = genre;
+      card.classList.add("active");
+      renderGenreFiltered(genre, allScored);
+    });
+  });
+}
+
+function renderGenreFiltered(genre, allScored) {
+  const el = document.getElementById("profile-genre-filtered");
+  if (!el) return;
+
+  const matches = (allScored || [])
+    .filter(r => r.movie.genre === genre)
+    .slice(0, 6);
+
+  if (matches.length === 0) {
+    el.innerHTML = `<div class="profile-genre-filtered-empty">No recommended ${genre.toLowerCase()} movies right now.</div>`;
+    return;
+  }
+
+  let html = `<div class="profile-genre-filtered-label">Recommended ${genre} movies:</div>`;
+  html += '<div class="profile-genre-filtered-list">';
+  for (const r of matches) {
+    html += `<div class="profile-genre-filtered-item">
+      <span class="profile-movie-title">${r.movie.title}</span>
+      <span class="profile-movie-year">${r.movie.year}</span>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ==========================================
+// UI — RENDER CONFIDENCE SECTION
+// ==========================================
+
+function renderConfidence(confidence, voteCount, distinctMovieCount) {
+  const el = document.getElementById("profile-confidence-content");
+  if (!el) return;
+
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference * (1 - confidence / 100);
+
+  let html = '<div class="profile-confidence-wrap">';
+
+  // Circular gauge
+  html += `<div class="profile-confidence-gauge">
+    <svg viewBox="0 0 120 120" class="profile-confidence-ring">
+      <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-bg-2)" stroke-width="8"/>
+      <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-accent)" stroke-width="8"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+        stroke-linecap="round" transform="rotate(-90 60 60)"
+        style="transition: stroke-dashoffset 1s ease"/>
+    </svg>
+    <div class="profile-confidence-value">${confidence}</div>
+  </div>`;
+
+  // Stats
+  html += '<div class="profile-confidence-stats">';
+  html += `<div class="profile-stat">
+    <span class="profile-stat-val">${voteCount}</span>
+    <span class="profile-stat-label">Total Votes</span>
+  </div>`;
+  html += `<div class="profile-stat">
+    <span class="profile-stat-val">${distinctMovieCount}</span>
+    <span class="profile-stat-label">Movies Compared</span>
+  </div>`;
+  html += `<div class="profile-stat">
+    <span class="profile-stat-val">${confidence}%</span>
+    <span class="profile-stat-label">Confidence</span>
+  </div>`;
+  html += '</div></div>';
+
+  // Contextual message
+  let msg;
+  if (confidence < 20) msg = "Just getting started. Keep voting to teach the engine your taste.";
+  else if (confidence < 50) msg = "Building a picture. Your recommendations are starting to personalize.";
+  else if (confidence < 75) msg = "Solid profile. The engine has a good read on your taste.";
+  else msg = "Expert level. The engine knows your taste inside and out.";
+  html += `<div class="profile-confidence-msg">${msg}</div>`;
+
+  el.innerHTML = html;
+}
+
+// ==========================================
 // INIT
 // ==========================================
 
@@ -678,6 +898,8 @@ async function loadEngine(user) {
 
     renderTasteProfile(data.tasteProfile, data.voteCount);
     renderRecommendations(data.allScored);
+    renderPreferences(data.genreStats, data.movieStats, data.allScored);
+    renderConfidence(data.confidence, data.voteCount, data.distinctMovieCount);
   } catch (err) {
     console.error("Engine error:", err);
     renderStatus("Something went wrong loading recommendations.", true);
@@ -694,6 +916,10 @@ window.addEventListener("load", () => {
       renderTasteProfile(null, 0);
       const grid = document.getElementById("engine-grid");
       if (grid) grid.innerHTML = '<div class="engine-empty">Your picks will appear here once you log in and start voting.</div>';
+      const prefsEl = document.getElementById("profile-prefs-content");
+      if (prefsEl) prefsEl.innerHTML = '<div class="engine-empty">Log in to build your Movie Profile (preferences + confidence).</div>';
+      const confEl = document.getElementById("profile-confidence-content");
+      if (confEl) confEl.innerHTML = '<div class="engine-empty">Log in to build your Movie Profile (preferences + confidence).</div>';
     }
   });
 });
