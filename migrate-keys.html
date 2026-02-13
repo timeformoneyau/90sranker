@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Migrate Vote Keys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: monospace; background: #0a1128; color: #e5e5e5; padding: 2rem; max-width: 900px; margin: 0 auto; }
+    h1 { color: #e8a317; }
+    .controls { margin: 1.5rem 0; display: flex; gap: 1rem; }
+    button { padding: 0.6rem 1.2rem; font-family: inherit; font-size: 0.9rem; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-dry { background: #0033cc; color: #fff; }
+    .btn-dry:hover { background: #0044ee; }
+    .btn-apply { background: #ef4444; color: #fff; }
+    .btn-apply:hover { background: #dc2626; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #status { color: #e8a317; margin: 1rem 0; }
+    #log { background: #111d35; border: 1px solid #1e3355; border-radius: 4px; padding: 1rem; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem; line-height: 1.5; }
+    .change { color: #22c55e; }
+    .skip { color: #607080; }
+    .err { color: #ef4444; }
+    .summary { color: #e8a317; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Vote Key Migration</h1>
+  <p>Rewrites malformed winner/loser keys in Firestore votes to the canonical <code>Title|Year</code> format.</p>
+  <div class="controls">
+    <button class="btn-dry" id="btn-dry" onclick="run(false)">Dry Run (preview changes)</button>
+    <button class="btn-apply" id="btn-apply" onclick="run(true)" disabled>Apply Changes</button>
+  </div>
+  <div id="status"></div>
+  <div id="log"></div>
+
+  <script type="module">
+    import { db, auth, onAuth, collection, getDocs, doc, updateDoc } from "./firebase.js";
+    import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
+
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const btnDry = document.getElementById("btn-dry");
+    const btnApply = document.getElementById("btn-apply");
+
+    function log(msg, cls = "") {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = msg + "\n";
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function run(apply) {
+      btnDry.disabled = true;
+      btnApply.disabled = true;
+      logEl.innerHTML = "";
+
+      statusEl.textContent = "Loading movie list...";
+      let normalizeKey;
+      try {
+        const res = await fetch("movie_list_cleaned.json");
+        const allMovies = await res.json();
+        const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+        normalizeKey = buildKeyNormalizer(movies);
+        log(`Loaded ${movies.length} movies for normalization.`);
+      } catch (err) {
+        log("Failed to load movie list: " + err.message, "err");
+        btnDry.disabled = false;
+        return;
+      }
+
+      statusEl.textContent = "Loading all votes from Firestore...";
+      let snap;
+      try {
+        snap = await getDocs(collection(db, "votes"));
+      } catch (err) {
+        log("Failed to load votes: " + err.message, "err");
+        btnDry.disabled = false;
+        return;
+      }
+
+      log(`Found ${snap.size} vote documents.\n`);
+
+      let changed = 0;
+      let skipped = 0;
+      let errors = 0;
+      const changeset = []; // { docId, oldWinner, newWinner, oldLoser, newLoser }
+
+      snap.forEach(d => {
+        const data = d.data();
+        const { winner, loser } = data;
+        if (!winner || !loser) {
+          skipped++;
+          return;
+        }
+
+        const newWinner = normalizeKey(winner);
+        const newLoser = normalizeKey(loser);
+
+        if (newWinner !== winner || newLoser !== loser) {
+          changeset.push({ docId: d.id, oldWinner: winner, newWinner, oldLoser: loser, newLoser });
+          let msg = `[CHANGE] ${d.id}`;
+          if (newWinner !== winner) msg += `\n  winner: "${winner}" → "${newWinner}"`;
+          if (newLoser !== loser) msg += `\n  loser:  "${loser}" → "${newLoser}"`;
+          log(msg, "change");
+          changed++;
+        } else {
+          skipped++;
+        }
+      });
+
+      log("");
+      log(`Summary: ${changed} to change, ${skipped} already canonical, ${snap.size} total.`, "summary");
+
+      if (!apply) {
+        statusEl.textContent = `Dry run complete. ${changed} votes need updating.`;
+        if (changed > 0) {
+          btnApply.disabled = false;
+          log("\nReview above, then click \"Apply Changes\" to write to Firestore.", "summary");
+        } else {
+          log("\nNothing to migrate — all keys are already canonical.", "summary");
+        }
+        btnDry.disabled = false;
+        // Store changeset for apply
+        window._changeset = changeset;
+        window._normalizeKey = normalizeKey;
+        return;
+      }
+
+      // Apply mode
+      statusEl.textContent = `Applying ${changeset.length} updates...`;
+      let applied = 0;
+
+      for (const c of changeset) {
+        try {
+          const updates = {};
+          if (c.newWinner !== c.oldWinner) updates.winner = c.newWinner;
+          if (c.newLoser !== c.oldLoser) updates.loser = c.newLoser;
+          await updateDoc(doc(db, "votes", c.docId), updates);
+          applied++;
+          if (applied % 50 === 0) {
+            statusEl.textContent = `Applied ${applied} / ${changeset.length}...`;
+          }
+        } catch (err) {
+          log(`[ERROR] ${c.docId}: ${err.message}`, "err");
+          errors++;
+        }
+      }
+
+      log("");
+      log(`Done. ${applied} updated, ${errors} errors.`, "summary");
+      statusEl.textContent = `Migration complete. ${applied} votes updated, ${errors} errors.`;
+      btnDry.disabled = false;
+    }
+
+    // Make run available to onclick handlers
+    window.run = run;
+
+    // Also store changeset reference for apply after dry run
+    window._changeset = [];
+    window._normalizeKey = null;
+
+    // Override apply to use stored changeset
+    const origRun = run;
+    window.run = async function(apply) {
+      if (apply && window._changeset.length > 0) {
+        // Use the stored changeset from dry run
+        btnDry.disabled = true;
+        btnApply.disabled = true;
+        logEl.innerHTML = "";
+
+        const changeset = window._changeset;
+        statusEl.textContent = `Applying ${changeset.length} updates...`;
+        let applied = 0;
+        let errors = 0;
+
+        for (const c of changeset) {
+          try {
+            const updates = {};
+            if (c.newWinner !== c.oldWinner) updates.winner = c.newWinner;
+            if (c.newLoser !== c.oldLoser) updates.loser = c.newLoser;
+            await updateDoc(doc(db, "votes", c.docId), updates);
+            applied++;
+            let msg = `[UPDATED] ${c.docId}`;
+            if (c.newWinner !== c.oldWinner) msg += `\n  winner: "${c.oldWinner}" → "${c.newWinner}"`;
+            if (c.newLoser !== c.oldLoser) msg += `\n  loser:  "${c.oldLoser}" → "${c.newLoser}"`;
+            log(msg, "change");
+            if (applied % 50 === 0) {
+              statusEl.textContent = `Applied ${applied} / ${changeset.length}...`;
+            }
+          } catch (err) {
+            log(`[ERROR] ${c.docId}: ${err.message}`, "err");
+            errors++;
+          }
+        }
+
+        log("");
+        log(`Done. ${applied} updated, ${errors} errors.`, "summary");
+        statusEl.textContent = `Migration complete. ${applied} votes updated, ${errors} errors.`;
+        window._changeset = [];
+        btnDry.disabled = false;
+      } else {
+        await origRun(apply);
+      }
+    };
+  </script>
+</body>
+</html>
