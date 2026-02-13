@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Migrate TMNT Keys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: monospace; background: #0a1128; color: #e5e5e5; padding: 2rem; max-width: 900px; margin: 0 auto; }
+    h1 { color: #e8a317; }
+    .controls { margin: 1.5rem 0; display: flex; gap: 1rem; }
+    button { padding: 0.6rem 1.2rem; font-family: inherit; font-size: 0.9rem; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-dry { background: #0033cc; color: #fff; }
+    .btn-dry:hover { background: #0044ee; }
+    .btn-apply { background: #ef4444; color: #fff; }
+    .btn-apply:hover { background: #dc2626; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #status { color: #e8a317; margin: 1rem 0; }
+    #log { background: #111d35; border: 1px solid #1e3355; border-radius: 4px; padding: 1rem; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem; line-height: 1.5; }
+    .change { color: #22c55e; }
+    .skip { color: #607080; }
+    .err { color: #ef4444; }
+    .summary { color: #e8a317; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>TMNT Key Migration</h1>
+  <p>Renames old TMNT movie keys to full "Teenage Mutant Ninja Turtles" titles in votes and user docs.</p>
+  <div class="controls">
+    <button class="btn-dry" id="btn-dry" onclick="run(false)">Dry Run (preview changes)</button>
+    <button class="btn-apply" id="btn-apply" onclick="run(true)" disabled>Apply Changes</button>
+  </div>
+  <div id="status"></div>
+  <div id="log"></div>
+
+  <script type="module">
+    import { db, collection, getDocs, doc, updateDoc, setDoc, arrayUnion, arrayRemove } from "./firebase.js";
+
+    const RENAMES = {
+      "TMNT|1990": "Teenage Mutant Ninja Turtles|1990",
+      "TMNT II: Secret of the Ooze|1991": "Teenage Mutant Ninja Turtles II: The Secret of the Ooze|1991",
+      "TMNT III|1993": "Teenage Mutant Ninja Turtles III|1993"
+    };
+
+    const USER_ARRAY_FIELDS = ["seen", "seenMovies", "inferredSeen", "notInterested"];
+
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const btnDry = document.getElementById("btn-dry");
+    const btnApply = document.getElementById("btn-apply");
+
+    function log(msg, cls = "") {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = msg + "\n";
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    let pendingChanges = null;
+
+    async function run(apply) {
+      btnDry.disabled = true;
+      btnApply.disabled = true;
+      logEl.innerHTML = "";
+
+      if (apply && pendingChanges) {
+        await applyChanges(pendingChanges);
+        return;
+      }
+
+      // --- Scan votes ---
+      statusEl.textContent = "Loading votes...";
+      let votesSnap;
+      try {
+        votesSnap = await getDocs(collection(db, "votes"));
+      } catch (err) {
+        log("Failed to load votes: " + err.message, "err");
+        btnDry.disabled = false;
+        return;
+      }
+
+      const voteChanges = [];
+      votesSnap.forEach(d => {
+        const data = d.data();
+        const updates = {};
+        if (RENAMES[data.winner]) updates.winner = RENAMES[data.winner];
+        if (RENAMES[data.loser]) updates.loser = RENAMES[data.loser];
+        if (Object.keys(updates).length > 0) {
+          voteChanges.push({ docId: d.id, old: { winner: data.winner, loser: data.loser }, updates });
+        }
+      });
+
+      log(`Votes: ${votesSnap.size} total, ${voteChanges.length} need updating.`, "summary");
+      for (const c of voteChanges) {
+        let msg = `[VOTE] ${c.docId}`;
+        if (c.updates.winner) msg += `\n  winner: "${c.old.winner}" → "${c.updates.winner}"`;
+        if (c.updates.loser) msg += `\n  loser:  "${c.old.loser}" → "${c.updates.loser}"`;
+        log(msg, "change");
+      }
+
+      // --- Scan user docs ---
+      statusEl.textContent = "Loading user docs...";
+      let usersSnap;
+      try {
+        usersSnap = await getDocs(collection(db, "users"));
+      } catch (err) {
+        log("Failed to load users: " + err.message, "err");
+        btnDry.disabled = false;
+        return;
+      }
+
+      const userChanges = [];
+      usersSnap.forEach(d => {
+        const data = d.data();
+        const fieldsToUpdate = {};
+        for (const field of USER_ARRAY_FIELDS) {
+          const arr = data[field];
+          if (!Array.isArray(arr)) continue;
+          const renames = [];
+          for (const key of arr) {
+            if (RENAMES[key]) {
+              renames.push({ old: key, new: RENAMES[key] });
+            }
+          }
+          if (renames.length > 0) fieldsToUpdate[field] = renames;
+        }
+        if (Object.keys(fieldsToUpdate).length > 0) {
+          userChanges.push({ docId: d.id, fieldsToUpdate });
+        }
+      });
+
+      log(`\nUsers: ${usersSnap.size} total, ${userChanges.length} need updating.`, "summary");
+      for (const c of userChanges) {
+        let msg = `[USER] ${c.docId}`;
+        for (const [field, renames] of Object.entries(c.fieldsToUpdate)) {
+          for (const r of renames) {
+            msg += `\n  ${field}: "${r.old}" → "${r.new}"`;
+          }
+        }
+        log(msg, "change");
+      }
+
+      const totalChanges = voteChanges.length + userChanges.length;
+      log(`\nTotal: ${totalChanges} docs to update.`, "summary");
+
+      if (totalChanges > 0) {
+        pendingChanges = { voteChanges, userChanges };
+        btnApply.disabled = false;
+        log("\nReview above, then click \"Apply Changes\" to write to Firestore.", "summary");
+      } else {
+        log("\nNothing to migrate — all TMNT keys already renamed.", "summary");
+      }
+
+      statusEl.textContent = `Dry run complete. ${totalChanges} docs need updating.`;
+      btnDry.disabled = false;
+    }
+
+    async function applyChanges({ voteChanges, userChanges }) {
+      logEl.innerHTML = "";
+      let applied = 0;
+      let errors = 0;
+      const total = voteChanges.length + userChanges.length;
+
+      statusEl.textContent = `Applying ${total} updates...`;
+
+      // Apply vote changes
+      for (const c of voteChanges) {
+        try {
+          await updateDoc(doc(db, "votes", c.docId), c.updates);
+          applied++;
+          let msg = `[UPDATED VOTE] ${c.docId}`;
+          if (c.updates.winner) msg += `\n  winner: "${c.old.winner}" → "${c.updates.winner}"`;
+          if (c.updates.loser) msg += `\n  loser:  "${c.old.loser}" → "${c.updates.loser}"`;
+          log(msg, "change");
+        } catch (err) {
+          log(`[ERROR] vote ${c.docId}: ${err.message}`, "err");
+          errors++;
+        }
+      }
+
+      // Apply user doc changes (use arrayRemove + arrayUnion for atomic swap)
+      for (const c of userChanges) {
+        try {
+          const removeOps = {};
+          const addOps = {};
+          for (const [field, renames] of Object.entries(c.fieldsToUpdate)) {
+            removeOps[field] = arrayRemove(...renames.map(r => r.old));
+            addOps[field] = arrayUnion(...renames.map(r => r.new));
+          }
+          // Two writes: remove old keys, then add new keys
+          await updateDoc(doc(db, "users", c.docId), removeOps);
+          await setDoc(doc(db, "users", c.docId), addOps, { merge: true });
+          applied++;
+          let msg = `[UPDATED USER] ${c.docId}`;
+          for (const [field, renames] of Object.entries(c.fieldsToUpdate)) {
+            for (const r of renames) {
+              msg += `\n  ${field}: "${r.old}" → "${r.new}"`;
+            }
+          }
+          log(msg, "change");
+        } catch (err) {
+          log(`[ERROR] user ${c.docId}: ${err.message}`, "err");
+          errors++;
+        }
+      }
+
+      log("");
+      log(`Done. ${applied} updated, ${errors} errors.`, "summary");
+      statusEl.textContent = `Migration complete. ${applied} docs updated, ${errors} errors.`;
+      pendingChanges = null;
+      btnDry.disabled = false;
+    }
+
+    window.run = run;
+  </script>
+</body>
+</html>

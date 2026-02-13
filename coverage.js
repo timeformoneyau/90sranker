@@ -39,6 +39,8 @@ window.onload = () => {
       pageEl.innerHTML = '<h1>Access Denied</h1><p style="color:var(--color-text-2)">This page is restricted to admin users. <a href="index.html">Back to Home</a></p>';
       return;
     }
+    const toolsEl = document.getElementById("admin-tools");
+    if (toolsEl) toolsEl.style.display = "";
     loadDiagnostics();
   });
 };
