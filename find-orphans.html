@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Orphaned Vote Keys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: monospace; background: #0a1128; color: #e5e5e5; padding: 2rem; max-width: 960px; margin: 0 auto; }
+    h1 { color: #e8a317; }
+    p { color: #99aabb; line-height: 1.5; }
+    button { padding: 0.6rem 1.2rem; font-family: inherit; font-size: 0.9rem; font-weight: bold;
+             border: none; border-radius: 4px; cursor: pointer; background: #0033cc; color: #fff; }
+    button:hover { background: #0044ee; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #status { color: #e8a317; margin: 1rem 0; font-weight: bold; }
+    #results { background: #111d35; border: 1px solid #1e3355; border-radius: 4px; padding: 1rem;
+               max-height: 72vh; overflow-y: auto; font-size: 0.82rem; line-height: 1.6; display: none; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: #e8a317; border-bottom: 1px solid #1e3355; padding: 0.4rem 0.6rem; }
+    td { padding: 0.3rem 0.6rem; border-bottom: 1px solid #0d1a2e; }
+    .count { color: #ef4444; text-align: right; width: 80px; }
+    .key { color: #60a5fa; word-break: break-all; }
+    .summary { color: #22c55e; margin: 1rem 0; }
+    .err { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>Find Orphaned Vote Keys</h1>
+  <p>Scans every vote in Firestore and finds winner/loser keys that don't match any movie in
+     <code>movie_list_cleaned.json</code>. These are "orphans" — votes referencing movies
+     that no longer exist in the canonical list.</p>
+  <button id="btn-scan" onclick="scan()">Scan Votes</button>
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <script type="module">
+    import { db, collection, getDocs } from "./firebase.js";
+    import { makeMovieKey } from "./movieKeys.js";
+
+    const statusEl  = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+    const btnScan   = document.getElementById("btn-scan");
+
+    async function scan() {
+      btnScan.disabled = true;
+      resultsEl.style.display = "none";
+      resultsEl.innerHTML = "";
+
+      // 1. Load canonical movie list
+      statusEl.textContent = "Loading movie list...";
+      let canonicalKeys;
+      try {
+        const res = await fetch("movie_list_cleaned.json");
+        const allMovies = await res.json();
+        const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+        canonicalKeys = new Set(movies.map(m => makeMovieKey(m.title, m.year)));
+        statusEl.textContent = `Loaded ${canonicalKeys.size} canonical movie keys.`;
+      } catch (err) {
+        statusEl.innerHTML = `<span class="err">Failed to load movie list: ${err.message}</span>`;
+        btnScan.disabled = false;
+        return;
+      }
+
+      // 2. Load all votes from Firestore
+      statusEl.textContent = "Reading all votes from Firestore...";
+      let snap;
+      try {
+        snap = await getDocs(collection(db, "votes"));
+      } catch (err) {
+        statusEl.innerHTML = `<span class="err">Failed to read votes: ${err.message}</span>`;
+        btnScan.disabled = false;
+        return;
+      }
+
+      statusEl.textContent = `Loaded ${snap.size} votes. Analyzing...`;
+
+      // 3. Collect every unique winner/loser key and count references
+      const orphanCounts = new Map(); // key → count
+
+      snap.forEach(d => {
+        const data = d.data();
+        for (const field of ["winner", "loser"]) {
+          const key = data[field];
+          if (!key) continue;
+          if (!canonicalKeys.has(key)) {
+            orphanCounts.set(key, (orphanCounts.get(key) || 0) + 1);
+          }
+        }
+      });
+
+      // 4. Sort orphans by count descending, then alphabetically
+      const sorted = [...orphanCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+      // 5. Display results
+      resultsEl.style.display = "block";
+
+      if (sorted.length === 0) {
+        resultsEl.innerHTML = `<div class="summary">No orphaned keys found. All ${snap.size} votes reference canonical movies.</div>`;
+        statusEl.textContent = "Scan complete — no orphans.";
+        btnScan.disabled = false;
+        return;
+      }
+
+      const totalOrphanRefs = sorted.reduce((sum, [, c]) => sum + c, 0);
+
+      let html = `<div class="summary">${sorted.length} orphaned keys found across ${totalOrphanRefs} vote references (out of ${snap.size} total votes).</div>`;
+      html += `<table><thead><tr><th>Orphaned Key</th><th class="count">Votes</th></tr></thead><tbody>`;
+      for (const [key, count] of sorted) {
+        html += `<tr><td class="key">${escHtml(key)}</td><td class="count">${count}</td></tr>`;
+      }
+      html += `</tbody></table>`;
+      resultsEl.innerHTML = html;
+
+      statusEl.textContent = `Scan complete. ${sorted.length} orphaned keys, ${totalOrphanRefs} total references.`;
+      btnScan.disabled = false;
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    window.scan = scan;
+  </script>
+</body>
+</html>
