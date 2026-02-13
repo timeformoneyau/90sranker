@@ -63,6 +63,9 @@ let currentUid = null;
 // Set of movie keys the user marked "haven't seen" — used for badge display + removal
 let unseenMovieKeys = new Set();
 
+// Set of movie keys the user marked "not interested" — permanently hidden from recommendations
+let notInterestedKeys = new Set();
+
 // ==========================================
 // UTILITY
 // ==========================================
@@ -274,6 +277,7 @@ async function getRecommendationsForUser(userId) {
       (data.seen || []).forEach(k => unseenKeys.add(k));
       (data.seenMovies || []).forEach(k => seenKeys.add(k));
       (data.inferredSeen || []).forEach(k => inferredSeenKeys.add(k));
+      (data.notInterested || []).forEach(k => notInterestedKeys.add(k));
     }
   } catch (err) {
     console.warn("Could not load user data:", err);
@@ -303,10 +307,19 @@ async function getRecommendationsForUser(userId) {
   const isSparse = userVotes.length < MIN_VOTES_FOR_PERSONALIZATION;
   const { prefs, votedKeys } = buildPreferenceVector(userVotes, movieMap);
 
+  // Apply mild negative signal from notInterested movies
+  for (const niKey of notInterestedKeys) {
+    const niMovie = movieMap[niKey];
+    if (niMovie?.genre) {
+      const genreKey = `genre:${niMovie.genre}`;
+      prefs[genreKey] = (prefs[genreKey] || 0) - 0.3;
+    }
+  }
+
   // Exclude: voted + seen-it + inferred-seen (but NOT haven't-seen — those get a badge instead)
   const candidates = movies.filter(m => {
     const key = getMovieKey(m);
-    return !votedKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key) && !inferredSeenKeys.has(key);
+    return !votedKeys.has(key) && !seenKeys.has(key) && !sessionSeenKeys.has(key) && !inferredSeenKeys.has(key) && !notInterestedKeys.has(key);
   });
 
   let allScored;
@@ -399,6 +412,23 @@ async function markMovieSeen(movieKey) {
   }
 }
 
+async function saveNotInterested(movieKey) {
+  notInterestedKeys.add(movieKey);
+  if (currentUid) {
+    try {
+      await setDoc(doc(db, "users", currentUid), {
+        notInterested: arrayUnion(movieKey)
+      }, { merge: true });
+    } catch (err) {
+      console.error("Failed to save not-interested:", err);
+    }
+  } else {
+    const stored = JSON.parse(localStorage.getItem("notInterestedMovies")) || [];
+    if (!stored.includes(movieKey)) stored.push(movieKey);
+    localStorage.setItem("notInterestedMovies", JSON.stringify(stored));
+  }
+}
+
 async function removeUnseenDesignation(movieKey) {
   if (!currentUid) return;
   unseenMovieKeys.delete(movieKey);
@@ -445,6 +475,7 @@ function buildCardHTML(item, index) {
       <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
       ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
       <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
+      <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
     </div>`;
 }
 
@@ -502,6 +533,61 @@ async function handleSeenIt(index) {
     }, { once: true });
   } else {
     // No replacement available — shrink the card away
+    card.classList.remove("engine-card-exit");
+    card.style.display = "none";
+    displayedItems[index] = null;
+  }
+}
+
+// ==========================================
+// UI — HANDLE "NOT INTERESTED"
+// ==========================================
+
+async function handleNotInterested(index) {
+  const item = displayedItems[index];
+  if (!item) return;
+
+  const card = document.getElementById(`engine-card-${index}`);
+  if (!card) return;
+
+  // Prevent double-clicks
+  const btnSeen = card.querySelector(".engine-btn-seen");
+  const btnNI = card.querySelector(".engine-btn-not-interested");
+  if (btnSeen) btnSeen.disabled = true;
+  if (btnNI) btnNI.disabled = true;
+
+  const movieKey = getMovieKey(item.movie);
+
+  // Save to Firebase/localStorage (non-blocking — animate immediately)
+  saveNotInterested(movieKey);
+
+  // Animate the card out
+  card.classList.add("engine-card-exit");
+
+  // Wait for exit animation
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // Filter notInterested from overflow queue
+  overflowQueue = overflowQueue.filter(r => !notInterestedKeys.has(getMovieKey(r.movie)));
+
+  // Find replacement from overflow queue
+  const replacement = overflowQueue.shift();
+
+  if (replacement) {
+    displayedItems[index] = replacement;
+    card.classList.remove("engine-card-exit");
+    card.innerHTML = buildCardHTML(replacement, index);
+    card.classList.add("engine-card-enter");
+
+    fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+      const img = document.getElementById(`engine-poster-${index}`);
+      if (img && url) img.src = url;
+    });
+
+    card.addEventListener("animationend", () => {
+      card.classList.remove("engine-card-enter");
+    }, { once: true });
+  } else {
     card.classList.remove("engine-card-exit");
     card.style.display = "none";
     displayedItems[index] = null;
@@ -574,6 +660,11 @@ function renderRecommendations(allScored) {
 
 async function loadEngine(user) {
   currentUid = user.uid;
+
+  // Load notInterested from localStorage as fallback/supplement
+  const stored = JSON.parse(localStorage.getItem("notInterestedMovies")) || [];
+  stored.forEach(k => notInterestedKeys.add(k));
+
   renderStatus("Analyzing your votes...");
 
   try {
@@ -609,3 +700,4 @@ window.addEventListener("load", () => {
 
 // Expose for inline onclick handlers
 window.handleSeenIt = handleSeenIt;
+window.handleNotInterested = handleNotInterested;
