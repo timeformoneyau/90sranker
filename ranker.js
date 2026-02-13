@@ -20,6 +20,7 @@ import {
 } from "./firebase.js";
 
 import confetti from "https://esm.sh/canvas-confetti";
+import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
 // STATE MANAGEMENT
@@ -45,7 +46,7 @@ const state = {
  * Build consistent movie key for tracking
  */
 function getMovieKey(movie) {
-  return `${movie.title.trim()}|${movie.year}`;
+  return makeMovieKey(movie.title, movie.year);
 }
 
 /**

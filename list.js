@@ -8,6 +8,25 @@ import {
   getDocs
 } from "./firebase.js";
 
+import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
+
+// ==========================================
+// KEY NORMALIZATION
+// ==========================================
+
+let normalizeKey = (k) => k; // identity until movie list loads
+
+async function initNormalizer() {
+  try {
+    const res = await fetch("movie_list_cleaned.json");
+    const allMovies = await res.json();
+    const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+    normalizeKey = buildKeyNormalizer(movies);
+  } catch (err) {
+    console.warn("Could not load movie list for key normalization:", err);
+  }
+}
+
 // ==========================================
 // RAW VOTE STORAGE (for matchup modal)
 // ==========================================
@@ -206,10 +225,12 @@ async function loadGlobalStats() {
       const { winner, loser } = d;
       if (!winner || !loser) return;
       globalVoteDocs.push(d);
-      stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-      stats[loser] = stats[loser] || { wins: 0, losses: 0 };
-      stats[winner].wins++;
-      stats[loser].losses++;
+      const w = normalizeKey(winner);
+      const l = normalizeKey(loser);
+      stats[w] = stats[w] || { wins: 0, losses: 0 };
+      stats[l] = stats[l] || { wins: 0, losses: 0 };
+      stats[w].wins++;
+      stats[l].losses++;
     });
 
     globalAllRows = buildRankedData(stats);
@@ -267,10 +288,12 @@ async function loadPersonalStats(uid) {
       const { winner, loser } = d;
       if (!winner || !loser) return;
       personalVoteDocs.push(d);
-      stats[winner] = stats[winner] || { wins: 0, losses: 0 };
-      stats[loser] = stats[loser] || { wins: 0, losses: 0 };
-      stats[winner].wins++;
-      stats[loser].losses++;
+      const w = normalizeKey(winner);
+      const l = normalizeKey(loser);
+      stats[w] = stats[w] || { wins: 0, losses: 0 };
+      stats[l] = stats[l] || { wins: 0, losses: 0 };
+      stats[w].wins++;
+      stats[l].losses++;
     });
 
     personalAllRows = buildRankedData(stats);
@@ -330,8 +353,10 @@ async function loadRecentVotes(uid) {
     }
 
     votes.forEach(({ winner, loser, timestamp }) => {
-      const w = typeof winner === "string" ? winner.split("|")[0] : winner.title || "Unknown";
-      const l = typeof loser === "string" ? loser.split("|")[0] : loser.title || "Unknown";
+      const wKey = typeof winner === "string" ? normalizeKey(winner) : "";
+      const lKey = typeof loser === "string" ? normalizeKey(loser) : "";
+      const w = wKey ? wKey.split("|")[0] : (winner?.title || "Unknown");
+      const l = lKey ? lKey.split("|")[0] : (loser?.title || "Unknown");
       const d = formatDate(timestamp);
 
       const tr = document.createElement("tr");
@@ -370,12 +395,12 @@ function showMatchupModal(key) {
   const title = key.split("|")[0];
   const year = key.split("|")[1] || "";
 
-  // Filter votes involving this movie
+  // Filter votes involving this movie (normalize to catch legacy key variants)
   const matchups = votes
-    .filter(v => v.winner === key || v.loser === key)
+    .filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key)
     .map(v => {
-      const won = v.winner === key;
-      const opponentKey = won ? v.loser : v.winner;
+      const won = normalizeKey(v.winner) === key;
+      const opponentKey = normalizeKey(won ? v.loser : v.winner);
       const opponentTitle = opponentKey.split("|")[0];
       const ts = v.timestamp ? (v.timestamp.toDate ? v.timestamp.toDate() : new Date(v.timestamp)) : null;
       return { won, opponentKey, opponentTitle, ts };
@@ -445,7 +470,8 @@ document.addEventListener("keydown", (e) => {
 // INIT
 // ==========================================
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
+  await initNormalizer();
   onAuth(async user => {
     if (user) {
       await loadPersonalStats(user.uid);

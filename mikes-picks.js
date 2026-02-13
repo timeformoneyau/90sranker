@@ -4,6 +4,8 @@ import {
   getDocs
 } from "./firebase.js";
 
+import { buildKeyNormalizer } from "./movieKeys.js";
+
 // ==========================================
 // WILSON SCORE (same as list.js)
 // ==========================================
@@ -128,6 +130,17 @@ async function loadMikesPicks() {
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
+    // Load movie list for key normalization
+    let normalizeKey = (k) => k;
+    try {
+      const moviesRes = await fetch("movie_list_cleaned.json");
+      const allMovies = await moviesRes.json();
+      const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+      normalizeKey = buildKeyNormalizer(movies);
+    } catch (e) {
+      console.warn("Could not load movie list for normalization:", e);
+    }
+
     const snap = await getDocs(collection(db, "votes"));
 
     // Group votes by user to find Mike (most active voter)
@@ -137,22 +150,24 @@ async function loadMikesPicks() {
     snap.forEach(doc => {
       const { winner, loser, user } = doc.data();
       if (!winner || !loser) return;
+      const w = normalizeKey(winner);
+      const l = normalizeKey(loser);
 
       // Build global stats
-      globalStats[winner] = globalStats[winner] || { wins: 0, losses: 0 };
-      globalStats[loser] = globalStats[loser] || { wins: 0, losses: 0 };
-      globalStats[winner].wins++;
-      globalStats[loser].losses++;
+      globalStats[w] = globalStats[w] || { wins: 0, losses: 0 };
+      globalStats[l] = globalStats[l] || { wins: 0, losses: 0 };
+      globalStats[w].wins++;
+      globalStats[l].losses++;
 
       // Group by user
       if (user) {
         votesByUser[user] = votesByUser[user] || { votes: 0, stats: {} };
         votesByUser[user].votes++;
         const s = votesByUser[user].stats;
-        s[winner] = s[winner] || { wins: 0, losses: 0 };
-        s[loser] = s[loser] || { wins: 0, losses: 0 };
-        s[winner].wins++;
-        s[loser].losses++;
+        s[w] = s[w] || { wins: 0, losses: 0 };
+        s[l] = s[l] || { wins: 0, losses: 0 };
+        s[w].wins++;
+        s[l].losses++;
       }
     });
 

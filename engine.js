@@ -21,6 +21,8 @@ import {
   where
 } from "./firebase.js";
 
+import { makeMovieKey } from "./movieKeys.js";
+
 // ==========================================
 // CONSTANTS
 // ==========================================
@@ -66,7 +68,7 @@ let unseenMovieKeys = new Set();
 // ==========================================
 
 function getMovieKey(movie) {
-  return `${movie.title.trim()}|${movie.year}`;
+  return makeMovieKey(movie.title, movie.year);
 }
 
 function keyToTitle(key) {

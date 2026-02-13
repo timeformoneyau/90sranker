@@ -1,4 +1,5 @@
 import { db, auth, onAuth, collection, getDocs } from "./firebase.js";
+import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
 // ADMIN GATE
@@ -17,7 +18,7 @@ let currentFilter = "all";
 let currentSort = { key: "appearances", dir: -1 };
 
 function getMovieKey(m) {
-  return `${m.title.trim()}|${m.year}`;
+  return makeMovieKey(m.title, m.year);
 }
 
 // ==========================================
