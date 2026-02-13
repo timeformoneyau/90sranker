@@ -365,16 +365,17 @@ async function getRecommendationsForUser(userId) {
 
   const tasteProfile = buildTasteProfile(prefs);
 
-  // Compute genre stats, movie stats, and confidence for profile sections
-  const genreStats = computeGenreStats(userVotes, movieMap);
-  const movieStats = computeMovieStats(userVotes);
+  // Compute profile data: genre preferences, break-from-crowd, taste tier
+  const genrePreferences = computeGenrePreferenceScores(userVotes, movieMap);
+  const breakFromCrowd = computeBreakFromCrowd(userVotes, allVotes, movieMap);
   const distinctMovies = new Set();
   for (const v of userVotes) { distinctMovies.add(v.winner); distinctMovies.add(v.loser); }
-  const confidence = computeConfidence(userVotes.length);
+  const tierData = computeMaturityTier(userVotes.length, distinctMovies.size, movies.length);
 
   const output = {
     allScored, tasteProfile, voteCount: userVotes.length, isSparse,
-    genreStats, movieStats, confidence, distinctMovieCount: distinctMovies.size
+    genrePreferences, breakFromCrowd, tierData,
+    distinctMovieCount: distinctMovies.size, catalogueSize: movies.length
   };
 
   cache = { uid: userId, results: output };
@@ -407,10 +408,10 @@ function buildTasteProfile(prefs) {
 }
 
 // ==========================================
-// PROFILE — GENRE STATS
+// PROFILE — GENRE PREFERENCE SCORES
 // ==========================================
 
-function computeGenreStats(userVotes, movieMap) {
+function computeGenrePreferenceScores(userVotes, movieMap) {
   const stats = {}; // genre → { wins, losses }
   for (const vote of userVotes) {
     const winner = movieMap[vote.winner];
@@ -425,44 +426,124 @@ function computeGenreStats(userVotes, movieMap) {
     }
   }
   return Object.entries(stats)
-    .map(([genre, s]) => ({
-      genre,
-      wins: s.wins,
-      losses: s.losses,
-      total: s.wins + s.losses,
-      winRate: Math.round(100 * s.wins / (s.wins + s.losses))
-    }))
-    .filter(g => g.total >= 3)
-    .sort((a, b) => b.winRate - a.winRate);
+    .map(([genre, s]) => {
+      const total = s.wins + s.losses;
+      const winRate = s.wins / total;
+      return {
+        genre,
+        wins: s.wins,
+        losses: s.losses,
+        total,
+        winRate: Math.round(winRate * 100),
+        score: winRate - 0.5  // deviation from neutral baseline
+      };
+    })
+    .filter(g => g.total >= 6)
+    .sort((a, b) => b.score - a.score);
 }
 
 // ==========================================
-// PROFILE — MOVIE STATS (LOVED / REJECTED)
+// PROFILE — BREAK FROM THE CROWD
 // ==========================================
 
-function computeMovieStats(userVotes) {
-  const stats = {}; // movieKey → { wins, losses }
-  for (const vote of userVotes) {
-    if (!stats[vote.winner]) stats[vote.winner] = { wins: 0, losses: 0 };
-    stats[vote.winner].wins++;
-    if (!stats[vote.loser]) stats[vote.loser] = { wins: 0, losses: 0 };
-    stats[vote.loser].losses++;
+function computeBreakFromCrowd(userVotes, allVotes, movieMap) {
+  // Global per-movie stats
+  const globalStats = {};
+  for (const v of allVotes) {
+    if (!globalStats[v.winner]) globalStats[v.winner] = { wins: 0, losses: 0 };
+    globalStats[v.winner].wins++;
+    if (!globalStats[v.loser]) globalStats[v.loser] = { wins: 0, losses: 0 };
+    globalStats[v.loser].losses++;
   }
-  const all = Object.entries(stats).map(([key, s]) => ({
-    key, title: keyToTitle(key), year: key.split("|")[1],
-    wins: s.wins, losses: s.losses, diff: s.wins - s.losses
-  }));
-  const loved = [...all].sort((a, b) => b.diff - a.diff || b.wins - a.wins).slice(0, 5);
-  const rejected = [...all].sort((a, b) => a.diff - b.diff || b.losses - a.losses).slice(0, 5);
-  return { loved, rejected };
+
+  // User per-movie stats
+  const userStats = {};
+  for (const v of userVotes) {
+    if (!userStats[v.winner]) userStats[v.winner] = { wins: 0, losses: 0 };
+    userStats[v.winner].wins++;
+    if (!userStats[v.loser]) userStats[v.loser] = { wins: 0, losses: 0 };
+    userStats[v.loser].losses++;
+  }
+
+  const rows = [];
+  for (const [key, us] of Object.entries(userStats)) {
+    const userTotal = us.wins + us.losses;
+    if (userTotal < 5) continue;
+    const gs = globalStats[key];
+    if (!gs) continue;
+    const globalTotal = gs.wins + gs.losses;
+    if (globalTotal < 20) continue;
+
+    const userWinRate = Math.round(100 * us.wins / userTotal);
+    const globalWinRate = Math.round(100 * gs.wins / globalTotal);
+    const delta = userWinRate - globalWinRate;
+    if (delta === 0) continue;
+
+    rows.push({
+      key,
+      title: keyToTitle(key),
+      year: key.split("|")[1],
+      userRecord: `${us.wins}W\u2013${us.losses}L`,
+      globalRecord: `${gs.wins}W\u2013${gs.losses}L`,
+      userWinRate,
+      globalWinRate,
+      delta
+    });
+  }
+
+  rows.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  const higher = rows.filter(r => r.delta > 0).slice(0, 5);
+  const lower = rows.filter(r => r.delta < 0).slice(0, 5);
+  return { higher, lower, hasData: higher.length > 0 || lower.length > 0 };
 }
 
 // ==========================================
-// PROFILE — CONFIDENCE SCORE
+// PROFILE — TASTE TIER
 // ==========================================
 
-function computeConfidence(n) {
-  return Math.round(100 * (1 - Math.exp(-n / 50)));
+const TIER_THRESHOLDS = [
+  { name: "Rookie Voter",     min: 0,    max: 0.10 },
+  { name: "Taste Contender",  min: 0.10, max: 0.25 },
+  { name: "Signal Builder",   min: 0.25, max: 0.45 },
+  { name: "Matchup Veteran",  min: 0.45, max: 0.65 },
+  { name: "Taste Architect",  min: 0.65, max: 0.82 },
+  { name: "Canon Shaper",     min: 0.82, max: 1.00 }
+];
+
+function computeMaturityTier(voteCount, uniqueMovies, catalogueSize) {
+  const coverage = catalogueSize > 0 ? uniqueMovies / catalogueSize : 0;
+  const maturity = (1 - Math.exp(-voteCount / 120)) * Math.sqrt(coverage);
+  const clampedMaturity = Math.min(maturity, 0.999);
+
+  let tier = TIER_THRESHOLDS[0];
+  let tierIndex = 0;
+  for (let i = 0; i < TIER_THRESHOLDS.length; i++) {
+    if (clampedMaturity >= TIER_THRESHOLDS[i].min) {
+      tier = TIER_THRESHOLDS[i];
+      tierIndex = i;
+    }
+  }
+
+  const bandSize = tier.max - tier.min;
+  const progressInBand = bandSize > 0
+    ? Math.round(100 * (clampedMaturity - tier.min) / bandSize)
+    : 0;
+
+  const nextTier = tierIndex < TIER_THRESHOLDS.length - 1
+    ? TIER_THRESHOLDS[tierIndex + 1].name
+    : null;
+
+  return {
+    tierName: tier.name,
+    tierIndex,
+    maturity: clampedMaturity,
+    progress: Math.min(progressInBand, 99),
+    nextTier,
+    voteCount,
+    uniqueMovies,
+    catalogueSize,
+    coveragePct: Math.round(100 * coverage)
+  };
 }
 
 // ==========================================
@@ -725,151 +806,178 @@ function renderRecommendations(allScored) {
 }
 
 // ==========================================
-// UI — RENDER PREFERENCES SECTION
+// UI — RENDER TASTE PROFILE (DIVERGING BAR CHART)
 // ==========================================
 
-let activeGenreFilter = null;
-
-function renderPreferences(genreStats, movieStats, allScored) {
-  const el = document.getElementById("profile-prefs-content");
+function renderTasteProfileChart(genrePreferences) {
+  const el = document.getElementById("taste-profile-content");
   if (!el) return;
 
-  if (!genreStats || genreStats.length === 0) {
-    el.innerHTML = '<div class="engine-empty">Vote more to reveal your preferences.</div>';
+  if (!genrePreferences || genrePreferences.length === 0) {
+    el.innerHTML = '<div class="engine-empty">Vote more to build your taste profile. Genres appear after at least 6 matchups each.</div>';
     return;
   }
 
-  // Genre cards
-  let html = '<h3 class="profile-sub-heading">Top Genres (by win-rate)</h3>';
-  html += '<div class="profile-genre-cards">';
-  for (const g of genreStats.slice(0, 8)) {
-    html += `<button class="profile-genre-card" data-genre="${g.genre}">
-      <span class="profile-genre-name">${g.genre}</span>
-      <span class="profile-genre-rate">${g.winRate}%</span>
-      <span class="profile-genre-sample">${g.wins}&ndash;${g.losses}</span>
-    </button>`;
-  }
-  html += '</div>';
+  const maxAbs = Math.max(...genrePreferences.map(g => Math.abs(g.score)), 0.1);
 
-  // Genre filter results area
-  html += '<div id="profile-genre-filtered" class="profile-genre-filtered"></div>';
+  let html = '<div class="taste-chart-wrap">';
+  html += '<div class="taste-chart">';
 
-  // Loved / Rejected
-  html += '<div class="profile-loved-rejected">';
-  html += '<div class="profile-lr-col">';
-  html += '<h3 class="profile-sub-heading">Most Loved</h3>';
-  for (const m of movieStats.loved) {
-    html += `<div class="profile-movie-row profile-movie-loved">
-      <span class="profile-movie-title">${m.title}</span>
-      <span class="profile-movie-year">${m.year}</span>
-      <span class="profile-movie-record">${m.wins}W&ndash;${m.losses}L</span>
+  for (const g of genrePreferences) {
+    const pct = Math.round((Math.abs(g.score) / maxAbs) * 100);
+    const isPositive = g.score >= 0;
+    const barClass = isPositive ? "taste-bar--pos" : "taste-bar--neg";
+
+    html += `<div class="taste-chart-row" data-genre="${g.genre}" tabindex="0">
+      <div class="taste-chart-label">${g.genre}</div>
+      <div class="taste-chart-track">
+        <div class="taste-chart-center"></div>
+        ${isPositive
+          ? `<div class="taste-bar ${barClass}" style="left:50%;width:${pct / 2}%"></div>`
+          : `<div class="taste-bar ${barClass}" style="right:50%;width:${pct / 2}%"></div>`
+        }
+      </div>
+      <div class="taste-chart-pct">${isPositive ? "+" : ""}${g.winRate - 50}%</div>
+    </div>
+    <div class="taste-chart-evidence" data-for="${g.genre}">
+      ${g.genre}: ${g.winRate}% win-rate (${g.wins}\u2013${g.losses}), based on ${g.total} matchups
     </div>`;
   }
-  html += '</div><div class="profile-lr-col">';
-  html += '<h3 class="profile-sub-heading">Most Rejected</h3>';
-  for (const m of movieStats.rejected) {
-    html += `<div class="profile-movie-row profile-movie-rejected">
-      <span class="profile-movie-title">${m.title}</span>
-      <span class="profile-movie-year">${m.year}</span>
-      <span class="profile-movie-record">${m.wins}W&ndash;${m.losses}L</span>
-    </div>`;
-  }
+
   html += '</div></div>';
 
   el.innerHTML = html;
 
-  // Attach genre card click handlers
-  const cards = el.querySelectorAll(".profile-genre-card");
-  cards.forEach(card => {
-    card.addEventListener("click", () => {
-      const genre = card.dataset.genre;
-      // Toggle active state
-      cards.forEach(c => c.classList.remove("active"));
-      if (activeGenreFilter === genre) {
-        activeGenreFilter = null;
-        document.getElementById("profile-genre-filtered").innerHTML = "";
-        return;
+  // Attach hover/click handlers for evidence reveal
+  const rows = el.querySelectorAll(".taste-chart-row");
+  rows.forEach(row => {
+    const genre = row.dataset.genre;
+    const evidence = el.querySelector(`.taste-chart-evidence[data-for="${genre}"]`);
+
+    row.addEventListener("mouseenter", () => {
+      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
+      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
+      if (evidence) evidence.classList.add("visible");
+      row.classList.add("active");
+    });
+
+    row.addEventListener("click", () => {
+      const wasActive = evidence?.classList.contains("visible");
+      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
+      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
+      if (!wasActive && evidence) {
+        evidence.classList.add("visible");
+        row.classList.add("active");
       }
-      activeGenreFilter = genre;
-      card.classList.add("active");
-      renderGenreFiltered(genre, allScored);
     });
   });
+
+  // Clear on mouse leave from chart
+  const chart = el.querySelector(".taste-chart");
+  if (chart) {
+    chart.addEventListener("mouseleave", () => {
+      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
+      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
+    });
+  }
 }
 
-function renderGenreFiltered(genre, allScored) {
-  const el = document.getElementById("profile-genre-filtered");
+// ==========================================
+// UI — RENDER BREAK FROM THE CROWD
+// ==========================================
+
+function renderBreakFromCrowd(breakData) {
+  const el = document.getElementById("break-crowd-content");
   if (!el) return;
 
-  const matches = (allScored || [])
-    .filter(r => r.movie.genre === genre)
-    .slice(0, 6);
-
-  if (matches.length === 0) {
-    el.innerHTML = `<div class="profile-genre-filtered-empty">No recommended ${genre.toLowerCase()} movies right now.</div>`;
+  if (!breakData || !breakData.hasData) {
+    el.innerHTML = '<div class="engine-empty">Not enough data yet. Keep voting to see how your taste differs from the crowd.</div>';
     return;
   }
 
-  let html = `<div class="profile-genre-filtered-label">Recommended ${genre} movies:</div>`;
-  html += '<div class="profile-genre-filtered-list">';
-  for (const r of matches) {
-    html += `<div class="profile-genre-filtered-item">
-      <span class="profile-movie-title">${r.movie.title}</span>
-      <span class="profile-movie-year">${r.movie.year}</span>
-    </div>`;
+  function buildColumn(title, items, deltaClass) {
+    let html = `<div class="crowd-col"><h3 class="profile-sub-heading">${title}</h3>`;
+    if (items.length === 0) {
+      html += '<div class="crowd-empty">Not enough data yet.</div>';
+    } else {
+      html += '<div class="crowd-table">';
+      html += `<div class="crowd-header-row">
+        <span class="crowd-cell crowd-cell--title">Movie</span>
+        <span class="crowd-cell crowd-cell--stat">You</span>
+        <span class="crowd-cell crowd-cell--stat">Crowd</span>
+        <span class="crowd-cell crowd-cell--delta">Delta</span>
+      </div>`;
+      for (const r of items) {
+        html += `<div class="crowd-row">
+          <span class="crowd-cell crowd-cell--title">
+            <span class="profile-movie-title">${r.title}</span>
+            <span class="profile-movie-year">${r.year}</span>
+          </span>
+          <span class="crowd-cell crowd-cell--stat">${r.userWinRate}%</span>
+          <span class="crowd-cell crowd-cell--stat">${r.globalWinRate}%</span>
+          <span class="crowd-cell crowd-cell--delta ${deltaClass}">${r.delta > 0 ? "+" : ""}${r.delta}%</span>
+        </div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
   }
+
+  let html = '<div class="crowd-columns">';
+  html += buildColumn("You rate higher than the crowd", breakData.higher, "crowd-delta--pos");
+  html += buildColumn("You rate lower than the crowd", breakData.lower, "crowd-delta--neg");
   html += '</div>';
+
   el.innerHTML = html;
 }
 
 // ==========================================
-// UI — RENDER CONFIDENCE SECTION
+// UI — RENDER TASTE TIER
 // ==========================================
 
-function renderConfidence(confidence, voteCount, distinctMovieCount) {
-  const el = document.getElementById("profile-confidence-content");
+function renderTasteTier(tierData) {
+  const el = document.getElementById("taste-tier-content");
   if (!el) return;
 
-  const circumference = 2 * Math.PI * 54;
-  const offset = circumference * (1 - confidence / 100);
+  let html = '<div class="tier-wrap">';
 
-  let html = '<div class="profile-confidence-wrap">';
-
-  // Circular gauge
-  html += `<div class="profile-confidence-gauge">
-    <svg viewBox="0 0 120 120" class="profile-confidence-ring">
-      <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-bg-2)" stroke-width="8"/>
-      <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-accent)" stroke-width="8"
-        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
-        stroke-linecap="round" transform="rotate(-90 60 60)"
-        style="transition: stroke-dashoffset 1s ease"/>
-    </svg>
-    <div class="profile-confidence-value">${confidence}</div>
+  // Badge
+  html += `<div class="tier-badge">
+    <div class="tier-badge-name">${tierData.tierName}</div>
   </div>`;
 
-  // Stats
-  html += '<div class="profile-confidence-stats">';
+  // Progress toward next tier
+  if (tierData.nextTier) {
+    html += `<div class="tier-progress-wrap">
+      <div class="tier-progress-label">Progress toward <strong>${tierData.nextTier}</strong></div>
+      <div class="tier-progress-track">
+        <div class="tier-progress-fill" style="width:${tierData.progress}%"></div>
+      </div>
+      <div class="tier-progress-pct">${tierData.progress}%</div>
+    </div>`;
+  } else {
+    html += '<div class="tier-progress-label">You\'ve reached the highest tier.</div>';
+  }
+
+  // Grounding stats
+  html += '<div class="tier-stats">';
   html += `<div class="profile-stat">
-    <span class="profile-stat-val">${voteCount}</span>
+    <span class="profile-stat-val">${tierData.voteCount}</span>
     <span class="profile-stat-label">Total Votes</span>
   </div>`;
   html += `<div class="profile-stat">
-    <span class="profile-stat-val">${distinctMovieCount}</span>
+    <span class="profile-stat-val">${tierData.uniqueMovies}</span>
     <span class="profile-stat-label">Movies Compared</span>
   </div>`;
   html += `<div class="profile-stat">
-    <span class="profile-stat-val">${confidence}%</span>
-    <span class="profile-stat-label">Confidence</span>
+    <span class="profile-stat-val">${tierData.coveragePct}%</span>
+    <span class="profile-stat-label">Catalogue Coverage</span>
   </div>`;
-  html += '</div></div>';
+  html += '</div>';
 
-  // Contextual message
-  let msg;
-  if (confidence < 20) msg = "Just getting started. Keep voting to teach the engine your taste.";
-  else if (confidence < 50) msg = "Building a picture. Your recommendations are starting to personalize.";
-  else if (confidence < 75) msg = "Solid profile. The engine has a good read on your taste.";
-  else msg = "Expert level. The engine knows your taste inside and out.";
-  html += `<div class="profile-confidence-msg">${msg}</div>`;
+  html += '<div class="tier-explainer">Built from your vote volume and how broadly you\'ve compared the catalogue.</div>';
+  html += '</div>';
 
   el.innerHTML = html;
 }
@@ -898,8 +1006,9 @@ async function loadEngine(user) {
 
     renderTasteProfile(data.tasteProfile, data.voteCount);
     renderRecommendations(data.allScored);
-    renderPreferences(data.genreStats, data.movieStats, data.allScored);
-    renderConfidence(data.confidence, data.voteCount, data.distinctMovieCount);
+    renderTasteProfileChart(data.genrePreferences);
+    renderBreakFromCrowd(data.breakFromCrowd);
+    renderTasteTier(data.tierData);
   } catch (err) {
     console.error("Engine error:", err);
     renderStatus("Something went wrong loading recommendations.", true);
@@ -916,10 +1025,12 @@ window.addEventListener("load", () => {
       renderTasteProfile(null, 0);
       const grid = document.getElementById("engine-grid");
       if (grid) grid.innerHTML = '<div class="engine-empty">Your picks will appear here once you log in and start voting.</div>';
-      const prefsEl = document.getElementById("profile-prefs-content");
-      if (prefsEl) prefsEl.innerHTML = '<div class="engine-empty">Log in to build your Movie Profile (preferences + confidence).</div>';
-      const confEl = document.getElementById("profile-confidence-content");
-      if (confEl) confEl.innerHTML = '<div class="engine-empty">Log in to build your Movie Profile (preferences + confidence).</div>';
+      const tasteEl = document.getElementById("taste-profile-content");
+      if (tasteEl) tasteEl.innerHTML = '<div class="engine-empty">Log in and vote to build your taste profile.</div>';
+      const crowdEl = document.getElementById("break-crowd-content");
+      if (crowdEl) crowdEl.innerHTML = '<div class="engine-empty">Log in and vote to see how your taste differs.</div>';
+      const tierEl = document.getElementById("taste-tier-content");
+      if (tierEl) tierEl.innerHTML = '<div class="engine-empty">Log in to see your taste tier.</div>';
     }
   });
 });
