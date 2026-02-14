@@ -369,9 +369,20 @@ async function getRecommendationsForUser(userId) {
   const genrePreferences = computeGenrePreferenceScores(userVotes, allVotes, movieMap);
   const breakFromCrowd = computeBreakFromCrowd(userVotes, allVotes, movieMap);
 
+  // Progress metrics
+  const presentedKeys = new Set();
+  for (const v of userVotes) {
+    presentedKeys.add(v.winner);
+    presentedKeys.add(v.loser);
+  }
+
   const output = {
     allScored, tasteProfile, voteCount: userVotes.length, isSparse,
-    genrePreferences, breakFromCrowd
+    genrePreferences, breakFromCrowd,
+    totalMovies: movies.length,
+    comparedCount: presentedKeys.size,
+    unseenCount: unseenKeys.size,
+    notInterestedCount: notInterestedKeys.size
   };
 
   cache = { uid: userId, results: output };
@@ -1005,6 +1016,48 @@ function renderBreakFromCrowd(breakData) {
 }
 
 // ==========================================
+// UI — RENDER PROGRESS CARD
+// ==========================================
+
+function renderProgressCard({ totalMovies, comparedCount, voteCount, unseenCount, notInterestedCount }) {
+  const el = document.getElementById("progress-card");
+  if (!el) return;
+
+  const total = totalMovies || 1; // avoid divide by zero
+  const coveragePct = Math.round((comparedCount / total) * 100);
+  const unseenPct = Math.round((unseenCount / total) * 100);
+  const niPct = Math.round((notInterestedCount / total) * 100);
+
+  el.innerHTML = `
+    <h2 class="profile-section-heading">Your Progress</h2>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width:${coveragePct}%"></div>
+      </div>
+      <div class="progress-bar-label">${comparedCount} / ${totalMovies} movies compared (${coveragePct}%)</div>
+    </div>
+    <div class="progress-stats">
+      <div class="progress-stat">
+        <div class="progress-stat-val">${voteCount.toLocaleString()}</div>
+        <div class="progress-stat-label">Votes Cast</div>
+      </div>
+      <div class="progress-stat">
+        <div class="progress-stat-val">${comparedCount.toLocaleString()}</div>
+        <div class="progress-stat-label">Movies Compared</div>
+      </div>
+      <div class="progress-stat">
+        <div class="progress-stat-val">${unseenCount.toLocaleString()}</div>
+        <div class="progress-stat-label">Haven't Seen (${unseenPct}%)</div>
+      </div>
+      <div class="progress-stat">
+        <div class="progress-stat-val">${notInterestedCount.toLocaleString()}</div>
+        <div class="progress-stat-label">Not Interested (${niPct}%)</div>
+      </div>
+    </div>
+  `;
+}
+
+// ==========================================
 // INIT
 // ==========================================
 
@@ -1026,6 +1079,7 @@ async function loadEngine(user) {
       renderStatus(`Based on ${data.voteCount} votes. The more you vote, the smarter this gets.`);
     }
 
+    renderProgressCard(data);
     renderTasteProfile(data.tasteProfile, data.voteCount);
     renderRecommendations(data.allScored);
     renderTasteProfileChart(data.genrePreferences);
@@ -1050,6 +1104,15 @@ window.addEventListener("load", () => {
       if (tasteEl) tasteEl.innerHTML = '<div class="engine-empty">Log in and vote to build your taste profile.</div>';
       const crowdEl = document.getElementById("break-crowd-content");
       if (crowdEl) crowdEl.innerHTML = '<div class="engine-empty">Log in and vote to see how your taste differs.</div>';
+
+      // Show minimal progress for logged-out users
+      const progressEl = document.getElementById("progress-card");
+      if (progressEl) {
+        progressEl.innerHTML = `
+          <h2 class="profile-section-heading">Your Progress</h2>
+          <div class="engine-empty">Log in to track your catalogue coverage and voting progress.</div>
+        `;
+      }
     }
   });
 });
