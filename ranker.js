@@ -8,6 +8,7 @@ import {
   writeBatch,
   increment,
   serverTimestamp,
+  runTransaction,
   doc,
   getDoc,
   updateDoc,
@@ -751,6 +752,76 @@ async function updateVoteCounter() {
 }
 
 // ==========================================
+// TOUGH CALL FLAGGING
+// ==========================================
+
+/**
+ * Build a canonical stable ID for a matchup of two movies.
+ * Sorts the two keys lexicographically to avoid duplicates.
+ */
+function makeToughCallId(keyA, keyB) {
+  return keyA < keyB ? `${keyA}__${keyB}` : `${keyB}__${keyA}`;
+}
+
+/**
+ * Flag the current matchup as a "Tough Call" — sends it to the community queue.
+ * Does NOT count as a vote. Advances to next matchup.
+ */
+async function handleFlagToughCall() {
+  const { A, B } = state.currentMovies;
+  if (!A || !B) return;
+
+  const keyA = getMovieKey(A);
+  const keyB = getMovieKey(B);
+  const tcId = makeToughCallId(keyA, keyB);
+  const minKey = keyA < keyB ? keyA : keyB;
+  const maxKey = keyA < keyB ? keyB : keyA;
+  const uid = state.uid;
+
+  // Record both movies as inferred-seen (user saw the matchup)
+  recordInferredSeen(keyA, keyB);
+
+  // Track matchup so user doesn't see it again immediately
+  const matchupKey = [A.title, B.title].sort().join("|");
+  state.seenMatchups.push(matchupKey);
+  saveMatchupToFirestore(matchupKey);
+
+  // Upsert to toughCalls collection (fire-and-forget for UI speed)
+  if (uid) {
+    const tcRef = doc(db, "toughCalls", tcId);
+    runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(tcRef);
+      const now = new Date();
+      if (snap.exists()) {
+        const data = snap.data();
+        transaction.update(tcRef, {
+          flagCount: (data.flagCount || 0) + 1,
+          lastFlaggedAt: now,
+          [`flaggedBy.${uid}`]: true
+        });
+      } else {
+        transaction.set(tcRef, {
+          movieAKey: minKey,
+          movieBKey: maxKey,
+          createdAt: now,
+          createdByUid: uid,
+          createdByName: auth.currentUser?.email || "",
+          flagCount: 1,
+          lastFlaggedAt: now,
+          flaggedBy: { [uid]: true },
+          votesA: 0,
+          votesB: 0,
+          totalVotes: 0
+        });
+      }
+    }).catch(err => console.error("Failed to flag tough call:", err));
+  }
+
+  // Advance to next matchup
+  chooseTwoMovies();
+}
+
+// ==========================================
 // GLOBAL EXPORTS (for inline HTML handlers)
 // ==========================================
 
@@ -758,6 +829,7 @@ window.vote = handleVote;
 window.markUnseen = handleMarkUnseen;
 window.showMovieInfo = showMovieInfo;
 window.closeMovieInfo = closeMovieInfo;
+window.flagToughCall = handleFlagToughCall;
 
 // Expose movie objects for backwards compatibility
 Object.defineProperty(window, 'movieA', {

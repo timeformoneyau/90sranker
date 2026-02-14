@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mike's Picks | Shelf Life</title>
+  <title>Tough Calls | Shelf Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&family=Passion+One:wght@400;700;900&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
@@ -13,7 +13,6 @@
 
   <!-- Header -->
   <header class="site-header">
-    <!-- Membership Card -->
     <div class="member-card">
       <div class="member-card-inner">
         <div class="member-card-avatar"></div>
@@ -32,17 +31,17 @@
     </div>
 
     <div class="site-title">SHELF LIFE</div>
-    <p class="site-subtitle">Mike's personal top picks from the 90s.</p>
+    <p class="site-subtitle">The matchups no one could decide.</p>
   </header>
 
-  <!-- Navigation Bar -->
+  <!-- Navigation -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Results</a></li>
-      <li><a href="mikes-picks.html" class="active">Mike's Picks</a></li>
+      <li><a href="mikes-picks.html">Mike's Picks</a></li>
       <li><a href="engine.html">Movie Profile</a></li>
-      <li><a href="toughCalls.html">Tough Calls</a></li>
+      <li><a href="toughCalls.html" class="active">Tough Calls</a></li>
       <li><a href="unseen.html">Haven't Seen</a></li>
       <li><a href="account.html">Your Account</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
@@ -50,47 +49,27 @@
     <div id="login-status"></div>
   </nav>
 
-  <div class="results-page">
-
-    <!-- Intro -->
-    <div class="results-intro">
-      <h1 class="results-headline">Mike's Top 15</h1>
-      <p class="results-desc">The 15 highest-ranked movies based on Mike's personal votes, scored using the same adjusted confidence system as the global rankings.</p>
+  <!-- Main Content -->
+  <div class="tc-page">
+    <div class="tc-intro">
+      <h1 class="tc-headline">Tough Calls</h1>
+      <p class="tc-desc">Other users couldn't decide these matchups. You break the tie.</p>
     </div>
 
-    <div class="results-meta">
-      <span id="picks-status">Loading Mike's picks...</span>
+    <div class="tc-status" id="tc-status">Loading tough calls...</div>
+
+    <div class="tc-grid" id="tc-grid"></div>
+
+    <div class="tc-empty" id="tc-empty" style="display:none">
+      No more tough calls right now. Check back later.
     </div>
 
-    <!-- Desktop table -->
-    <div class="results-table-wrap">
-      <table class="results-table" id="picks-table">
-        <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th class="col-movie">Movie</th>
-            <th class="col-num" title="Total matchups played by Mike">Matchups</th>
-            <th class="col-num">Wins</th>
-            <th class="col-num">Losses</th>
-            <th class="col-num">Win %</th>
-            <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
-            <th class="col-num" title="This movie's rank in the global rankings">Global #</th>
-            <th class="col-num" title="TMDB community rating">Rating</th>
-          </tr>
-        </thead>
-        <tbody id="picks-list"></tbody>
-      </table>
-    </div>
-
-    <!-- Mobile cards -->
-    <div class="results-cards" id="picks-cards"></div>
-
-    <a href="index.html" class="back-link">Back to Home</a>
+    <a href="index.html" class="back-link">Back to voting</a>
   </div>
 
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>
-  <script type="module" src="mikes-picks.js"></script>
+  <script type="module" src="toughCalls.js"></script>
   <script type="module" src="loginStatus.js"></script>
 </body>
 </html>

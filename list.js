@@ -381,6 +381,103 @@ async function loadRecentVotes(uid) {
 }
 
 // ==========================================
+// WIRING: TOUGH CALLS TAB
+// ==========================================
+
+async function loadToughCallsTab() {
+  const countEl = document.getElementById("toughcalls-count");
+  const gridEl = document.getElementById("toughcalls-grid");
+  const cardsEl = document.getElementById("toughcalls-cards");
+  if (!gridEl) return;
+
+  gridEl.innerHTML = '<div class="results-empty">Loading tough calls...</div>';
+  cardsEl.innerHTML = '<div class="results-empty">Loading...</div>';
+
+  try {
+    const snap = await getDocs(collection(db, "toughCalls"));
+    const toughCalls = [];
+
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.totalVotes > 0) {
+        toughCalls.push({ id: d.id, ...data });
+      }
+    });
+
+    // Sort by total votes desc
+    toughCalls.sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0));
+    const top10 = toughCalls.slice(0, 10);
+
+    countEl.textContent = `${toughCalls.length} tough call${toughCalls.length !== 1 ? "s" : ""} with votes`;
+
+    if (top10.length === 0) {
+      gridEl.innerHTML = '<div class="results-empty">No tough call votes yet. Flag a matchup from the home page!</div>';
+      cardsEl.innerHTML = '<div class="results-empty">No tough call votes yet.</div>';
+      return;
+    }
+
+    // Desktop: table-style rendering
+    let tableHTML = `<div class="results-table-wrap"><table class="results-table">
+      <thead><tr>
+        <th class="col-rank">#</th>
+        <th class="col-movie">Matchup</th>
+        <th class="col-num">Total Votes</th>
+        <th class="col-num">Breakdown</th>
+      </tr></thead><tbody>`;
+
+    top10.forEach((tc, i) => {
+      const mA = tc.movieAKey.split("|")[0];
+      const mB = tc.movieBKey.split("|")[0];
+      const vA = tc.votesA || 0;
+      const vB = tc.votesB || 0;
+      const total = tc.totalVotes || 0;
+      const pctA = total ? Math.round((vA / total) * 100) : 0;
+      const pctB = total ? Math.round((vB / total) * 100) : 0;
+
+      tableHTML += `<tr>
+        <td class="col-rank">${i + 1}</td>
+        <td class="col-movie"><span class="movie-name">${mA}</span> <span class="tc-vs-label">vs</span> <span class="movie-name">${mB}</span></td>
+        <td class="col-num">${total}</td>
+        <td class="col-num"><span class="${pctA > pctB ? 'win-pct-high' : pctA < pctB ? 'win-pct-low' : ''}">${mA}: ${vA}</span> / <span class="${pctB > pctA ? 'win-pct-high' : pctB < pctA ? 'win-pct-low' : ''}">${mB}: ${vB}</span></td>
+      </tr>`;
+    });
+
+    tableHTML += "</tbody></table></div>";
+    gridEl.innerHTML = tableHTML;
+
+    // Mobile cards
+    cardsEl.innerHTML = "";
+    top10.forEach((tc, i) => {
+      const mA = tc.movieAKey.split("|")[0];
+      const mB = tc.movieBKey.split("|")[0];
+      const vA = tc.votesA || 0;
+      const vB = tc.votesB || 0;
+      const total = tc.totalVotes || 0;
+
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.innerHTML = `
+        <div class="result-card-rank">${i + 1}</div>
+        <div class="result-card-body">
+          <div class="result-card-title">${mA} <span class="tc-vs-label">vs</span> ${mB}</div>
+          <div class="result-card-stats">
+            <span>${total} votes</span>
+            <span>${mA}: ${vA}</span>
+            <span>${mB}: ${vB}</span>
+          </div>
+        </div>
+      `;
+      cardsEl.appendChild(card);
+    });
+  } catch (err) {
+    console.error("loadToughCallsTab error:", err);
+    gridEl.innerHTML = '<div class="results-empty results-error">Failed to load tough calls.</div>';
+    cardsEl.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
+    countEl.textContent = "Error";
+  }
+}
+
+// ==========================================
 // MATCHUP MODAL
 // ==========================================
 
@@ -484,5 +581,6 @@ window.addEventListener("load", async () => {
       document.getElementById("recent-cards").innerHTML = '<div class="results-empty">Log in to see votes.</div>';
     }
     await loadGlobalStats();
+    await loadToughCallsTab();
   });
 });

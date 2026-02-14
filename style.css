@@ -2410,3 +2410,271 @@ tbody tr:last-child td { border-bottom: none; }
     font-size: var(--fs-0);
   }
 }
+
+/* =========================================================
+   TOUGH CALLS — Main page button
+   ========================================================= */
+
+.tough-call-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-4) 0 var(--s-2);
+}
+
+.btn-tough-call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.6rem 2rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-accent-dim);
+  background: rgba(232, 163, 23, 0.06);
+  color: var(--color-text-1);
+  font-family: inherit;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform var(--t-fast), border-color var(--t-base), color var(--t-base), background var(--t-base);
+}
+
+.btn-tough-call:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(232, 163, 23, 0.12);
+}
+
+.btn-tough-call:active {
+  transform: translateY(1px);
+}
+
+.tough-call-sub {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================
+   TOUGH CALLS — Voting page
+   ========================================================= */
+
+.tc-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-4) var(--s-10);
+}
+
+.tc-intro {
+  text-align: center;
+  margin-bottom: var(--s-6);
+}
+
+.tc-headline {
+  font-family: var(--font-display);
+  font-size: var(--fs-7);
+  font-weight: var(--fw-black);
+  color: var(--color-text-0);
+  margin: 0 0 var(--s-2);
+}
+
+.tc-desc {
+  font-size: var(--fs-2);
+  color: var(--color-text-1);
+  margin: 0;
+}
+
+.tc-status {
+  text-align: center;
+  color: var(--color-accent);
+  font-size: var(--fs-1);
+  margin-bottom: var(--s-4);
+}
+
+.tc-login-prompt {
+  text-align: center;
+  padding: var(--s-8) var(--s-4);
+  font-size: var(--fs-3);
+  color: var(--color-text-1);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+}
+
+.tc-empty {
+  text-align: center;
+  padding: var(--s-8) var(--s-4);
+  font-size: var(--fs-3);
+  color: var(--color-text-2);
+}
+
+.tc-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+/* Individual tough call card */
+.tc-card {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  transition: opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.tc-card-matchup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--s-4);
+  align-items: center;
+}
+
+.tc-card-movie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  text-align: center;
+}
+
+.tc-card-poster {
+  width: 100%;
+  max-width: 140px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-2);
+}
+
+.tc-card-title {
+  font-family: var(--font-family);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-1);
+  color: var(--color-text-0);
+  line-height: var(--lh-tight);
+}
+
+.tc-card-year {
+  font-size: var(--fs-0);
+  color: var(--color-accent);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+}
+
+.tc-card-vs {
+  font-family: var(--font-display);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
+  color: var(--color-accent);
+  font-style: italic;
+  text-shadow: 0 0 12px var(--color-accent-dim);
+}
+
+.tc-card-vote {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  width: 100%;
+  max-width: 140px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: var(--fs-0);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform var(--t-fast), background-color var(--t-base), box-shadow var(--t-base);
+}
+
+.tc-card-vote:hover {
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-1);
+}
+
+.tc-card-vote:active {
+  transform: translateY(1px);
+}
+
+.tc-card-vote:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tc-card-flag-count {
+  text-align: center;
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  margin-top: var(--s-3);
+  letter-spacing: 0.02em;
+}
+
+/* Card exit/enter animations */
+@keyframes tc-card-exit {
+  0%   { opacity: 1; transform: translateX(0); max-height: 400px; }
+  60%  { opacity: 0; transform: translateX(40px); max-height: 400px; }
+  100% { opacity: 0; transform: translateX(40px); max-height: 0; padding: 0; margin: 0; }
+}
+
+@keyframes tc-card-enter {
+  0%   { opacity: 0; transform: translateX(-30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.tc-card-exit {
+  animation: tc-card-exit 0.4s ease-in forwards;
+  pointer-events: none;
+}
+
+.tc-card-enter {
+  animation: tc-card-enter 0.45s ease-out forwards;
+}
+
+/* Results tab "vs" label */
+.tc-vs-label {
+  font-weight: var(--fw-bold);
+  color: var(--color-accent);
+  font-style: italic;
+  margin: 0 0.3em;
+}
+
+/* Tough Calls page mobile */
+@media (max-width: 600px) {
+  .tc-card-matchup {
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--s-2);
+  }
+
+  .tc-card-poster {
+    max-width: 100px;
+  }
+
+  .tc-card-title {
+    font-size: var(--fs-0);
+  }
+
+  .tc-card-vote {
+    max-width: 100px;
+    font-size: 0.65rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .tc-card-vs {
+    font-size: var(--fs-3);
+  }
+
+  .tc-headline {
+    font-size: var(--fs-6);
+  }
+}
