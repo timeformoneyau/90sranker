@@ -1858,106 +1858,50 @@ tbody tr:last-child td { border-bottom: none; }
   margin: 0 0 var(--s-3);
 }
 
-/* ---- Taste Profile Chart (diverging bars) ---- */
-.taste-chart-wrap {
-  max-width: 640px;
-}
-
-.taste-chart-row {
+/* ---- Profile top row (two-column layout) ---- */
+.profile-top-row {
   display: grid;
-  grid-template-columns: 90px 1fr 48px;
-  align-items: center;
-  gap: var(--s-2);
-  padding: 6px 0;
-  cursor: pointer;
-  border-radius: var(--r-sm);
-  transition: background var(--t-base);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-5);
+  margin-bottom: var(--s-6);
 }
 
-.taste-chart-row:hover,
-.taste-chart-row.active {
-  background: rgba(232, 163, 23, 0.04);
+.profile-top-col {
+  margin-bottom: 0;
 }
 
-.taste-chart-label {
-  font-size: var(--fs-0);
-  font-weight: var(--fw-bold);
-  color: var(--color-text-0);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: right;
-  padding-right: var(--s-2);
+@media (max-width: 860px) {
+  .profile-top-row {
+    grid-template-columns: 1fr;
+    gap: var(--s-4);
+  }
 }
 
-.taste-chart-track {
-  position: relative;
-  height: 20px;
-  background: var(--color-bg-2);
-  border-radius: 3px;
-  overflow: hidden;
+/* ---- Taste Profile Radar Chart ---- */
+.radar-wrap {
+  display: flex;
+  justify-content: center;
 }
 
-.taste-chart-center {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--color-text-2);
-  opacity: 0.4;
+.radar-wrap canvas {
+  max-width: 100%;
+  height: auto;
 }
 
-.taste-bar {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border-radius: 2px;
-  transition: width 0.5s ease;
-}
-
-.taste-bar--pos {
-  background: var(--color-success);
-  opacity: 0.7;
-}
-
-.taste-bar--neg {
-  background: var(--color-error);
-  opacity: 0.6;
-}
-
-.taste-chart-pct {
-  font-size: 0.7rem;
-  font-weight: var(--fw-bold);
-  color: var(--color-text-1);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.taste-chart-evidence {
-  display: none;
-  grid-column: 1 / -1;
-  font-size: 0.7rem;
-  color: var(--color-text-2);
-  padding: 2px 0 6px 0;
+.radar-detail {
   text-align: center;
-}
-
-.taste-chart-evidence.visible {
-  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-1);
+  min-height: 1.6em;
+  margin-top: var(--s-2);
+  font-weight: var(--fw-semibold);
 }
 
 /* ---- Break From the Crowd ---- */
 .crowd-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-5);
-}
-
-@media (max-width: 700px) {
-  .crowd-columns {
-    grid-template-columns: 1fr;
-    gap: var(--s-4);
-  }
+  grid-template-columns: 1fr;
+  gap: var(--s-4);
 }
 
 .crowd-empty {
@@ -2047,89 +1991,6 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: 0.7rem;
   font-weight: var(--fw-semibold);
   letter-spacing: 0.08em;
-}
-
-/* ---- Taste Tier ---- */
-.tier-wrap {
-  max-width: 480px;
-}
-
-.tier-badge {
-  margin-bottom: var(--s-4);
-}
-
-.tier-badge-name {
-  font-size: clamp(var(--fs-4), 4vw, var(--fs-6));
-  font-weight: var(--fw-black);
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.tier-progress-wrap {
-  margin-bottom: var(--s-4);
-}
-
-.tier-progress-label {
-  font-size: var(--fs-0);
-  color: var(--color-text-1);
-  margin-bottom: var(--s-2);
-}
-
-.tier-progress-track {
-  height: 10px;
-  background: var(--color-bg-2);
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.tier-progress-fill {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 5px;
-  transition: width 0.8s ease;
-}
-
-.tier-progress-pct {
-  font-size: 0.65rem;
-  color: var(--color-text-2);
-  font-weight: var(--fw-bold);
-  text-align: right;
-}
-
-.tier-stats {
-  display: flex;
-  gap: var(--s-5);
-  flex-wrap: wrap;
-  margin-bottom: var(--s-3);
-}
-
-.profile-stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.profile-stat-val {
-  font-size: var(--fs-4);
-  font-weight: var(--fw-black);
-  color: var(--color-text-0);
-  line-height: 1.2;
-}
-
-.profile-stat-label {
-  font-size: 0.65rem;
-  font-weight: var(--fw-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-2);
-  margin-top: 2px;
-}
-
-.tier-explainer {
-  font-size: var(--fs-0);
-  color: var(--color-text-2);
-  font-style: italic;
 }
 
 /* Card exit / enter animations */

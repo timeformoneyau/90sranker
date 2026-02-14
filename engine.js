@@ -365,17 +365,13 @@ async function getRecommendationsForUser(userId) {
 
   const tasteProfile = buildTasteProfile(prefs);
 
-  // Compute profile data: genre preferences, break-from-crowd, taste tier
-  const genrePreferences = computeGenrePreferenceScores(userVotes, movieMap);
+  // Compute profile data: genre preferences (with global consensus), break-from-crowd
+  const genrePreferences = computeGenrePreferenceScores(userVotes, allVotes, movieMap);
   const breakFromCrowd = computeBreakFromCrowd(userVotes, allVotes, movieMap);
-  const distinctMovies = new Set();
-  for (const v of userVotes) { distinctMovies.add(v.winner); distinctMovies.add(v.loser); }
-  const tierData = computeMaturityTier(userVotes.length, distinctMovies.size, movies.length);
 
   const output = {
     allScored, tasteProfile, voteCount: userVotes.length, isSparse,
-    genrePreferences, breakFromCrowd, tierData,
-    distinctMovieCount: distinctMovies.size, catalogueSize: movies.length
+    genrePreferences, breakFromCrowd
   };
 
   cache = { uid: userId, results: output };
@@ -411,35 +407,64 @@ function buildTasteProfile(prefs) {
 // PROFILE — GENRE PREFERENCE SCORES
 // ==========================================
 
-function computeGenrePreferenceScores(userVotes, movieMap) {
-  const stats = {}; // genre → { wins, losses }
+function computeGenrePreferenceScores(userVotes, allVotes, movieMap) {
+  // User per-genre stats
+  const userStats = {};
   for (const vote of userVotes) {
     const winner = movieMap[vote.winner];
     const loser = movieMap[vote.loser];
     if (winner?.genre) {
-      if (!stats[winner.genre]) stats[winner.genre] = { wins: 0, losses: 0 };
-      stats[winner.genre].wins++;
+      if (!userStats[winner.genre]) userStats[winner.genre] = { wins: 0, losses: 0 };
+      userStats[winner.genre].wins++;
     }
     if (loser?.genre) {
-      if (!stats[loser.genre]) stats[loser.genre] = { wins: 0, losses: 0 };
-      stats[loser.genre].losses++;
+      if (!userStats[loser.genre]) userStats[loser.genre] = { wins: 0, losses: 0 };
+      userStats[loser.genre].losses++;
     }
   }
-  return Object.entries(stats)
+
+  // Global per-genre stats (for consensus baseline)
+  const globalStats = {};
+  for (const vote of allVotes) {
+    const winner = movieMap[vote.winner];
+    const loser = movieMap[vote.loser];
+    if (winner?.genre) {
+      if (!globalStats[winner.genre]) globalStats[winner.genre] = { wins: 0, losses: 0 };
+      globalStats[winner.genre].wins++;
+    }
+    if (loser?.genre) {
+      if (!globalStats[loser.genre]) globalStats[loser.genre] = { wins: 0, losses: 0 };
+      globalStats[loser.genre].losses++;
+    }
+  }
+
+  return Object.entries(userStats)
     .map(([genre, s]) => {
       const total = s.wins + s.losses;
-      const winRate = s.wins / total;
+      const userRate = s.wins / total;
+      const gs = globalStats[genre];
+      let globalRate = 0.5;
+      let globalTotal = 0;
+      if (gs) {
+        globalTotal = gs.wins + gs.losses;
+        if (globalTotal >= 10) globalRate = gs.wins / globalTotal;
+      }
+      const delta = userRate - globalRate;
       return {
         genre,
         wins: s.wins,
         losses: s.losses,
         total,
-        winRate: Math.round(winRate * 100),
-        score: winRate - 0.5  // deviation from neutral baseline
+        userRate: Math.round(userRate * 100),
+        globalRate: Math.round(globalRate * 100),
+        globalTotal,
+        delta,
+        value: Math.max(0, Math.min(1, 0.5 + delta))  // clamped for chart
       };
     })
     .filter(g => g.total >= 6)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.delta - a.delta)
+    .slice(0, 12);
 }
 
 // ==========================================
@@ -495,55 +520,6 @@ function computeBreakFromCrowd(userVotes, allVotes, movieMap) {
   const higher = rows.filter(r => r.delta > 0).slice(0, 5);
   const lower = rows.filter(r => r.delta < 0).slice(0, 5);
   return { higher, lower, hasData: higher.length > 0 || lower.length > 0 };
-}
-
-// ==========================================
-// PROFILE — TASTE TIER
-// ==========================================
-
-const TIER_THRESHOLDS = [
-  { name: "Rookie Voter",     min: 0,    max: 0.10 },
-  { name: "Taste Contender",  min: 0.10, max: 0.25 },
-  { name: "Signal Builder",   min: 0.25, max: 0.45 },
-  { name: "Matchup Veteran",  min: 0.45, max: 0.65 },
-  { name: "Taste Architect",  min: 0.65, max: 0.82 },
-  { name: "Canon Shaper",     min: 0.82, max: 1.00 }
-];
-
-function computeMaturityTier(voteCount, uniqueMovies, catalogueSize) {
-  const coverage = catalogueSize > 0 ? uniqueMovies / catalogueSize : 0;
-  const maturity = (1 - Math.exp(-voteCount / 120)) * Math.sqrt(coverage);
-  const clampedMaturity = Math.min(maturity, 0.999);
-
-  let tier = TIER_THRESHOLDS[0];
-  let tierIndex = 0;
-  for (let i = 0; i < TIER_THRESHOLDS.length; i++) {
-    if (clampedMaturity >= TIER_THRESHOLDS[i].min) {
-      tier = TIER_THRESHOLDS[i];
-      tierIndex = i;
-    }
-  }
-
-  const bandSize = tier.max - tier.min;
-  const progressInBand = bandSize > 0
-    ? Math.round(100 * (clampedMaturity - tier.min) / bandSize)
-    : 0;
-
-  const nextTier = tierIndex < TIER_THRESHOLDS.length - 1
-    ? TIER_THRESHOLDS[tierIndex + 1].name
-    : null;
-
-  return {
-    tierName: tier.name,
-    tierIndex,
-    maturity: clampedMaturity,
-    progress: Math.min(progressInBand, 99),
-    nextTier,
-    voteCount,
-    uniqueMovies,
-    catalogueSize,
-    coveragePct: Math.round(100 * coverage)
-  };
 }
 
 // ==========================================
@@ -806,7 +782,7 @@ function renderRecommendations(allScored) {
 }
 
 // ==========================================
-// UI — RENDER TASTE PROFILE (DIVERGING BAR CHART)
+// UI — RENDER TASTE PROFILE (RADAR / SPIDERWEB CANVAS)
 // ==========================================
 
 function renderTasteProfileChart(genrePreferences) {
@@ -814,72 +790,168 @@ function renderTasteProfileChart(genrePreferences) {
   if (!el) return;
 
   if (!genrePreferences || genrePreferences.length === 0) {
-    el.innerHTML = '<div class="engine-empty">Vote more to build your taste profile. Genres appear after at least 6 matchups each.</div>';
+    el.innerHTML = '<div class="engine-empty">Vote a bit more to reveal your taste profile. Genres appear after at least 6 matchups each.</div>';
     return;
   }
 
-  const maxAbs = Math.max(...genrePreferences.map(g => Math.abs(g.score)), 0.1);
+  const data = genrePreferences;
+  const n = data.length;
 
-  let html = '<div class="taste-chart-wrap">';
-  html += '<div class="taste-chart">';
+  el.innerHTML = '<div class="radar-wrap"><canvas id="radar-canvas" width="360" height="360"></canvas></div>'
+    + '<div class="radar-detail" id="radar-detail"></div>';
 
-  for (const g of genrePreferences) {
-    const pct = Math.round((Math.abs(g.score) / maxAbs) * 100);
-    const isPositive = g.score >= 0;
-    const barClass = isPositive ? "taste-bar--pos" : "taste-bar--neg";
+  const canvas = document.getElementById("radar-canvas");
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const cssSize = 360;
+  canvas.width = cssSize * dpr;
+  canvas.height = cssSize * dpr;
+  canvas.style.width = cssSize + "px";
+  canvas.style.height = cssSize + "px";
+  ctx.scale(dpr, dpr);
 
-    html += `<div class="taste-chart-row" data-genre="${g.genre}" tabindex="0">
-      <div class="taste-chart-label">${g.genre}</div>
-      <div class="taste-chart-track">
-        <div class="taste-chart-center"></div>
-        ${isPositive
-          ? `<div class="taste-bar ${barClass}" style="left:50%;width:${pct / 2}%"></div>`
-          : `<div class="taste-bar ${barClass}" style="right:50%;width:${pct / 2}%"></div>`
-        }
-      </div>
-      <div class="taste-chart-pct">${isPositive ? "+" : ""}${g.winRate - 50}%</div>
-    </div>
-    <div class="taste-chart-evidence" data-for="${g.genre}">
-      ${g.genre}: ${g.winRate}% win-rate (${g.wins}\u2013${g.losses}), based on ${g.total} matchups
-    </div>`;
+  const cx = cssSize / 2;
+  const cy = cssSize / 2;
+  const maxR = cssSize / 2 - 40;
+  const rings = 4;
+
+  function angleFor(i) {
+    return (Math.PI * 2 * i) / n - Math.PI / 2;
   }
 
-  html += '</div></div>';
+  function pointAt(i, val) {
+    const a = angleFor(i);
+    const r = val * maxR;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  }
 
-  el.innerHTML = html;
+  function draw(highlightIdx) {
+    ctx.clearRect(0, 0, cssSize, cssSize);
 
-  // Attach hover/click handlers for evidence reveal
-  const rows = el.querySelectorAll(".taste-chart-row");
-  rows.forEach(row => {
-    const genre = row.dataset.genre;
-    const evidence = el.querySelector(`.taste-chart-evidence[data-for="${genre}"]`);
-
-    row.addEventListener("mouseenter", () => {
-      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
-      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
-      if (evidence) evidence.classList.add("visible");
-      row.classList.add("active");
-    });
-
-    row.addEventListener("click", () => {
-      const wasActive = evidence?.classList.contains("visible");
-      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
-      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
-      if (!wasActive && evidence) {
-        evidence.classList.add("visible");
-        row.classList.add("active");
+    // Web rings
+    for (let r = 1; r <= rings; r++) {
+      const frac = r / rings;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const p = pointAt(i, frac);
+        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
       }
-    });
+      ctx.closePath();
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Spokes
+    for (let i = 0; i < n; i++) {
+      const p = pointAt(i, 1);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Neutral ring (0.5 = baseline)
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const p = pointAt(i, 0.5);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Data polygon
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const p = pointAt(i, data[i].value);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "rgba(232, 163, 23, 0.15)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(232, 163, 23, 0.8)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Data points + Labels
+    for (let i = 0; i < n; i++) {
+      const dp = pointAt(i, data[i].value);
+      const isHighlight = highlightIdx === i;
+
+      // Point
+      ctx.beginPath();
+      ctx.arc(dp.x, dp.y, isHighlight ? 5 : 3, 0, Math.PI * 2);
+      ctx.fillStyle = isHighlight ? "#e8a317" : "rgba(232, 163, 23, 0.9)";
+      ctx.fill();
+
+      // Label
+      const lp = pointAt(i, 1.15);
+      ctx.font = `${isHighlight ? "bold " : ""}${isHighlight ? "12" : "10"}px 'Space Grotesk', sans-serif`;
+      ctx.fillStyle = isHighlight ? "#e8a317" : "rgba(229,229,229,0.7)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(data[i].genre, lp.x, lp.y);
+    }
+  }
+
+  draw(-1);
+
+  // Interaction: find nearest axis on mouse/touch
+  function getNearest(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    let minDist = Infinity, nearest = -1;
+    for (let i = 0; i < n; i++) {
+      const p = pointAt(i, data[i].value);
+      const d = Math.hypot(mx - p.x, my - p.y);
+      if (d < minDist) { minDist = d; nearest = i; }
+    }
+    return minDist < 40 ? nearest : -1;
+  }
+
+  function showDetail(idx) {
+    const detail = document.getElementById("radar-detail");
+    if (!detail) return;
+    if (idx < 0) {
+      detail.textContent = "";
+      return;
+    }
+    const g = data[idx];
+    const deltaSign = g.delta >= 0 ? "+" : "";
+    const deltaStr = `${deltaSign}${Math.round(g.delta * 100)}%`;
+    detail.textContent = `${g.genre}: You ${g.userRate}% (${g.wins}\u2013${g.losses}) | Crowd ${g.globalRate}% | Delta ${deltaStr}`;
+  }
+
+  let activeIdx = -1;
+
+  canvas.addEventListener("mousemove", e => {
+    const idx = getNearest(e.clientX, e.clientY);
+    if (idx !== activeIdx) {
+      activeIdx = idx;
+      draw(idx);
+      showDetail(idx);
+    }
   });
 
-  // Clear on mouse leave from chart
-  const chart = el.querySelector(".taste-chart");
-  if (chart) {
-    chart.addEventListener("mouseleave", () => {
-      el.querySelectorAll(".taste-chart-evidence.visible").forEach(e => e.classList.remove("visible"));
-      el.querySelectorAll(".taste-chart-row.active").forEach(r => r.classList.remove("active"));
-    });
-  }
+  canvas.addEventListener("mouseleave", () => {
+    activeIdx = -1;
+    draw(-1);
+    showDetail(-1);
+  });
+
+  canvas.addEventListener("click", e => {
+    const idx = getNearest(e.clientX, e.clientY);
+    activeIdx = idx;
+    draw(idx);
+    showDetail(idx);
+  });
 }
 
 // ==========================================
@@ -933,56 +1005,6 @@ function renderBreakFromCrowd(breakData) {
 }
 
 // ==========================================
-// UI — RENDER TASTE TIER
-// ==========================================
-
-function renderTasteTier(tierData) {
-  const el = document.getElementById("taste-tier-content");
-  if (!el) return;
-
-  let html = '<div class="tier-wrap">';
-
-  // Badge
-  html += `<div class="tier-badge">
-    <div class="tier-badge-name">${tierData.tierName}</div>
-  </div>`;
-
-  // Progress toward next tier
-  if (tierData.nextTier) {
-    html += `<div class="tier-progress-wrap">
-      <div class="tier-progress-label">Progress toward <strong>${tierData.nextTier}</strong></div>
-      <div class="tier-progress-track">
-        <div class="tier-progress-fill" style="width:${tierData.progress}%"></div>
-      </div>
-      <div class="tier-progress-pct">${tierData.progress}%</div>
-    </div>`;
-  } else {
-    html += '<div class="tier-progress-label">You\'ve reached the highest tier.</div>';
-  }
-
-  // Grounding stats
-  html += '<div class="tier-stats">';
-  html += `<div class="profile-stat">
-    <span class="profile-stat-val">${tierData.voteCount}</span>
-    <span class="profile-stat-label">Total Votes</span>
-  </div>`;
-  html += `<div class="profile-stat">
-    <span class="profile-stat-val">${tierData.uniqueMovies}</span>
-    <span class="profile-stat-label">Movies Compared</span>
-  </div>`;
-  html += `<div class="profile-stat">
-    <span class="profile-stat-val">${tierData.coveragePct}%</span>
-    <span class="profile-stat-label">Catalogue Coverage</span>
-  </div>`;
-  html += '</div>';
-
-  html += '<div class="tier-explainer">Built from your vote volume and how broadly you\'ve compared the catalogue.</div>';
-  html += '</div>';
-
-  el.innerHTML = html;
-}
-
-// ==========================================
 // INIT
 // ==========================================
 
@@ -1008,7 +1030,6 @@ async function loadEngine(user) {
     renderRecommendations(data.allScored);
     renderTasteProfileChart(data.genrePreferences);
     renderBreakFromCrowd(data.breakFromCrowd);
-    renderTasteTier(data.tierData);
   } catch (err) {
     console.error("Engine error:", err);
     renderStatus("Something went wrong loading recommendations.", true);
@@ -1029,8 +1050,6 @@ window.addEventListener("load", () => {
       if (tasteEl) tasteEl.innerHTML = '<div class="engine-empty">Log in and vote to build your taste profile.</div>';
       const crowdEl = document.getElementById("break-crowd-content");
       if (crowdEl) crowdEl.innerHTML = '<div class="engine-empty">Log in and vote to see how your taste differs.</div>';
-      const tierEl = document.getElementById("taste-tier-content");
-      if (tierEl) tierEl.innerHTML = '<div class="engine-empty">Log in to see your taste tier.</div>';
     }
   });
 });
