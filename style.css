@@ -34,6 +34,11 @@
   --color-text-2: #6b6560;
   --color-text-3: #4a4540;
 
+  /* Indigo — TV standby glow */
+  --color-indigo: #4a6cf7;
+  --color-indigo-dim: rgba(74, 108, 247, 0.3);
+  --color-indigo-glow: rgba(74, 108, 247, 0.08);
+
   /* Burgundy / oxblood — cinema curtain tension */
   --color-burgundy: #5c3a3a;
   --color-burgundy-light: #6e4848;
@@ -232,7 +237,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   text-align: center;
   padding: var(--s-8) var(--s-4) var(--s-5);
   position: relative;
-  background: #0b1018;
+  background: radial-gradient(ellipse at 50% 100%, var(--color-indigo-glow) 0%, #0b1018 70%);
   border-bottom: none;
 }
 
@@ -339,12 +344,12 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 
 .nav-links li a:hover {
   color: var(--color-text-0);
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-indigo-dim);
 }
 
 .nav-links li a.active {
-  color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
+  color: var(--color-indigo);
+  border-bottom-color: var(--color-indigo);
 }
 
 
@@ -567,6 +572,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .poster:hover {
   border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 40px rgba(180, 150, 100, 0.08), 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 20px var(--color-indigo-glow);
 }
 
 /* Brief highlight on the chosen poster before transition */
@@ -593,6 +599,26 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: var(--fs-0);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.08em;
+}
+
+/* "Remind Me" link — opens info modal */
+.btn-remind {
+  background: none;
+  border: none;
+  color: var(--color-indigo);
+  font-family: inherit;
+  font-size: var(--fs-0);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+
+.btn-remind:hover {
+  text-decoration: underline;
+  color: var(--color-text-0);
 }
 
 /* Haven't Seen button */
@@ -1209,6 +1235,10 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .movie-year {
+    font-size: 0.65rem;
+  }
+
+  .btn-remind {
     font-size: 0.65rem;
   }
 
@@ -2256,6 +2286,13 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: var(--fs-0);
   color: var(--color-accent);
   font-weight: var(--fw-bold);
+}
+
+.info-modal-cast {
+  font-size: var(--fs-0);
+  color: var(--color-text-1);
+  margin-bottom: var(--s-4);
+  line-height: 1.6;
 }
 
 .info-modal-trailer-btn {

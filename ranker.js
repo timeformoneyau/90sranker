@@ -157,14 +157,16 @@ async function fetchMovieInfo(title, year) {
   const movieId = searchData.results?.[0]?.id;
   if (!movieId) throw new Error("Movie not found on TMDB");
 
-  // Fetch details and videos in parallel
-  const [detailRes, videosRes] = await Promise.all([
+  // Fetch details, videos, and credits in parallel
+  const [detailRes, videosRes, creditsRes] = await Promise.all([
     fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`),
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`)
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`),
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`)
   ]);
 
   const detail = await detailRes.json();
   const videos = await videosRes.json();
+  const credits = await creditsRes.json();
 
   // Find YouTube trailer
   const trailer = videos.results?.find(
@@ -176,7 +178,8 @@ async function fetchMovieInfo(title, year) {
     genres: (detail.genres || []).map(g => g.name),
     runtime: detail.runtime || null,
     rating: detail.vote_average || null,
-    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null
+    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
+    cast: (credits.cast || []).slice(0, 5).map(c => c.name)
   };
 
   movieInfoCache[cacheKey] = info;
@@ -222,6 +225,11 @@ async function showMovieInfo(choice) {
       html += `<span class="info-modal-rating">★ ${info.rating.toFixed(1)}</span>`;
     }
     html += '</div>';
+
+    // Cast
+    if (info.cast && info.cast.length > 0) {
+      html += `<div class="info-modal-cast">Cast: ${info.cast.join(', ')}</div>`;
+    }
 
     // Trailer button
     if (info.trailerUrl) {
@@ -393,7 +401,7 @@ async function replaceMovie(oldMovie) {
 function setMatchupButtonsDisabled(disabled) {
   const section = document.getElementById("compare-section");
   if (!section) return;
-  section.querySelectorAll(".btn-select, .btn-undecided, .btn-unseen").forEach(btn => {
+  section.querySelectorAll(".btn-select, .btn-undecided, .btn-unseen, .btn-remind").forEach(btn => {
     btn.disabled = disabled;
   });
 }
