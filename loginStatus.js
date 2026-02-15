@@ -1,4 +1,4 @@
-// loginStatus.js — Populates the membership card with auth info + username overlay
+// loginStatus.js — Populates the account indicator with auth info + username overlay
 import { auth, db, doc, getDoc, setDoc, signOut } from "./firebase.js";
 
 const ADMIN_EMAIL = "mjreardon62@gmail.com";
@@ -78,9 +78,8 @@ function showUsernameOverlay(user) {
       });
       await setDoc(doc(db, "users", user.uid), { username: username }, { merge: true });
 
-      // Update member card
-      const memberName = document.getElementById("member-name");
-      if (memberName) memberName.textContent = username.toUpperCase();
+      // Update account indicator
+      updateAccountIndicator(username, user);
 
       // Remove overlay
       backdrop.remove();
@@ -104,9 +103,39 @@ function removeUsernameOverlay() {
   if (overlay) overlay.remove();
 }
 
+function updateAccountIndicator(displayName, user) {
+  const indicator = document.getElementById("account-indicator");
+  if (!indicator) return;
+
+  if (!user) {
+    indicator.innerHTML = '';
+    return;
+  }
+
+  // Determine member since year from metadata
+  const createdAt = user.metadata?.creationTime;
+  const memberYear = createdAt ? new Date(createdAt).getFullYear() : '';
+  const metaText = memberYear ? `Member since ${memberYear}` : '';
+
+  indicator.innerHTML = `
+    <div class="account-indicator-name">${displayName}</div>
+    <div class="account-indicator-meta">${metaText}</div>
+    <button class="account-indicator-logout" id="indicator-logout">Log out</button>
+  `;
+
+  const logoutBtn = document.getElementById("indicator-logout");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut();
+      } catch (err) {
+        console.error("[loginStatus] Logout failed:", err);
+      }
+    });
+  }
+}
+
 export function updateLoginStatus() {
-  const memberName = document.getElementById("member-name");
-  const memberLogout = document.getElementById("member-logout");
   const accountNavLink = document.querySelector('nav a[href="account.html"]');
   const adminNavLink = document.getElementById("admin-nav-link");
 
@@ -114,10 +143,6 @@ export function updateLoginStatus() {
     // Update the navigation link text
     if (accountNavLink) {
       accountNavLink.textContent = user ? "Your Account" : "Log In";
-    }
-
-    if (memberLogout) {
-      memberLogout.style.display = user ? "inline-block" : "none";
     }
 
     // Show admin link only for admin email
@@ -135,31 +160,18 @@ export function updateLoginStatus() {
         console.error("[loginStatus] Failed to fetch username:", err);
       }
 
-      if (memberName) {
-        memberName.textContent = username ? username.toUpperCase() : user.email.split("@")[0].toUpperCase();
-      }
+      const displayName = username || user.email.split("@")[0];
+      updateAccountIndicator(displayName, user);
 
       // If no username, show blocking overlay (except on account page)
       if (!username && !window.location.pathname.includes("account.html")) {
         showUsernameOverlay(user);
       }
     } else {
-      if (memberName) memberName.textContent = "GUEST";
+      updateAccountIndicator(null, null);
       removeUsernameOverlay();
     }
   });
-
-  // Wire the logout button on the card
-  if (memberLogout) {
-    memberLogout.addEventListener("click", async () => {
-      try {
-        await signOut();
-      } catch (err) {
-        console.error("[loginStatus] Logout failed:", err);
-        alert("Logout failed: " + err.message);
-      }
-    });
-  }
 }
 
 // Immediately run it

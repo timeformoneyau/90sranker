@@ -20,7 +20,6 @@ import {
   where
 } from "./firebase.js";
 
-import confetti from "https://esm.sh/canvas-confetti";
 import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
@@ -413,11 +412,21 @@ async function handleVote(choice) {
   // 4. Update vote counter
   updateVoteCounter();
 
-  // 4. Celebrate!
-  triggerConfetti(choice);
+  // 4. Load next matchup with subtle fade
+  const blockA = document.getElementById("movieA-block");
+  const blockB = document.getElementById("movieB-block");
+  if (blockA) blockA.classList.add("matchup-fade-out");
+  if (blockB) blockB.classList.add("matchup-fade-out");
 
-  // 5. Load next matchup
-  setTimeout(() => chooseTwoMovies(), 1200);
+  setTimeout(() => {
+    chooseTwoMovies();
+    if (blockA) { blockA.classList.remove("matchup-fade-out"); blockA.classList.add("matchup-fade-in"); }
+    if (blockB) { blockB.classList.remove("matchup-fade-out"); blockB.classList.add("matchup-fade-in"); }
+    setTimeout(() => {
+      if (blockA) blockA.classList.remove("matchup-fade-in");
+      if (blockB) blockB.classList.remove("matchup-fade-in");
+    }, 500);
+  }, 500);
 }
 
 /**
@@ -450,78 +459,13 @@ async function saveVoteToFirestore(winner, loser) {
   }
 }
 
-/**
- * Trigger confetti from winning poster + dance animation
- */
-function triggerConfetti(choice) {
-  const poster = document.getElementById(choice === "A" ? "posterA" : "posterB");
-  const rect = poster.getBoundingClientRect();
-  const x = (rect.left + rect.width / 2) / window.innerWidth;
-  const y = (rect.top + rect.height / 2) / window.innerHeight;
-
-  confetti({
-    particleCount: 100,
-    spread: 70,
-    origin: { x, y }
-  });
-
-  poster.classList.add("poster-dance");
-  poster.addEventListener("animationend", () => {
-    poster.classList.remove("poster-dance");
-  }, { once: true });
-}
 
 // ==========================================
 // UNSEEN MOVIE HANDLING
 // ==========================================
 
 /**
- * Spawn smoke particles around an element
- */
-function spawnSmokeParticles(block) {
-  const rect = block.getBoundingClientRect();
-  const centerX = rect.width / 2;
-  const centerY = rect.height / 3; // bias toward poster area
-
-  const count = 12;
-  const particles = [];
-
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement("div");
-    el.className = "smoke-particle";
-
-    // Random drift direction
-    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
-    const dist = 40 + Math.random() * 80;
-    const dx = Math.cos(angle) * dist;
-    const dy = Math.sin(angle) * dist - 30; // bias upward
-    const scale = 1.5 + Math.random() * 2;
-    const duration = 500 + Math.random() * 400;
-    const size = 20 + Math.random() * 25;
-
-    el.style.cssText = `
-      left: ${centerX - size / 2}px;
-      top: ${centerY - size / 2}px;
-      width: ${size}px;
-      height: ${size}px;
-      --smoke-x: ${dx}px;
-      --smoke-y: ${dy}px;
-      --smoke-scale: ${scale};
-      --smoke-duration: ${duration}ms;
-    `;
-
-    block.appendChild(el);
-    particles.push(el);
-  }
-
-  // Clean up after longest particle finishes
-  setTimeout(() => {
-    particles.forEach(p => p.remove());
-  }, 1000);
-}
-
-/**
- * Mark a movie as unseen with poof animation
+ * Mark a movie as unseen with cinematic fade animation
  */
 async function handleMarkUnseen(movie) {
   if (!movie) {
@@ -546,27 +490,23 @@ async function handleMarkUnseen(movie) {
   await saveUnseenToFirestore(movieKey);
   console.log(`Marked as unseen: ${movie.title}`);
 
-  // Animate: smoke particles + poof out, then swap + fade in
+  // Animate: cinematic fade out, then swap + fade in
   if (block) {
-    block.style.position = "relative";
-    block.style.overflow = "visible";
-    spawnSmokeParticles(block);
-    block.classList.add("poof-out");
+    block.classList.add("matchup-fade-out");
 
-    // Wait for poof-out to finish
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for fade-out to finish
+    await new Promise(resolve => setTimeout(resolve, 450));
 
-    // Hold invisible while we swap content (prevent flash-back)
     block.style.opacity = "0";
-    block.classList.remove("poof-out");
+    block.classList.remove("matchup-fade-out");
 
     await replaceMovie(movie);
 
     // Fade the new movie in
     block.style.opacity = "";
-    block.classList.add("poof-in");
+    block.classList.add("matchup-fade-in");
     block.addEventListener("animationend", () => {
-      block.classList.remove("poof-in");
+      block.classList.remove("matchup-fade-in");
     }, { once: true });
   } else {
     replaceMovie(movie);
@@ -764,10 +704,10 @@ function makeToughCallId(keyA, keyB) {
 }
 
 /**
- * Flag the current matchup as a "Tough Call" — sends it to the community queue.
- * Does NOT count as a vote. Advances to next matchup.
+ * Mark the current matchup as "Undecided" — sends it to the community queue.
+ * Does NOT count as a vote. Advances to next matchup with cinematic fade.
  */
-async function handleFlagToughCall() {
+async function handleUndecided() {
   const { A, B } = state.currentMovies;
   if (!A || !B) return;
 
@@ -817,8 +757,20 @@ async function handleFlagToughCall() {
     }).catch(err => console.error("Failed to flag tough call:", err));
   }
 
-  // Advance to next matchup
-  chooseTwoMovies();
+  // Cinematic fade out → advance → fade in
+  const section = document.getElementById("compare-section");
+  if (section) {
+    section.classList.add("matchup-fade-out");
+    await new Promise(r => setTimeout(r, 450));
+    chooseTwoMovies();
+    section.classList.remove("matchup-fade-out");
+    section.classList.add("matchup-fade-in");
+    section.addEventListener("animationend", () => {
+      section.classList.remove("matchup-fade-in");
+    }, { once: true });
+  } else {
+    chooseTwoMovies();
+  }
 }
 
 // ==========================================
@@ -829,7 +781,7 @@ window.vote = handleVote;
 window.markUnseen = handleMarkUnseen;
 window.showMovieInfo = showMovieInfo;
 window.closeMovieInfo = closeMovieInfo;
-window.flagToughCall = handleFlagToughCall;
+window.handleUndecided = handleUndecided;
 
 // Expose movie objects for backwards compatibility
 Object.defineProperty(window, 'movieA', {
