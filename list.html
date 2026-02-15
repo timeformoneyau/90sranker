@@ -12,7 +12,13 @@
   <!-- Header -->
   <header class="site-header">
     <div class="account-indicator" id="account-indicator"></div>
-    <div class="site-title">THE REWIND ROOM</div>
+    <div class="site-title-row">
+      <div class="site-title">THE REWIND ROOM</div>
+      <svg class="site-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon points="24,6 4,24 24,42" fill="var(--color-indigo)"/>
+        <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
+      </svg>
+    </div>
     <p class="site-subtitle">Your 90s movie showdowns, tallied and tracked.</p>
   </header>
 
@@ -21,7 +27,6 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html" class="active">Voting Results</a></li>
-      <li><a href="mikes-picks.html">Mike's Picks</a></li>
       <li><a href="engine.html">Recommended For You</a></li>
       <li><a href="toughCalls.html">Undecided Votes</a></li>
       <li style="display:none"><a href="unseen.html">Haven't Seen</a></li>
@@ -49,6 +54,7 @@
       <button class="results-tab" data-tab="personal">Your Rankings</button>
       <button class="results-tab" data-tab="recent">Recent Votes</button>
       <button class="results-tab" data-tab="toughcalls">Undecided Votes</button>
+      <button class="results-tab" data-tab="michaels">Michael's Rankings</button>
     </div>
 
     <!-- ===== GLOBAL TAB ===== -->
@@ -191,6 +197,36 @@
       </div>
       <div class="tc-results-grid" id="toughcalls-grid"></div>
       <div class="results-cards" id="toughcalls-cards"></div>
+    </div>
+
+    <!-- ===== MICHAEL'S RANKINGS TAB ===== -->
+    <div class="results-panel" id="panel-michaels">
+      <div class="results-meta">
+        <span id="michaels-status">Loading Michael's rankings...</span>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="results-table-wrap">
+        <table class="results-table" id="michaels-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played by Michael">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+              <th class="col-num" title="This movie's rank in the global rankings">Global #</th>
+              <th class="col-num" title="TMDB community rating">Rating</th>
+            </tr>
+          </thead>
+          <tbody id="michaels-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="results-cards" id="michaels-cards"></div>
     </div>
 
     <a href="index.html" class="back-link">Back to Home</a>

@@ -237,21 +237,35 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   text-align: center;
   padding: var(--s-8) var(--s-4) var(--s-5);
   position: relative;
-  background: radial-gradient(ellipse at 50% 100%, var(--color-indigo-glow) 0%, #0b1018 70%);
+  background: linear-gradient(180deg, #1a2560 0%, #0f1a3d 60%, #0b1018 100%);
   border-bottom: none;
 }
 
 .site-header::after { display: none; }
 
-/* SITE TITLE — serif, clean, no box decoration */
+/* SITE TITLE — clean geometric sans */
+.site-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+}
+
 .site-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-family);
   color: var(--color-text-0);
   font-size: clamp(2.2rem, 10vw, var(--fs-8));
-  font-weight: var(--fw-regular);
+  font-weight: var(--fw-black);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: var(--s-2);
+}
+
+.site-logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(74, 108, 247, 0.4));
 }
 
 .site-subtitle {
@@ -1185,6 +1199,15 @@ tbody tr:last-child td { border-bottom: none; }
   .site-title {
     font-size: clamp(1.6rem, 9vw, 2.4rem);
     letter-spacing: 0.15em;
+  }
+
+  .site-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .site-title-row {
+    gap: var(--s-2);
   }
 
   .site-subtitle {
