@@ -160,8 +160,11 @@
         <p class="subtext">Log in or create a new account to save your movie rankings.</p>
 
         <form id="login-form">
-          <input type="email" id="email" placeholder="Email" required>
+          <input type="text" id="email" placeholder="Email or Username" required>
           <input type="password" id="password" placeholder="Password" required>
+          <div id="signup-fields" class="hidden">
+            <input type="text" id="username" placeholder="Choose a Username (3-20 chars, letters/numbers/_)" maxlength="20">
+          </div>
           <button type="submit" id="login-button">Log In</button>
         </form>
 
@@ -190,6 +193,7 @@
       <!-- Logged-in state -->
       <div id="account-logged-in" class="hidden">
         <h2>Your Account</h2>
+        <p id="user-username" class="subtext" style="font-weight:600; color:#e5e5e5;"></p>
         <p id="user-email" class="subtext"></p>
         <button id="logout-button">Log Out</button>
       </div>

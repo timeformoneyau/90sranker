@@ -2746,3 +2746,115 @@ tbody tr:last-child td { border-bottom: none; }
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+/* =========================================================
+   USERNAME OVERLAY (blocking modal for users without username)
+   ========================================================= */
+
+.username-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.username-overlay-modal {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+
+/* =========================================================
+   ADMIN USER MANAGEMENT
+   ========================================================= */
+
+.admin-username-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-username-text {
+  font-weight: var(--fw-semibold);
+}
+
+.admin-btn {
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.admin-btn-edit {
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+}
+
+.admin-btn-edit:hover {
+  border-color: var(--color-accent);
+  background: rgba(232, 163, 23, 0.1);
+}
+
+.admin-btn-save {
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  color: #fff;
+}
+
+.admin-btn-save:hover {
+  background: var(--color-primary-dark);
+}
+
+.admin-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-btn-cancel {
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-2);
+}
+
+.admin-btn-cancel:hover {
+  border-color: var(--color-text-1);
+  color: var(--color-text-1);
+}
+
+.admin-btn-reset {
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-1);
+}
+
+.admin-btn-reset:hover {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+.admin-btn-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-action-status {
+  font-size: 0.75rem;
+  font-weight: var(--fw-bold);
+  margin-left: 0.5rem;
+}

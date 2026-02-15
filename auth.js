@@ -80,8 +80,11 @@ const loggedInView      = document.getElementById('account-logged-in');
 const resetPasswordForm = document.getElementById('reset-password-form');
 const emailInput        = document.getElementById('email');
 const passwordInput     = document.getElementById('password');
+const usernameInput     = document.getElementById('username');
 const resetEmailInput   = document.getElementById('reset-email');
 const userEmailDisplay  = document.getElementById('user-email');
+const userUsernameDisplay = document.getElementById('user-username');
+const signupFields      = document.getElementById('signup-fields');
 
 // Autofocus email field on page load
 window.addEventListener('DOMContentLoaded', () => {
@@ -144,16 +147,38 @@ if (resetForm) {
   });
 }
 
-// Immediate signup when clicking "Create one"
+// Username validation helper
+function validateUsername(username) {
+  if (!username) return 'Please enter a username.';
+  if (username.length < 3 || username.length > 20) return 'Username must be 3-20 characters.';
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores.';
+  return null;
+}
+
+// Signup flow: first click shows username field, second click creates account
+let signupMode = false;
+
 if (signupTrigger) {
   signupTrigger.addEventListener('click', async (e) => {
     e.preventDefault();
 
+    // First click: reveal the username field and switch to signup mode
+    if (!signupMode) {
+      signupMode = true;
+      if (signupFields) signupFields.classList.remove('hidden');
+      if (usernameInput) usernameInput.focus();
+      signupTrigger.textContent = 'Create Account';
+      if (loginButton) loginButton.textContent = 'Back to Log In';
+      return;
+    }
+
+    // Second click: perform signup
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
+    const username = usernameInput ? usernameInput.value.trim() : '';
 
     if (!email || !password) {
-      showStatus('Please enter your email and password first.', true);
+      showStatus('Please enter your email and password.', true);
       return;
     }
 
@@ -162,8 +187,33 @@ if (signupTrigger) {
       return;
     }
 
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      showStatus(usernameError, true);
+      return;
+    }
+
+    // Check username uniqueness
     try {
-      await signUp(email, password);
+      const usernameDoc = await getDoc(doc(db, "usernames", username.toLowerCase()));
+      if (usernameDoc.exists()) {
+        showStatus('That username is already taken. Please choose another.', true);
+        return;
+      }
+    } catch (err) {
+      console.error('Username check failed', err);
+      showStatus('Error checking username availability. Please try again.', true);
+      return;
+    }
+
+    try {
+      const cred = await signUp(email, password);
+      // Save username to both collections
+      await setDoc(doc(db, "usernames", username.toLowerCase()), {
+        uid: cred.user.uid,
+        email: email
+      });
+      await setDoc(doc(db, "users", cred.user.uid), { username: username }, { merge: true });
       showStatus('Account created successfully! You are now logged in.');
     } catch (err) {
       console.error('Signup failed', err);
@@ -182,24 +232,52 @@ if (signupTrigger) {
   });
 }
 
-// Normal login on form submit
+// Normal login on form submit (supports email or username)
 if (form) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const email = emailInput.value.trim();
+    // If in signup mode, clicking "Back to Log In" resets to login mode
+    if (signupMode) {
+      signupMode = false;
+      if (signupFields) signupFields.classList.add('hidden');
+      if (usernameInput) usernameInput.value = '';
+      signupTrigger.textContent = 'Create one';
+      if (loginButton) loginButton.textContent = 'Log In';
+      return;
+    }
+
+    const emailOrUsername = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
+    let loginEmail = emailOrUsername;
+
+    // If no @ sign, treat as username and look up the email
+    if (!emailOrUsername.includes('@')) {
+      try {
+        const usernameDoc = await getDoc(doc(db, "usernames", emailOrUsername.toLowerCase()));
+        if (!usernameDoc.exists()) {
+          showStatus('Invalid username or password.', true);
+          return;
+        }
+        loginEmail = usernameDoc.data().email;
+      } catch (err) {
+        console.error('Username lookup failed', err);
+        showStatus('Login failed. Please try again.', true);
+        return;
+      }
+    }
+
     try {
-      await signIn(email, password);
+      await signIn(loginEmail, password);
       showStatus('Successfully logged in!');
     } catch (err) {
       console.error('Login failed', err);
       let errorMessage = 'Login failed: ';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        errorMessage += 'Invalid email or password.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        errorMessage += 'Invalid email/username or password.';
       } else if (err.code === 'auth/invalid-email') {
-        errorMessage += 'Please enter a valid email address.';
+        errorMessage += 'Please enter a valid email address or username.';
       } else if (err.code === 'auth/too-many-requests') {
         errorMessage += 'Too many failed attempts. Please try again later.';
       } else {
@@ -226,7 +304,7 @@ if (logoutButton) {
 }
 
 // Auth state listener
-onAuth((user) => {
+onAuth(async (user) => {
   if (loggedOutView && loggedInView) {
     if (user) {
       loggedOutView.classList.add("hidden");
@@ -234,9 +312,24 @@ onAuth((user) => {
       if (userEmailDisplay) {
         userEmailDisplay.textContent = `Logged in as ${user.email}`;
       }
+      // Fetch and display username
+      if (userUsernameDisplay) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const username = userDoc.exists() ? userDoc.data().username : null;
+          userUsernameDisplay.textContent = username ? `Username: ${username}` : 'No username set';
+        } catch (err) {
+          console.error('Failed to fetch username', err);
+        }
+      }
     } else {
       loggedOutView.classList.remove("hidden");
       loggedInView.classList.add("hidden");
+      // Reset signup mode when logged out
+      signupMode = false;
+      if (signupFields) signupFields.classList.add('hidden');
+      if (signupTrigger) signupTrigger.textContent = 'Create one';
+      if (loginButton) loginButton.textContent = 'Log In';
       // Make sure reset form is hidden when logged out
       if (resetPasswordForm) resetPasswordForm.classList.add('hidden');
       if (form) form.style.display = 'block';
