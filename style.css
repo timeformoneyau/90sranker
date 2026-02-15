@@ -34,6 +34,13 @@
   --color-text-2: #6b6560;
   --color-text-3: #4a4540;
 
+  /* Burgundy / oxblood — cinema curtain tension */
+  --color-burgundy: #5c3a3a;
+  --color-burgundy-light: #6e4848;
+  --color-burgundy-dark: #4a2e2e;
+  --color-burgundy-dim: rgba(92, 58, 58, 0.4);
+  --color-burgundy-flash: rgba(92, 58, 58, 0.04);
+
   /* Semantic */
   --color-success: #22c55e;
   --color-warning: #eab308;
@@ -529,8 +536,21 @@ tbody tr:last-child td { border-bottom: none; }
   align-items: flex-end;
   justify-content: center;
   align-self: stretch;
+  position: relative;
   /* Push to the bottom of the poster area so it aligns with SELECT row */
   padding-bottom: calc(36px + var(--s-2)); /* height of Haven't Seen + gap */
+}
+
+/* Subtle center column vertical guide */
+.matchup-undecided::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: calc(36px + var(--s-2) + var(--tap-min) + var(--s-2));
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, var(--color-border) 30%, var(--color-border) 70%, transparent 100%);
+  opacity: 0.5;
 }
 
 /* Poster — the hero */
@@ -652,37 +672,57 @@ tbody tr:last-child td { border-bottom: none; }
   background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 
-/* Undecided button — outlined, secondary, smaller */
+/* Undecided button — deep burgundy, cinema-curtain tension */
 .btn-undecided {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 0.5rem 1.25rem;
+  min-height: var(--tap-min);
+  padding: 0.55rem 1.25rem;
   border-radius: var(--r-md);
-  border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--color-text-2);
+  border: 1px solid var(--color-burgundy-light);
+  background: linear-gradient(180deg, #6e4848 0%, var(--color-burgundy) 8%, var(--color-burgundy-dark) 100%);
+  color: #d4c4c4;
   font-family: inherit;
   font-size: var(--fs-0);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 80ms ease, border-color var(--t-base), color var(--t-base), box-shadow var(--t-base);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 80ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .btn-undecided:hover {
-  border-color: var(--color-text-1);
-  color: var(--color-text-1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, #7a5252 0%, var(--color-burgundy-light) 8%, var(--color-burgundy) 100%);
+  border-color: #8a5e5e;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
 .btn-undecided:active {
   transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, var(--color-burgundy) 0%, var(--color-burgundy-dark) 100%);
+}
+
+/* Burgundy overlay flash on undecided click */
+@keyframes burgundy-flash {
+  0%   { background-color: rgba(92, 58, 58, 0.06); }
+  100% { background-color: transparent; }
+}
+
+.burgundy-flash {
+  animation: burgundy-flash 350ms ease-out forwards;
+}
+
+/* Disabled state during transition — prevents double-clicks */
+.btn-select:disabled,
+.btn-undecided:disabled,
+.btn-unseen:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Vote counter */
@@ -1190,6 +1230,11 @@ tbody tr:last-child td { border-bottom: none; }
 
   .matchup-undecided {
     padding-bottom: calc(28px + var(--s-1));
+  }
+
+  .matchup-undecided::before {
+    top: 15%;
+    bottom: calc(28px + var(--s-1) + 36px + var(--s-1));
   }
 
   .btn-undecided {

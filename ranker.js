@@ -388,6 +388,17 @@ async function replaceMovie(oldMovie) {
 // ==========================================
 
 /**
+ * Disable/enable matchup buttons during transition to prevent double-clicks
+ */
+function setMatchupButtonsDisabled(disabled) {
+  const section = document.getElementById("compare-section");
+  if (!section) return;
+  section.querySelectorAll(".btn-select, .btn-undecided, .btn-unseen").forEach(btn => {
+    btn.disabled = disabled;
+  });
+}
+
+/**
  * Handle vote for a movie
  */
 async function handleVote(choice) {
@@ -412,7 +423,10 @@ async function handleVote(choice) {
   // 4. Update vote counter
   updateVoteCounter();
 
-  // 5. Brief highlight on chosen poster, then cinematic fade transition
+  // 5. Disable buttons to prevent double-clicks
+  setMatchupButtonsDisabled(true);
+
+  // 6. Brief highlight on chosen poster, then cinematic fade transition
   const chosenPoster = document.getElementById(choice === "A" ? "posterA" : "posterB");
   if (chosenPoster) chosenPoster.classList.add("poster-selected");
 
@@ -430,10 +444,12 @@ async function handleVote(choice) {
     section.classList.add("matchup-fade-in");
     section.addEventListener("animationend", () => {
       section.classList.remove("matchup-fade-in");
+      setMatchupButtonsDisabled(false);
     }, { once: true });
   } else {
     if (chosenPoster) chosenPoster.classList.remove("poster-selected");
     chooseTwoMovies();
+    setMatchupButtonsDisabled(false);
   }
 }
 
@@ -765,19 +781,26 @@ async function handleUndecided() {
     }).catch(err => console.error("Failed to flag tough call:", err));
   }
 
-  // Cinematic fade out → advance → fade in
+  // Disable buttons to prevent double-clicks
+  setMatchupButtonsDisabled(true);
+
+  // Cinematic fade out with subtle burgundy flash → advance → fade in
   const section = document.getElementById("compare-section");
   if (section) {
+    section.classList.add("burgundy-flash");
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
+    section.classList.remove("burgundy-flash");
     chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
     section.addEventListener("animationend", () => {
       section.classList.remove("matchup-fade-in");
+      setMatchupButtonsDisabled(false);
     }, { once: true });
   } else {
     chooseTwoMovies();
+    setMatchupButtonsDisabled(false);
   }
 }
 
