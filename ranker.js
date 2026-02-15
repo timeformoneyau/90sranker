@@ -412,21 +412,29 @@ async function handleVote(choice) {
   // 4. Update vote counter
   updateVoteCounter();
 
-  // 4. Load next matchup with subtle fade
-  const blockA = document.getElementById("movieA-block");
-  const blockB = document.getElementById("movieB-block");
-  if (blockA) blockA.classList.add("matchup-fade-out");
-  if (blockB) blockB.classList.add("matchup-fade-out");
+  // 5. Brief highlight on chosen poster, then cinematic fade transition
+  const chosenPoster = document.getElementById(choice === "A" ? "posterA" : "posterB");
+  if (chosenPoster) chosenPoster.classList.add("poster-selected");
 
-  setTimeout(() => {
+  const section = document.getElementById("compare-section");
+
+  // Wait for the highlight moment (150ms), then fade out
+  await new Promise(r => setTimeout(r, 150));
+
+  if (section) {
+    section.classList.add("matchup-fade-out");
+    await new Promise(r => setTimeout(r, 450));
+    if (chosenPoster) chosenPoster.classList.remove("poster-selected");
     chooseTwoMovies();
-    if (blockA) { blockA.classList.remove("matchup-fade-out"); blockA.classList.add("matchup-fade-in"); }
-    if (blockB) { blockB.classList.remove("matchup-fade-out"); blockB.classList.add("matchup-fade-in"); }
-    setTimeout(() => {
-      if (blockA) blockA.classList.remove("matchup-fade-in");
-      if (blockB) blockB.classList.remove("matchup-fade-in");
-    }, 500);
-  }, 500);
+    section.classList.remove("matchup-fade-out");
+    section.classList.add("matchup-fade-in");
+    section.addEventListener("animationend", () => {
+      section.classList.remove("matchup-fade-in");
+    }, { once: true });
+  } else {
+    if (chosenPoster) chosenPoster.classList.remove("poster-selected");
+    chooseTwoMovies();
+  }
 }
 
 /**

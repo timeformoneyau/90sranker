@@ -496,8 +496,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 #compare-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-6);
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0 var(--s-5);
   align-items: start;
   justify-items: center;
   padding: var(--s-6) var(--s-4) var(--s-4);
@@ -506,10 +506,31 @@ tbody tr:last-child td { border-bottom: none; }
 .movie-block {
   width: 100%;
   max-width: 360px;
-  display: grid;
-  gap: var(--s-3);
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  gap: var(--s-2);
+}
+
+/* Title + info icon row */
+.movie-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  width: 100%;
+  margin-top: var(--s-2);
+}
+
+/* Undecided sits in the center column, aligned with SELECT buttons */
+.matchup-undecided {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: stretch;
+  /* Push to the bottom of the poster area so it aligns with SELECT row */
+  padding-bottom: calc(36px + var(--s-2)); /* height of Haven't Seen + gap */
 }
 
 /* Poster — the hero */
@@ -517,31 +538,39 @@ tbody tr:last-child td { border-bottom: none; }
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border-radius: 0;
+  border-radius: var(--r-sm);
   background: var(--color-bg-2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-poster);
-  transition: opacity var(--t-base), border-color var(--t-base);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  transition: opacity var(--t-base), border-color var(--t-base), box-shadow var(--t-base);
 }
 
 .poster:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Brief highlight on the chosen poster before transition */
+.poster.poster-selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 0 2px var(--color-accent-dim);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .movie-title {
   margin: 0;
   font-family: var(--font-family);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-2);
   color: var(--color-text-0);
   letter-spacing: 0.02em;
   overflow-wrap: break-word;
+  line-height: var(--lh-tight);
 }
 
 .movie-year {
   margin: 0;
   color: var(--color-accent);
-  font-size: var(--fs-1);
+  font-size: var(--fs-0);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.15em;
 }
@@ -553,18 +582,18 @@ tbody tr:last-child td { border-bottom: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
+  min-height: 32px;
   width: 100%;
   max-width: 200px;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   border-radius: var(--r-md);
-  border: 1px solid var(--color-accent-dim);
-  background: rgba(196, 164, 106, 0.06);
-  color: var(--color-text-1);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-2);
   font-family: inherit;
-  font-size: var(--fs-0);
+  font-size: 0.7rem;
   font-weight: var(--fw-semibold);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition: transform var(--t-fast), border-color var(--t-base), color var(--t-base), background var(--t-base);
 }
@@ -572,9 +601,9 @@ tbody tr:last-child td { border-bottom: none; }
 .btn-unseen:hover,
 .movie-block .tertiary:hover,
 .movie-block .btn-haven-seen:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background: rgba(196, 164, 106, 0.12);
+  border-color: var(--color-text-1);
+  color: var(--color-text-1);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .btn-unseen:active,
@@ -588,65 +617,72 @@ tbody tr:last-child td { border-bottom: none; }
   display: none;
 }
 
-/* Matchup Actions Row (Select / Undecided / Select) */
-.matchup-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--s-4);
-  padding: var(--s-5) 0;
-}
-
+/* SELECT button — beveled depth, sits under each poster */
 .btn-select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: var(--tap-min);
-  padding: 0.7rem 1.5rem;
+  width: 100%;
+  max-width: 200px;
+  padding: 0.65rem 1.5rem;
   border-radius: var(--r-md);
   border: none;
-  background: var(--color-accent);
+  background: linear-gradient(180deg, #d4b87a 0%, var(--color-accent) 6%, var(--color-primary) 100%);
   color: var(--color-bg-0);
   font-family: inherit;
-  font-size: var(--fs-2);
+  font-size: var(--fs-1);
   font-weight: var(--fw-bold);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: transform var(--t-fast), background-color var(--t-base), opacity var(--t-base);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 80ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .btn-select:hover {
-  background: var(--color-primary-light);
+  background: linear-gradient(180deg, #dcc48a 0%, #cdb074 6%, var(--color-primary-light) 100%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .btn-select:active {
   transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 
+/* Undecided button — outlined, secondary, smaller */
 .btn-undecided {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--tap-min);
-  padding: 0.7rem 1.5rem;
+  min-height: 38px;
+  padding: 0.5rem 1.25rem;
   border-radius: var(--r-md);
-  border: 1px solid var(--color-accent-dim);
-  background: transparent;
-  color: var(--color-text-1);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-2);
   font-family: inherit;
-  font-size: var(--fs-2);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.03em;
+  font-size: var(--fs-0);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: transform var(--t-fast), border-color var(--t-base), color var(--t-base);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 80ms ease, border-color var(--t-base), color var(--t-base), box-shadow var(--t-base);
 }
 
 .btn-undecided:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--color-text-1);
+  color: var(--color-text-1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-undecided:active {
   transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Vote counter */
@@ -679,11 +715,11 @@ tbody tr:last-child td { border-bottom: none; }
 
 @keyframes matchup-fade-out {
   0%   { opacity: 1; transform: translateY(0); filter: blur(0); }
-  100% { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  100% { opacity: 0; transform: translateY(10px); filter: blur(2px); }
 }
 
 @keyframes matchup-fade-in {
-  0%   { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  0%   { opacity: 0; transform: translateY(-8px); filter: blur(2px); }
   100% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
@@ -1059,20 +1095,19 @@ tbody tr:last-child td { border-bottom: none; }
   :root { --container-pad: var(--s-6); }
 
   #compare-section {
-    column-gap: var(--s-10);
-    row-gap: var(--s-6);
+    column-gap: var(--s-6);
   }
 
   .movie-block {
-    max-width: 340px;
+    max-width: 320px;
   }
 
 }
 
 @media (min-width: 1024px) {
   :root { --container-pad: var(--s-8); }
-  #compare-section { column-gap: var(--s-10); }
-  .movie-block { max-width: 380px; }
+  #compare-section { column-gap: var(--s-8); }
+  .movie-block { max-width: 360px; }
 }
 
 /* Small screens */
@@ -1110,14 +1145,19 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   #compare-section {
-    grid-template-columns: 1fr 1fr;
-    column-gap: var(--s-2);
-    row-gap: var(--s-3);
+    grid-template-columns: 1fr auto 1fr;
+    column-gap: var(--s-1);
+    row-gap: 0;
     padding: var(--s-4) var(--s-2);
   }
 
   .movie-block {
-    gap: var(--s-2);
+    gap: var(--s-1);
+  }
+
+  .movie-title-row {
+    gap: var(--s-1);
+    margin-top: var(--s-1);
   }
 
   .poster {
@@ -1125,32 +1165,43 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .movie-title {
-    font-size: var(--fs-2);
+    font-size: var(--fs-1);
   }
 
   .movie-year {
-    font-size: var(--fs-0);
+    font-size: 0.65rem;
+  }
+
+  .btn-select {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.65rem;
+    max-width: 160px;
+    min-height: 36px;
   }
 
   .btn-unseen,
   .movie-block .tertiary,
   .movie-block .btn-haven-seen {
-    min-height: 30px;
-    padding: 0.35rem 0.5rem;
+    min-height: 28px;
+    padding: 0.3rem 0.5rem;
     font-size: 0.6rem;
-    max-width: 160px;
+    max-width: 140px;
   }
 
-  .matchup-actions {
-    flex-wrap: wrap;
-    gap: var(--s-2);
-    padding: var(--s-3) 0;
+  .matchup-undecided {
+    padding-bottom: calc(28px + var(--s-1));
   }
 
-  .btn-select,
   .btn-undecided {
-    padding: 0.5rem 1rem;
-    font-size: var(--fs-1);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.6rem;
+    min-height: 36px;
+  }
+
+  .btn-info {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
   }
 
   /* Results: swap table for cards on mobile */
@@ -1216,9 +1267,9 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   #compare-section {
-    grid-template-columns: 1fr 1fr;
-    column-gap: var(--s-5);
-    row-gap: var(--s-2);
+    grid-template-columns: 1fr auto 1fr;
+    column-gap: var(--s-3);
+    row-gap: 0;
     padding: var(--s-3) var(--s-4);
   }
 
@@ -1240,12 +1291,24 @@ tbody tr:last-child td { border-bottom: none; }
     font-size: var(--fs-0);
   }
 
+  .btn-select {
+    min-height: 32px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.6rem;
+  }
+
   .btn-unseen,
   .movie-block .tertiary,
   .movie-block .btn-haven-seen {
     min-height: 28px;
     padding: 0.3rem 0.5rem;
     font-size: 0.55rem;
+  }
+
+  .btn-info {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
   }
 }
 
@@ -2000,28 +2063,28 @@ tbody tr:last-child td { border-bottom: none; }
    15) MOVIE INFO MODAL
    ========================================================= */
 
-/* Info button on movie cards */
+/* Info button — small circle, inline with title */
 .btn-info {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   border-radius: var(--r-full);
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   color: var(--color-text-2);
-  font-size: var(--fs-2);
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: border-color var(--t-base), color var(--t-base), background var(--t-base);
+  transition: border-color var(--t-base), color var(--t-base);
   padding: 0;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .btn-info:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background: rgba(196, 164, 106, 0.1);
+  border-color: var(--color-text-1);
+  color: var(--color-text-0);
 }
 
 .btn-info:active {
@@ -2202,18 +2265,9 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .btn-info {
-    width: 28px;
-    height: 28px;
-    font-size: var(--fs-1);
-  }
-}
-
-/* Landscape info button */
-@media (max-height: 500px) and (orientation: landscape) {
-  .btn-info {
-    width: 26px;
-    height: 26px;
-    font-size: var(--fs-0);
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
   }
 }
 

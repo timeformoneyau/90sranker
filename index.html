@@ -39,29 +39,33 @@
       <!-- Movie A -->
       <div class="movie-block" id="movieA-block">
         <img src="" alt="Movie Poster A" id="posterA" class="poster" />
-        <div class="movie-title" id="movieA">Movie A</div>
+        <div class="movie-title-row">
+          <span class="movie-title" id="movieA">Movie A</span>
+          <button class="btn-info" onclick="showMovieInfo('A')" title="Movie Info">ⓘ</button>
+        </div>
         <div class="movie-year" id="movieA-year"></div>
+        <button class="btn-select" onclick="vote('A')">SELECT</button>
         <button class="btn-unseen" onclick="markUnseen(movieA)">Haven't Seen</button>
-        <button class="btn-info" onclick="showMovieInfo('A')" title="Movie Info">ⓘ</button>
+      </div>
+
+      <!-- Undecided (centered between columns) -->
+      <div class="matchup-undecided">
+        <button class="btn-undecided" onclick="handleUndecided()">Undecided</button>
       </div>
 
       <!-- Movie B -->
       <div class="movie-block" id="movieB-block">
         <img src="" alt="Movie Poster B" id="posterB" class="poster" />
-        <div class="movie-title" id="movieB">Movie B</div>
+        <div class="movie-title-row">
+          <span class="movie-title" id="movieB">Movie B</span>
+          <button class="btn-info" onclick="showMovieInfo('B')" title="Movie Info">ⓘ</button>
+        </div>
         <div class="movie-year" id="movieB-year"></div>
+        <button class="btn-select" onclick="vote('B')">SELECT</button>
         <button class="btn-unseen" onclick="markUnseen(movieB)">Haven't Seen</button>
-        <button class="btn-info" onclick="showMovieInfo('B')" title="Movie Info">ⓘ</button>
       </div>
 
     </section>
-
-    <!-- Matchup Actions -->
-    <div class="matchup-actions">
-      <button class="btn-select" onclick="vote('A')">Select Film A</button>
-      <button class="btn-undecided" onclick="handleUndecided()">Undecided</button>
-      <button class="btn-select" onclick="vote('B')">Select Film B</button>
-    </div>
 
     <!-- Movie Info Modal -->
     <div id="movie-info-modal" class="info-modal-backdrop hidden">
