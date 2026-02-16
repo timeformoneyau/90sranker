@@ -1,10 +1,8 @@
 import {
   db,
-  collection,
-  getDocs
+  doc,
+  getDoc
 } from "./firebase.js";
-
-import { buildKeyNormalizer } from "./movieKeys.js";
 
 // ==========================================
 // WILSON SCORE (same as list.js)
@@ -130,82 +128,55 @@ async function loadMikesPicks() {
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
-    // Load movie list for key normalization
-    let normalizeKey = (k) => k;
-    try {
-      const moviesRes = await fetch("movie_list_cleaned.json");
-      const allMovies = await moviesRes.json();
-      const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
-      normalizeKey = buildKeyNormalizer(movies);
-    } catch (e) {
-      console.warn("Could not load movie list for normalization:", e);
-    }
+    // Read stats/meta for Mike's UID + global stats (3 doc reads total)
+    const [metaSnap, globalSnap] = await Promise.all([
+      getDoc(doc(db, "stats", "meta")),
+      getDoc(doc(db, "stats", "global"))
+    ]);
 
-    const snap = await getDocs(collection(db, "votes"));
-
-    // Group votes by user to find Mike (most active voter)
-    const votesByUser = {};
-    const globalStats = {};
-
-    snap.forEach(doc => {
-      const { winner, loser, user } = doc.data();
-      if (!winner || !loser) return;
-      const w = normalizeKey(winner);
-      const l = normalizeKey(loser);
-
-      // Build global stats
-      globalStats[w] = globalStats[w] || { wins: 0, losses: 0 };
-      globalStats[l] = globalStats[l] || { wins: 0, losses: 0 };
-      globalStats[w].wins++;
-      globalStats[l].losses++;
-
-      // Group by user
-      if (user) {
-        votesByUser[user] = votesByUser[user] || { votes: 0, stats: {} };
-        votesByUser[user].votes++;
-        const s = votesByUser[user].stats;
-        s[w] = s[w] || { wins: 0, losses: 0 };
-        s[l] = s[l] || { wins: 0, losses: 0 };
-        s[w].wins++;
-        s[l].losses++;
-      }
-    });
-
-    // Find Mike — the user with the most votes
-    let mikeUid = null;
-    let maxVotes = 0;
-    for (const [uid, data] of Object.entries(votesByUser)) {
-      if (data.votes > maxVotes) {
-        maxVotes = data.votes;
-        mikeUid = uid;
-      }
-    }
+    const meta = metaSnap.exists() ? metaSnap.data() : {};
+    const mikeUid = meta.mikeUid;
 
     if (!mikeUid) {
-      statusEl.textContent = "No votes found.";
+      statusEl.textContent = "Mike's UID not configured.";
+      tbody.innerHTML = '<tr><td colspan="9" class="results-empty">Not available.</td></tr>';
+      cards.innerHTML = '<div class="results-empty">Not available.</div>';
+      return;
+    }
+
+    // Read Mike's per-user aggregate stats (1 read)
+    const mikeSnap = await getDoc(doc(db, "stats", `user_${mikeUid}`));
+    const mikeStats = mikeSnap.exists() ? (mikeSnap.data().stats || {}) : {};
+
+    if (Object.keys(mikeStats).length === 0) {
+      statusEl.textContent = "No votes found for Mike.";
       tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No votes found.</td></tr>';
       cards.innerHTML = '<div class="results-empty">No votes found.</div>';
       return;
     }
 
-    // Build global rankings
+    // Build global rank map from aggregate stats (0 extra reads)
+    const globalStats = globalSnap.exists() ? (globalSnap.data().stats || {}) : {};
     const globalRows = buildRankedData(globalStats);
     globalRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n);
     const globalRankMap = {};
     globalRows.forEach((r, i) => { globalRankMap[r.key] = i + 1; });
 
     // Build Mike's rankings
-    const mikeStats = votesByUser[mikeUid].stats;
     let mikeRows = buildRankedData(mikeStats);
     mikeRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n || b.wins - a.wins);
     mikeRows = mikeRows.slice(0, 15);
 
-    // Add global rank
     mikeRows.forEach(r => {
       r.globalRank = globalRankMap[r.key] || null;
     });
 
-    statusEl.textContent = `${maxVotes.toLocaleString()} total votes by Mike`;
+    // Count Mike's total votes from aggregate stats
+    let totalMikeVotes = 0;
+    for (const s of Object.values(mikeStats)) {
+      totalMikeVotes += (s.wins || 0);
+    }
+    statusEl.textContent = `${totalMikeVotes.toLocaleString()} total votes by Mike`;
 
     // Render immediately without ratings
     mikeRows.forEach(r => { r.tmdbRating = null; });
