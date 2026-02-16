@@ -14,7 +14,9 @@ import {
   getDoc,
   setDoc,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  collection,
+  getDocs
 } from "./firebase.js";
 
 import { makeMovieKey } from "./movieKeys.js";
@@ -43,6 +45,9 @@ const DISPLAY_COUNT = 10;
 
 // Cache the full engine output so we can pull replacements without re-fetching
 let cache = { uid: null, results: null };
+
+// Cache collaborative filtering data for the session (avoids re-fetching other users' stats)
+let collabCache = { uid: null, similarUsers: null };
 
 // The full ranked overflow list (everything beyond the visible 10)
 let overflowQueue = [];
@@ -165,24 +170,211 @@ function scoreCandidates(candidates, prefs) {
 }
 
 // ==========================================
+// PHASE 3 — COLLABORATIVE FILTERING
+// ==========================================
+
+function computeSimilarity(userStatsA, userStatsB) {
+  // Find shared movies both users have voted on
+  const shared = [];
+  for (const key of Object.keys(userStatsA)) {
+    if (userStatsB[key]) {
+      const a = userStatsA[key];
+      const b = userStatsB[key];
+      const aTotal = (a.wins || 0) + (a.losses || 0);
+      const bTotal = (b.wins || 0) + (b.losses || 0);
+      if (aTotal >= 2 && bTotal >= 2) {
+        shared.push({
+          aRate: (a.wins || 0) / aTotal,
+          bRate: (b.wins || 0) / bTotal
+        });
+      }
+    }
+  }
+
+  // Require minimum 10 shared movies for a meaningful comparison
+  if (shared.length < 10) return 0;
+
+  // Pearson-like correlation on win rates
+  const n = shared.length;
+  let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+  for (const { aRate, bRate } of shared) {
+    sumA += aRate;
+    sumB += bRate;
+    sumAB += aRate * bRate;
+    sumA2 += aRate * aRate;
+    sumB2 += bRate * bRate;
+  }
+
+  const numerator = n * sumAB - sumA * sumB;
+  const denominator = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
+
+  if (denominator === 0) return 0;
+  return Math.max(0, numerator / denominator); // Only positive correlations are useful
+}
+
+async function applyCollaborativeBoost(scoredCandidates, userStats, currentUid, movieMap) {
+  try {
+    let similarUsers;
+
+    // Use cached collab data if available for this user
+    if (collabCache.uid === currentUid && collabCache.similarUsers) {
+      similarUsers = collabCache.similarUsers;
+    } else {
+      // Fetch all user UIDs
+      const usersSnap = await getDocs(collection(db, "users"));
+      const otherUids = [];
+      usersSnap.forEach(d => {
+        if (d.id !== currentUid) otherUids.push(d.id);
+      });
+
+      // Cap at 20 other users
+      const uidsToCheck = otherUids.slice(0, 20);
+
+      // Fetch stats for each other user
+      const statsSnaps = await Promise.all(
+        uidsToCheck.map(uid => getDoc(doc(db, "stats", `user_${uid}`)))
+      );
+
+      // Compute similarity for each
+      const candidates = [];
+      for (let i = 0; i < uidsToCheck.length; i++) {
+        const snap = statsSnaps[i];
+        if (!snap.exists()) continue;
+        const otherStats = snap.data().stats || {};
+        const similarity = computeSimilarity(userStats, otherStats);
+        if (similarity > 0.1) {
+          candidates.push({ uid: uidsToCheck[i], similarity, stats: otherStats });
+        }
+      }
+
+      // Take top 5 most similar
+      candidates.sort((a, b) => b.similarity - a.similarity);
+      similarUsers = candidates.slice(0, 5);
+
+      // Cache for session
+      collabCache = { uid: currentUid, similarUsers };
+    }
+
+    console.log(`Collab filtering: found ${similarUsers.length} similar users`);
+
+    if (similarUsers.length === 0) return;
+
+    // Build set of movies the current user has voted on
+    const userVotedKeys = new Set(Object.keys(userStats));
+
+    // For each candidate movie, check if similar users love it
+    for (const item of scoredCandidates) {
+      const key = getMovieKey(item.movie);
+      if (userVotedKeys.has(key)) continue;
+
+      let boost = 0;
+      for (const { similarity, stats } of similarUsers) {
+        const movieStats = stats[key];
+        if (!movieStats) continue;
+        const w = movieStats.wins || 0;
+        const l = movieStats.losses || 0;
+        const total = w + l;
+        if (total < 3) continue;
+        const winRate = w / total;
+        if (winRate > 0.6) {
+          boost += similarity * winRate * 0.5;
+        }
+      }
+
+      item.communityBoost = boost;
+    }
+
+    // Re-sort by score + communityBoost
+    scoredCandidates.sort((a, b) => (b.score + b.communityBoost) - (a.score + a.communityBoost));
+  } catch (err) {
+    console.warn("Collaborative filtering failed (non-fatal):", err);
+  }
+}
+
+// ==========================================
+// PHASE 4 — DIVERSITY SELECTION
+// ==========================================
+
+function applyDiversitySelection(scoredItems, count) {
+  if (scoredItems.length <= count) return scoredItems;
+
+  // Sort by final score (score + communityBoost) descending
+  const pool = scoredItems.map(item => ({
+    ...item,
+    finalScore: item.score + (item.communityBoost || 0)
+  }));
+  pool.sort((a, b) => b.finalScore - a.finalScore);
+
+  const selected = [];
+  const selectedGenres = [];
+
+  // Always pick the #1 scored movie
+  selected.push(pool[0]);
+  if (pool[0].movie.genre) selectedGenres.push(pool[0].movie.genre);
+  pool.splice(0, 1);
+
+  // Greedily pick remaining slots with genre-diversity penalty
+  while (selected.length < count && pool.length > 0) {
+    let bestIdx = 0;
+    let bestPenalizedScore = -Infinity;
+
+    for (let i = 0; i < pool.length; i++) {
+      let penalized = pool[i].finalScore;
+      if (pool[i].movie.genre) {
+        const genreCount = selectedGenres.filter(g => g === pool[i].movie.genre).length;
+        penalized *= Math.pow(0.7, genreCount);
+      }
+      if (penalized > bestPenalizedScore) {
+        bestPenalizedScore = penalized;
+        bestIdx = i;
+      }
+    }
+
+    const pick = pool[bestIdx];
+    selected.push(pick);
+    if (pick.movie.genre) selectedGenres.push(pick.movie.genre);
+    pool.splice(bestIdx, 1);
+  }
+
+  return selected;
+}
+
+// ==========================================
 // REASON GENERATION
 // ==========================================
 
 function generateReason(item) {
+  const hasCollabBoost = (item.communityBoost || 0) > 0.1;
   const top = (item.contributions || [])[0];
+
+  // Pure collaborative signal — no strong attribute match
+  if (hasCollabBoost && (!top || top.value <= 0)) {
+    return "Loved by voters with similar taste to yours";
+  }
+
   if (!top || top.value <= 0) return "A 90s classic worth checking out";
 
   const [type, value] = top.key.split(":");
+
+  // Build the attribute reason
+  let attrReason;
   switch (type) {
-    case "genre":    return `Because you tend to prefer ${value.toLowerCase()} films`;
-    case "decade":   return `Matches your taste for ${value} era movies`;
-    case "tone":     return `Fits your preference for ${value} movies`;
-    case "category": return value === "cult"
+    case "genre":    attrReason = `Because you tend to prefer ${value.toLowerCase()} films`; break;
+    case "decade":   attrReason = `Matches your taste for ${value} era movies`; break;
+    case "tone":     attrReason = `Fits your preference for ${value} movies`; break;
+    case "category": attrReason = value === "cult"
                        ? "Right up your alley \u2014 a cult favorite"
-                       : "A crowd-pleasing pick based on your votes";
-    case "vibe":     return `Matches the ${value} vibe you gravitate toward`;
-    default:         return "Based on your voting history";
+                       : "A crowd-pleasing pick based on your votes"; break;
+    case "vibe":     attrReason = `Matches the ${value} vibe you gravitate toward`; break;
+    default:         attrReason = "Based on your voting history";
   }
+
+  // Combine attribute reason with collaborative signal
+  if (hasCollabBoost) {
+    return `${attrReason} \u2014 and similar voters love it`;
+  }
+
+  return attrReason;
 }
 
 // ==========================================
@@ -278,13 +470,24 @@ async function getRecommendationsForUser(userId) {
       })
       .sort((a, b) => b.score - a.score);
 
-    allScored = [...prefPicks, ...popular];
-    allScored.forEach(r => { if (!r.reason) r.reason = generateReason(r); });
+    const combined = [...prefPicks, ...popular];
+    combined.forEach(r => { if (!r.reason) r.reason = generateReason(r); });
+
+    // Apply diversity even for sparse users
+    allScored = applyDiversitySelection(combined, DISPLAY_COUNT * 3);
   } else {
     let scored = scoreCandidates(candidates, prefs);
-    scored.sort((a, b) => b.score - a.score);
-    scored.forEach(r => { r.reason = generateReason(r); });
-    allScored = scored;
+
+    // Phase 3 — Collaborative filtering
+    await applyCollaborativeBoost(scored, userStats, userId, movieMap);
+
+    // Phase 4 — Diversity selection
+    const diverse = applyDiversitySelection(scored, DISPLAY_COUNT * 3);
+
+    // Update reasons with collab signals
+    diverse.forEach(r => { r.reason = generateReason(r); });
+
+    allScored = diverse;
   }
 
   const tasteProfile = buildTasteProfile(prefs);
