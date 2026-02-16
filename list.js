@@ -474,8 +474,6 @@ async function loadToughCallsTab() {
 // MICHAEL'S RANKINGS TAB
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-
 async function fetchTmdbRating(title, year) {
   try {
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
