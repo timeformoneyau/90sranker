@@ -359,6 +359,12 @@ async function displayMovies() {
 
     document.getElementById("posterA").src = posterA;
     document.getElementById("posterB").src = posterB;
+
+    // Update poster button aria-labels with actual movie titles
+    const btnA = document.getElementById("posterBtnA");
+    const btnB = document.getElementById("posterBtnB");
+    if (btnA) btnA.setAttribute("aria-label", `Select ${A.title}`);
+    if (btnB) btnB.setAttribute("aria-label", `Select ${B.title}`);
   } catch (error) {
     console.error("Error displaying movies:", error);
   }
@@ -392,6 +398,47 @@ async function replaceMovie(oldMovie) {
 }
 
 // ==========================================
+// CONFETTI — lightweight DOM-based burst
+// ==========================================
+
+function spawnConfetti(originEl) {
+  // Respect prefers-reduced-motion
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * 0.3;
+
+  const container = document.createElement("div");
+  container.className = "confetti-container";
+  document.body.appendChild(container);
+
+  const colors = ["#e8a317", "#d4543a", "#4ea8de", "#5ebd72", "#c084fc", "#f472b6"];
+  const count = 28;
+
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement("div");
+    dot.className = "confetti-dot";
+    dot.style.background = colors[i % colors.length];
+    dot.style.left = cx + "px";
+    dot.style.top = cy + "px";
+
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const dist = 60 + Math.random() * 100;
+    const endX = Math.cos(angle) * dist;
+    const endY = Math.sin(angle) * dist - 40;
+
+    dot.style.setProperty("--end-x", endX + "px");
+    dot.style.setProperty("--end-y", endY + "px");
+    dot.style.animation = `confettiFall ${400 + Math.random() * 300}ms ease-out forwards`;
+
+    container.appendChild(dot);
+  }
+
+  setTimeout(() => container.remove(), 800);
+}
+
+// ==========================================
 // VOTING LOGIC
 // ==========================================
 
@@ -401,7 +448,7 @@ async function replaceMovie(oldMovie) {
 function setMatchupButtonsDisabled(disabled) {
   const section = document.getElementById("compare-section");
   if (!section) return;
-  section.querySelectorAll(".btn-select, .btn-undecided, .btn-unseen, .btn-remind").forEach(btn => {
+  section.querySelectorAll(".btn-select, .btn-undecided, .btn-unseen, .btn-remind, .poster-btn").forEach(btn => {
     btn.disabled = disabled;
   });
 }
@@ -434,9 +481,12 @@ async function handleVote(choice) {
   // 5. Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // 6. Brief highlight on chosen poster, then cinematic fade transition
+  // 6. Brief highlight on chosen poster, confetti burst, then cinematic fade transition
   const chosenPoster = document.getElementById(choice === "A" ? "posterA" : "posterB");
-  if (chosenPoster) chosenPoster.classList.add("poster-selected");
+  if (chosenPoster) {
+    chosenPoster.classList.add("poster-selected");
+    spawnConfetti(chosenPoster);
+  }
 
   const section = document.getElementById("compare-section");
 
