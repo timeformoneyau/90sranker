@@ -4,7 +4,6 @@ import {
   collection,
   query,
   where,
-  limit,
   getDocs
 } from "./firebase.js";
 
@@ -17,11 +16,12 @@ import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 let normalizeKey = (k) => k; // identity until movie list loads
 
 // ==========================================
-// POSTER LOOKUP (from movie_list_cleaned.json)
+// POSTER LOOKUP (TMDB API)
 // ==========================================
 
-const posterMap = {};      // movieKey -> poster URL (from JSON)
-const FALLBACK_POSTER = "";
+const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+const posterCache = {};    // movieKey -> poster URL (runtime TMDB lookups)
 
 async function initNormalizer() {
   try {
@@ -29,22 +29,47 @@ async function initNormalizer() {
     const allMovies = await res.json();
     const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
     normalizeKey = buildKeyNormalizer(movies);
-
-    // Build poster map from JSON data
-    movies.forEach(m => {
-      const key = makeMovieKey(m.title, m.year);
-      if (m.poster) {
-        // Use w185 size for table thumbnails (smaller than w500 in JSON)
-        posterMap[key] = m.poster.replace("/w500/", "/w185/");
-      }
-    });
   } catch (err) {
     console.warn("Could not load movie list for key normalization:", err);
   }
 }
 
 function getPosterUrl(movieKey) {
-  return posterMap[movieKey] || FALLBACK_POSTER;
+  return posterCache[movieKey] || "";
+}
+
+async function fetchPosterFromTMDB(title, year) {
+  try {
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const posterPath = data.results?.[0]?.poster_path;
+    return posterPath ? TMDB_IMAGE_BASE + posterPath : null;
+  } catch {
+    return null;
+  }
+}
+
+// Lazy-fetch posters for all img elements with data-needs-poster attribute
+async function lazyLoadPosters(container) {
+  const imgs = container.querySelectorAll("img[data-needs-poster]");
+  for (const img of imgs) {
+    const key = img.dataset.needsPoster;
+    if (!key) continue;
+    const title = key.split("|")[0];
+    const year = key.split("|")[1] || "";
+    fetchPosterFromTMDB(title, year).then(url => {
+      if (url) {
+        posterCache[key] = url;
+        img.src = url;
+        img.style.opacity = "1";
+      } else {
+        img.closest(".poster-thumb-wrap")?.classList.add("poster-thumb--empty");
+        img.remove();
+      }
+      img.removeAttribute("data-needs-poster");
+    });
+  }
 }
 
 // ==========================================
@@ -130,13 +155,13 @@ function sortRows(rows, mode) {
 // ==========================================
 
 function movieCellHTML(title, year, movieKey) {
-  const poster = getPosterUrl(movieKey);
-  const posterImg = poster
-    ? `<img class="poster-thumb" src="${poster}" alt="" loading="lazy" />`
-    : `<div class="poster-thumb poster-thumb--empty"></div>`;
+  const cached = getPosterUrl(movieKey);
+  const posterHTML = cached
+    ? `<div class="poster-thumb-wrap"><img class="poster-thumb" src="${cached}" alt="" loading="lazy" /></div>`
+    : `<div class="poster-thumb-wrap"><img class="poster-thumb" src="" alt="" loading="lazy" style="opacity:0" data-needs-poster="${movieKey}" /></div>`;
   return `
     <div class="movie-row">
-      ${posterImg}
+      ${posterHTML}
       <div class="movie-meta">
         <span class="movie-name">${title}</span>
         ${year ? `<span class="movie-yr">${year}</span>` : ""}
@@ -167,6 +192,7 @@ function renderTable(tbody, rows) {
     `;
     tbody.appendChild(tr);
   });
+  lazyLoadPosters(tbody);
 }
 
 function renderCards(container, rows) {
@@ -177,14 +203,17 @@ function renderCards(container, rows) {
   }
   rows.forEach((m, i) => {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
-    const poster = getPosterUrl(m.key);
+    const cached = getPosterUrl(m.key);
+    const posterHTML = cached
+      ? `<img class="poster-thumb poster-thumb--card" src="${cached}" alt="" loading="lazy" />`
+      : `<img class="poster-thumb poster-thumb--card" src="" alt="" loading="lazy" style="opacity:0" data-needs-poster="${m.key}" />`;
     const card = document.createElement("div");
     card.className = "result-card";
     card.style.cursor = "pointer";
     card.addEventListener("click", () => showMatchupModal(m.key));
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
-      ${poster ? `<img class="poster-thumb poster-thumb--card" src="${poster}" alt="" loading="lazy" />` : ""}
+      ${posterHTML}
       <div class="result-card-body">
         <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
         <div class="result-card-stats">
@@ -197,6 +226,7 @@ function renderCards(container, rows) {
     `;
     container.appendChild(card);
   });
+  lazyLoadPosters(container);
 }
 
 // ==========================================
@@ -482,6 +512,7 @@ function renderMichaelsTable(tbody, rows) {
     `;
     tbody.appendChild(tr);
   });
+  lazyLoadPosters(tbody);
 }
 
 function renderMichaelsCards(container, rows) {
@@ -494,12 +525,15 @@ function renderMichaelsCards(container, rows) {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
     const globalDisplay = m.globalRank != null ? `#${m.globalRank}` : "—";
-    const poster = getPosterUrl(m.key);
+    const cached = getPosterUrl(m.key);
+    const posterHTML = cached
+      ? `<img class="poster-thumb poster-thumb--card" src="${cached}" alt="" loading="lazy" />`
+      : `<img class="poster-thumb poster-thumb--card" src="" alt="" loading="lazy" style="opacity:0" data-needs-poster="${m.key}" />`;
     const card = document.createElement("div");
     card.className = "result-card";
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
-      ${poster ? `<img class="poster-thumb poster-thumb--card" src="${poster}" alt="" loading="lazy" />` : ""}
+      ${posterHTML}
       <div class="result-card-body">
         <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
         <div class="result-card-stats">
@@ -514,6 +548,7 @@ function renderMichaelsCards(container, rows) {
     `;
     container.appendChild(card);
   });
+  lazyLoadPosters(container);
 }
 
 async function loadMichaelsRankings() {

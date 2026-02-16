@@ -1197,14 +1197,24 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: 2px;
 }
 
-/* Poster thumbnail */
+/* Poster thumbnail wrapper — reserves space to prevent layout shift */
+.poster-thumb-wrap {
+  width: 40px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--color-bg-2);
+}
+
 .poster-thumb {
   width: 40px;
   height: 60px;
   object-fit: cover;
   border-radius: var(--r-sm);
   flex-shrink: 0;
-  background: var(--color-bg-2);
+  display: block;
+  transition: opacity 0.3s ease;
 }
 
 /* Empty placeholder when no poster available */
