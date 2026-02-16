@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Migration: Build Stats Aggregates</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #ccc; padding: 2rem; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; cursor: pointer; margin: 0.5rem 0; }
+    #log { white-space: pre-wrap; margin-top: 1rem; line-height: 1.6; }
+    .ok { color: #22c55e; }
+    .warn { color: #eab308; }
+    .err { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>Migration: Build Stats Aggregates from Votes</h1>
+  <p>This one-time script reads all votes and writes stats/global, stats/user_{uid}, and stats/meta.</p>
+  <p><strong>You must be logged in as admin to run this.</strong></p>
+
+  <button id="btn-run" onclick="runMigration()">Run Migration</button>
+  <button id="btn-dry" onclick="runMigration(true)">Dry Run (no writes)</button>
+  <div id="log"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyApkVMpbaHkUEZU0H8tW3vzxaM2DYxPdwM",
+      authDomain: "sranker-f2642.firebaseapp.com",
+      projectId: "sranker-f2642",
+      storageBucket: "sranker-f2642.appspot.com",
+      messagingSenderId: "601665183803",
+      appId: "1:601665183803:web:705a2ebeeb43b672ef3c1e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_EMAIL = "mjreardon62@gmail.com";
+    const logEl = document.getElementById("log");
+
+    function log(msg, cls = "") {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = msg + "\n";
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (user && user.email === ADMIN_EMAIL) {
+        log(`Logged in as ${user.email}`, "ok");
+      } else if (user) {
+        log(`Logged in as ${user.email} — NOT admin. Migration blocked.`, "err");
+      } else {
+        log("Not logged in. Enter credentials below.", "warn");
+        // Add login form
+        const form = document.createElement("div");
+        form.innerHTML = `
+          <input id="email" type="email" placeholder="Email" value="${ADMIN_EMAIL}" style="margin:4px;padding:4px;">
+          <input id="pass" type="password" placeholder="Password" style="margin:4px;padding:4px;">
+          <button onclick="document.dispatchEvent(new CustomEvent('do-login'))">Log In</button>
+        `;
+        logEl.parentElement.insertBefore(form, logEl);
+        document.addEventListener("do-login", async () => {
+          try {
+            await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("pass").value);
+          } catch (e) {
+            log("Login failed: " + e.message, "err");
+          }
+        });
+      }
+    });
+
+    window.runMigration = async function(dryRun = false) {
+      const user = auth.currentUser;
+      if (!user || user.email !== ADMIN_EMAIL) {
+        log("Must be logged in as admin.", "err");
+        return;
+      }
+
+      document.getElementById("btn-run").disabled = true;
+      document.getElementById("btn-dry").disabled = true;
+
+      log(dryRun ? "=== DRY RUN ===" : "=== RUNNING MIGRATION ===", "warn");
+
+      try {
+        // 1. Read all votes
+        log("Reading all votes...");
+        const votesSnap = await getDocs(collection(db, "votes"));
+        log(`Found ${votesSnap.size} vote documents.`, "ok");
+
+        // 2. Aggregate
+        const globalStats = {};  // { "Title|Year": { wins: N, losses: N } }
+        const userStats = {};    // { uid: { "Title|Year": { wins: N, losses: N } } }
+        const userVoteCounts = {}; // { uid: totalVotes }
+        let totalVotes = 0;
+
+        votesSnap.forEach(d => {
+          const data = d.data();
+          if (!data.winner || !data.loser) return;
+          totalVotes++;
+
+          // Global
+          if (!globalStats[data.winner]) globalStats[data.winner] = { wins: 0, losses: 0 };
+          globalStats[data.winner].wins++;
+          if (!globalStats[data.loser]) globalStats[data.loser] = { wins: 0, losses: 0 };
+          globalStats[data.loser].losses++;
+
+          // Per-user
+          const uid = data.user;
+          if (uid) {
+            if (!userStats[uid]) userStats[uid] = {};
+            if (!userStats[uid][data.winner]) userStats[uid][data.winner] = { wins: 0, losses: 0 };
+            userStats[uid][data.winner].wins++;
+            if (!userStats[uid][data.loser]) userStats[uid][data.loser] = { wins: 0, losses: 0 };
+            userStats[uid][data.loser].losses++;
+
+            userVoteCounts[uid] = (userVoteCounts[uid] || 0) + 1;
+          }
+        });
+
+        const movieCount = Object.keys(globalStats).length;
+        const userCount = Object.keys(userStats).length;
+
+        log(`Aggregated: ${totalVotes} votes, ${movieCount} movies, ${userCount} users.`);
+
+        // 3. Find Mike (most active voter)
+        let mikeUid = null;
+        let maxVotes = 0;
+        for (const [uid, count] of Object.entries(userVoteCounts)) {
+          if (count > maxVotes) {
+            maxVotes = count;
+            mikeUid = uid;
+          }
+        }
+        log(`Most active voter: ${mikeUid} with ${maxVotes} votes.`);
+
+        // Show top 5 users
+        const sortedUsers = Object.entries(userVoteCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        for (const [uid, count] of sortedUsers) {
+          log(`  ${uid}: ${count} votes${uid === mikeUid ? " ← mikeUid" : ""}`);
+        }
+
+        if (dryRun) {
+          log("\n=== DRY RUN COMPLETE — no data written ===", "warn");
+          document.getElementById("btn-run").disabled = false;
+          document.getElementById("btn-dry").disabled = false;
+          return;
+        }
+
+        // 4. Write stats/global
+        log("Writing stats/global...");
+        await setDoc(doc(db, "stats", "global"), { stats: globalStats });
+        log("  stats/global written.", "ok");
+
+        // 5. Write stats/meta
+        log("Writing stats/meta...");
+        await setDoc(doc(db, "stats", "meta"), { totalVotes, mikeUid });
+        log("  stats/meta written.", "ok");
+
+        // 6. Write stats/user_{uid} for each user
+        // Firestore writeBatch limit is 500 ops, so we batch accordingly
+        log(`Writing ${userCount} user stats documents...`);
+        const userEntries = Object.entries(userStats);
+        const BATCH_SIZE = 400; // leave room under 500
+
+        for (let i = 0; i < userEntries.length; i += BATCH_SIZE) {
+          const batch = writeBatch(db);
+          const slice = userEntries.slice(i, i + BATCH_SIZE);
+          for (const [uid, stats] of slice) {
+            batch.set(doc(db, "stats", `user_${uid}`), { stats });
+          }
+          await batch.commit();
+          log(`  Batch ${Math.floor(i / BATCH_SIZE) + 1}: wrote ${slice.length} user docs.`, "ok");
+        }
+
+        log(`\n=== MIGRATION COMPLETE ===`, "ok");
+        log(`  stats/global: ${movieCount} movies`);
+        log(`  stats/meta: totalVotes=${totalVotes}, mikeUid=${mikeUid}`);
+        log(`  stats/user_*: ${userCount} user docs`);
+
+      } catch (err) {
+        log("MIGRATION ERROR: " + err.message, "err");
+        console.error(err);
+      }
+
+      document.getElementById("btn-run").disabled = false;
+      document.getElementById("btn-dry").disabled = false;
+    };
+  </script>
+</body>
+</html>

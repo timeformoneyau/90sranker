@@ -52,37 +52,28 @@ async function loadDiagnostics() {
   const statusEl = document.getElementById("diag-status");
 
   try {
-    // Load movie list + all votes in parallel
-    const [moviesRes, votesSnap] = await Promise.all([
+    // Load movie list + aggregate stats (2 doc reads instead of full votes scan)
+    const [moviesRes, globalSnap, metaSnap] = await Promise.all([
       fetch("movie_list_cleaned.json"),
-      getDocs(collection(db, "votes"))
+      getDoc(doc(db, "stats", "global")),
+      getDoc(doc(db, "stats", "meta"))
     ]);
 
     const rawMovies = await moviesRes.json();
     allMovies = rawMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
 
-    statusEl.textContent = `Loaded ${votesSnap.size.toLocaleString()} votes across ${allMovies.length} movies. Analyzing...`;
+    const globalStats = globalSnap.exists() ? (globalSnap.data().stats || {}) : {};
+    const totalVotes = metaSnap.exists() ? (metaSnap.data().totalVotes || 0) : 0;
 
-    // Count appearances (each vote = 1 appearance for winner + 1 for loser)
-    const appearances = {};
-    const wins = {};
-    const losses = {};
+    statusEl.textContent = `Loaded ${totalVotes.toLocaleString()} votes across ${allMovies.length} movies. Analyzing...`;
 
-    votesSnap.forEach(d => {
-      const data = d.data();
-      if (!data.winner || !data.loser) return;
-      appearances[data.winner] = (appearances[data.winner] || 0) + 1;
-      appearances[data.loser] = (appearances[data.loser] || 0) + 1;
-      wins[data.winner] = (wins[data.winner] || 0) + 1;
-      losses[data.loser] = (losses[data.loser] || 0) + 1;
-    });
-
-    // Build full data array
+    // Build full data array from aggregate stats
     fullData = allMovies.map(movie => {
       const key = getMovieKey(movie);
-      const a = appearances[key] || 0;
-      const w = wins[key] || 0;
-      const l = losses[key] || 0;
+      const s = globalStats[key] || {};
+      const w = s.wins || 0;
+      const l = s.losses || 0;
+      const a = w + l; // appearances = wins + losses
       const wp = a > 0 ? (w / a) * 100 : 0;
       return {
         title: movie.title,
@@ -106,14 +97,14 @@ async function loadDiagnostics() {
     });
 
     // Render everything
-    renderSummary(votesSnap.size, withAppearances.length);
+    renderSummary(totalVotes, withAppearances.length);
     renderFairness();
     renderOverexposed();
     renderNeverShown();
     renderTable();
     setupControls();
 
-    statusEl.textContent = `Analysis complete: ${votesSnap.size.toLocaleString()} votes, ${allMovies.length} movies, avg ${avgAppearances.toFixed(1)} appearances per movie.`;
+    statusEl.textContent = `Analysis complete: ${totalVotes.toLocaleString()} votes, ${allMovies.length} movies, avg ${avgAppearances.toFixed(1)} appearances per movie.`;
   } catch (err) {
     console.error("Diagnostics error:", err);
     statusEl.textContent = "Error loading data: " + err.message;
@@ -334,18 +325,10 @@ async function loadUserManagement() {
   statusEl.textContent = "Loading users...";
 
   try {
-    const [usersSnap, usernamesSnap, votesSnap] = await Promise.all([
+    const [usersSnap, usernamesSnap] = await Promise.all([
       getDocs(collection(db, "users")),
-      getDocs(collection(db, "usernames")),
-      getDocs(collection(db, "votes"))
+      getDocs(collection(db, "usernames"))
     ]);
-
-    // Count votes per user
-    const voteCounts = {};
-    votesSnap.forEach(d => {
-      const uid = d.data().user;
-      if (uid) voteCounts[uid] = (voteCounts[uid] || 0) + 1;
-    });
 
     // Build username lookup (lowercase -> doc data)
     const usernamesByUid = {};
@@ -354,17 +337,32 @@ async function loadUserManagement() {
       usernamesByUid[data.uid] = { docId: d.id, email: data.email };
     });
 
-    // Build user rows
-    const users = [];
+    // Build user rows, fetching vote counts from per-user stats docs
+    const userEntries = [];
     usersSnap.forEach(d => {
       const data = d.data();
-      users.push({
-        uid: d.id,
-        username: data.username || null,
-        email: usernamesByUid[d.id]?.email || data.email || "unknown",
-        votes: voteCounts[d.id] || 0,
-        usernameDocId: usernamesByUid[d.id]?.docId || null
-      });
+      userEntries.push({ uid: d.id, data, usernameInfo: usernamesByUid[d.id] });
+    });
+
+    // Fetch all user stats docs in parallel (1 read per registered user)
+    const statsSnaps = await Promise.all(
+      userEntries.map(u => getDoc(doc(db, "stats", `user_${u.uid}`)))
+    );
+
+    const users = userEntries.map((u, i) => {
+      const statsData = statsSnaps[i].exists() ? (statsSnaps[i].data().stats || {}) : {};
+      // Count total votes: sum of all wins (each vote = 1 win for someone)
+      let votes = 0;
+      for (const key in statsData) {
+        votes += (statsData[key].wins || 0);
+      }
+      return {
+        uid: u.uid,
+        username: u.data.username || null,
+        email: u.usernameInfo?.email || u.data.email || "unknown",
+        votes,
+        usernameDocId: u.usernameInfo?.docId || null
+      };
     });
 
     // Sort by vote count descending

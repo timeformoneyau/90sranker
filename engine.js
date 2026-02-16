@@ -10,15 +10,11 @@ import {
   db,
   auth,
   onAuth,
-  collection,
-  getDocs,
   doc,
   getDoc,
   setDoc,
   arrayUnion,
-  arrayRemove,
-  query,
-  where
+  arrayRemove
 } from "./firebase.js";
 
 import { makeMovieKey } from "./movieKeys.js";
@@ -116,27 +112,23 @@ async function fetchPosterUrl(title, year) {
 // PHASE 1 — PERSONAL PREFERENCE SCORING
 // ==========================================
 
-function buildPreferenceVector(userVotes, movieMap) {
+function buildPreferenceVector(userStats, movieMap) {
   const prefs = {};
   const votedKeys = new Set();
 
-  for (const vote of userVotes) {
-    votedKeys.add(vote.winner);
-    votedKeys.add(vote.loser);
+  for (const [key, stats] of Object.entries(userStats)) {
+    const w = stats.wins || 0;
+    const l = stats.losses || 0;
+    if (w === 0 && l === 0) continue;
+    votedKeys.add(key);
 
-    const winnerMovie = movieMap[vote.winner];
-    const loserMovie = movieMap[vote.loser];
-    if (!winnerMovie || !loserMovie) continue;
+    const movie = movieMap[key];
+    if (!movie) continue;
 
-    const winnerAttrs = getMovieAttributes(winnerMovie);
-    const loserAttrs = getMovieAttributes(loserMovie);
-    const allKeys = new Set([...Object.keys(winnerAttrs), ...Object.keys(loserAttrs)]);
-
-    for (const key of allKeys) {
-      const winVal = key in winnerAttrs ? 1 : 0;
-      const loseVal = key in loserAttrs ? 1 : 0;
-      const weight = winnerAttrs[key] || loserAttrs[key] || 1;
-      prefs[key] = (prefs[key] || 0) + weight * (winVal - loseVal);
+    const attrs = getMovieAttributes(movie);
+    // Net signal: wins push attributes positive, losses push negative
+    for (const [attrKey, weight] of Object.entries(attrs)) {
+      prefs[attrKey] = (prefs[attrKey] || 0) + weight * (w - l);
     }
   }
 
@@ -173,70 +165,10 @@ function scoreCandidates(candidates, prefs) {
 }
 
 // ==========================================
-// PHASE 3 — COMMUNITY BOOST
-// ==========================================
-
-function applyCommunityBoost(scored, currentUserWinners, votesByUser, currentUid) {
-  const userWinnerSets = {};
-  for (const [uid, votes] of Object.entries(votesByUser)) {
-    if (uid === currentUid) continue;
-    userWinnerSets[uid] = new Set(votes.map(v => v.winner));
-  }
-
-  const similarities = [];
-  for (const [uid, winners] of Object.entries(userWinnerSets)) {
-    let intersection = 0;
-    for (const w of currentUserWinners) {
-      if (winners.has(w)) intersection++;
-    }
-    if (intersection === 0) continue;
-    const union = currentUserWinners.size + winners.size - intersection;
-    const sim = intersection / union;
-    if (sim > 0.05) {
-      const shared = [...currentUserWinners].filter(w => winners.has(w));
-      similarities.push({ uid, sim, winners, shared });
-    }
-  }
-
-  similarities.sort((a, b) => b.sim - a.sim);
-  const topSimilar = similarities.slice(0, 5);
-
-  if (topSimilar.length === 0) return scored;
-
-  const boostMap = {};
-  for (const { sim, winners, shared } of topSimilar) {
-    for (const key of winners) {
-      if (!currentUserWinners.has(key)) {
-        if (!boostMap[key]) boostMap[key] = { boost: 0, sharedMovies: new Set() };
-        boostMap[key].boost += sim;
-        shared.slice(0, 2).forEach(s => boostMap[key].sharedMovies.add(s));
-      }
-    }
-  }
-
-  for (const item of scored) {
-    const key = getMovieKey(item.movie);
-    const entry = boostMap[key];
-    if (entry && entry.boost > 0) {
-      item.communityBoost = entry.boost;
-      item.score += entry.boost * 2;
-      item.similarMovies = [...entry.sharedMovies].slice(0, 2).map(keyToTitle);
-    }
-  }
-
-  return scored;
-}
-
-// ==========================================
 // REASON GENERATION
 // ==========================================
 
 function generateReason(item) {
-  if (item.communityBoost > 0.3 && item.similarMovies.length > 0) {
-    const movieNames = item.similarMovies.join(" and ");
-    return `Popular with voters who also liked ${movieNames}`;
-  }
-
   const top = (item.contributions || [])[0];
   if (!top || top.value <= 0) return "A 90s classic worth checking out";
 
@@ -260,27 +192,38 @@ function generateReason(item) {
 async function getRecommendationsForUser(userId) {
   if (cache.uid === userId && cache.results) return cache.results;
 
-  const moviesRes = await fetch("movie_list_cleaned.json");
+  // Load movie list + user stats + global stats + user doc (4 reads, no votes scan)
+  const [moviesRes, userStatsSnap, globalStatsSnap, userDocSnap] = await Promise.all([
+    fetch("movie_list_cleaned.json"),
+    getDoc(doc(db, "stats", `user_${userId}`)),
+    getDoc(doc(db, "stats", "global")),
+    getDoc(doc(db, "users", userId))
+  ]);
+
   const allMovies = await moviesRes.json();
   const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
   const movieMap = {};
   for (const m of movies) movieMap[getMovieKey(m)] = m;
 
+  const userStats = userStatsSnap.exists() ? (userStatsSnap.data().stats || {}) : {};
+  const globalStats = globalStatsSnap.exists() ? (globalStatsSnap.data().stats || {}) : {};
+
+  // Count user's total votes (each vote = 1 win for one movie)
+  let voteCount = 0;
+  for (const key in userStats) {
+    voteCount += (userStats[key].wins || 0);
+  }
+
   // Load user's "haven't seen" list, "seen it" list, and inferred-seen list
   let unseenKeys = new Set();
   let seenKeys = new Set();
   let inferredSeenKeys = new Set();
-  try {
-    const userSnap = await getDoc(doc(db, "users", userId));
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      (data.seen || []).forEach(k => unseenKeys.add(k));
-      (data.seenMovies || []).forEach(k => seenKeys.add(k));
-      (data.inferredSeen || []).forEach(k => inferredSeenKeys.add(k));
-      (data.notInterested || []).forEach(k => notInterestedKeys.add(k));
-    }
-  } catch (err) {
-    console.warn("Could not load user data:", err);
+  if (userDocSnap.exists()) {
+    const data = userDocSnap.data();
+    (data.seen || []).forEach(k => unseenKeys.add(k));
+    (data.seenMovies || []).forEach(k => seenKeys.add(k));
+    (data.inferredSeen || []).forEach(k => inferredSeenKeys.add(k));
+    (data.notInterested || []).forEach(k => notInterestedKeys.add(k));
   }
 
   // Merge session-seen keys
@@ -289,23 +232,8 @@ async function getRecommendationsForUser(userId) {
   // Store unseen keys at module level so cards can show badges
   unseenMovieKeys = unseenKeys;
 
-  const votesSnap = await getDocs(collection(db, "votes"));
-  const votesByUser = {};
-  const allVotes = [];
-
-  votesSnap.forEach(d => {
-    const data = d.data();
-    if (!data.winner || !data.loser) return;
-    allVotes.push(data);
-    if (data.user) {
-      if (!votesByUser[data.user]) votesByUser[data.user] = [];
-      votesByUser[data.user].push(data);
-    }
-  });
-
-  const userVotes = votesByUser[userId] || [];
-  const isSparse = userVotes.length < MIN_VOTES_FOR_PERSONALIZATION;
-  const { prefs, votedKeys } = buildPreferenceVector(userVotes, movieMap);
+  const isSparse = voteCount < MIN_VOTES_FOR_PERSONALIZATION;
+  const { prefs, votedKeys } = buildPreferenceVector(userStats, movieMap);
 
   // Apply mild negative signal from notInterested movies
   for (const niKey of notInterestedKeys) {
@@ -325,13 +253,9 @@ async function getRecommendationsForUser(userId) {
   let allScored;
 
   if (isSparse) {
-    const globalWins = {};
-    for (const v of allVotes) {
-      globalWins[v.winner] = (globalWins[v.winner] || 0) + 1;
-    }
-
+    // For sparse users, mix preference-based picks with globally popular movies
     let prefPicks = [];
-    if (userVotes.length > 0) {
+    if (voteCount > 0) {
       const scored = scoreCandidates(candidates, prefs);
       scored.sort((a, b) => b.score - a.score);
       prefPicks = scored.slice(0, Math.floor(DISPLAY_COUNT / 2));
@@ -341,23 +265,23 @@ async function getRecommendationsForUser(userId) {
     const prefKeys = new Set(prefPicks.map(p => getMovieKey(p.movie)));
     const popular = candidates
       .filter(m => !prefKeys.has(getMovieKey(m)))
-      .map(m => ({
-        movie: m,
-        score: globalWins[getMovieKey(m)] || 0,
-        contributions: [],
-        communityBoost: 0,
-        similarMovies: [],
-        reason: "A popular pick \u2014 vote more to personalize"
-      }))
+      .map(m => {
+        const gs = globalStats[getMovieKey(m)] || {};
+        return {
+          movie: m,
+          score: gs.wins || 0,
+          contributions: [],
+          communityBoost: 0,
+          similarMovies: [],
+          reason: "A popular pick \u2014 vote more to personalize"
+        };
+      })
       .sort((a, b) => b.score - a.score);
 
     allScored = [...prefPicks, ...popular];
-    // Assign reasons to popular picks that don't have one yet
     allScored.forEach(r => { if (!r.reason) r.reason = generateReason(r); });
   } else {
     let scored = scoreCandidates(candidates, prefs);
-    const currentUserWinners = new Set(userVotes.map(v => v.winner));
-    scored = applyCommunityBoost(scored, currentUserWinners, votesByUser, userId);
     scored.sort((a, b) => b.score - a.score);
     scored.forEach(r => { r.reason = generateReason(r); });
     allScored = scored;
@@ -366,21 +290,14 @@ async function getRecommendationsForUser(userId) {
   const tasteProfile = buildTasteProfile(prefs);
 
   // Compute profile data: genre preferences (with global consensus), break-from-crowd
-  const genrePreferences = computeGenrePreferenceScores(userVotes, allVotes, movieMap);
-  const breakFromCrowd = computeBreakFromCrowd(userVotes, allVotes, movieMap);
-
-  // Progress metrics
-  const presentedKeys = new Set();
-  for (const v of userVotes) {
-    presentedKeys.add(v.winner);
-    presentedKeys.add(v.loser);
-  }
+  const genrePreferences = computeGenrePreferenceScores(userStats, globalStats, movieMap);
+  const breakFromCrowd = computeBreakFromCrowd(userStats, globalStats, movieMap);
 
   const output = {
-    allScored, tasteProfile, voteCount: userVotes.length, isSparse,
+    allScored, tasteProfile, voteCount, isSparse,
     genrePreferences, breakFromCrowd,
     totalMovies: movies.length,
-    comparedCount: presentedKeys.size,
+    comparedCount: votedKeys.size,
     unseenCount: unseenKeys.size,
     notInterestedCount: notInterestedKeys.size
   };
@@ -418,42 +335,32 @@ function buildTasteProfile(prefs) {
 // PROFILE — GENRE PREFERENCE SCORES
 // ==========================================
 
-function computeGenrePreferenceScores(userVotes, allVotes, movieMap) {
-  // User per-genre stats
-  const userStats = {};
-  for (const vote of userVotes) {
-    const winner = movieMap[vote.winner];
-    const loser = movieMap[vote.loser];
-    if (winner?.genre) {
-      if (!userStats[winner.genre]) userStats[winner.genre] = { wins: 0, losses: 0 };
-      userStats[winner.genre].wins++;
-    }
-    if (loser?.genre) {
-      if (!userStats[loser.genre]) userStats[loser.genre] = { wins: 0, losses: 0 };
-      userStats[loser.genre].losses++;
-    }
+function computeGenrePreferenceScores(userStats, globalStats, movieMap) {
+  // Aggregate per-genre stats from per-movie stats
+  const userGenre = {};
+  const globalGenre = {};
+
+  for (const [key, s] of Object.entries(userStats)) {
+    const movie = movieMap[key];
+    if (!movie?.genre) continue;
+    if (!userGenre[movie.genre]) userGenre[movie.genre] = { wins: 0, losses: 0 };
+    userGenre[movie.genre].wins += (s.wins || 0);
+    userGenre[movie.genre].losses += (s.losses || 0);
   }
 
-  // Global per-genre stats (for consensus baseline)
-  const globalStats = {};
-  for (const vote of allVotes) {
-    const winner = movieMap[vote.winner];
-    const loser = movieMap[vote.loser];
-    if (winner?.genre) {
-      if (!globalStats[winner.genre]) globalStats[winner.genre] = { wins: 0, losses: 0 };
-      globalStats[winner.genre].wins++;
-    }
-    if (loser?.genre) {
-      if (!globalStats[loser.genre]) globalStats[loser.genre] = { wins: 0, losses: 0 };
-      globalStats[loser.genre].losses++;
-    }
+  for (const [key, s] of Object.entries(globalStats)) {
+    const movie = movieMap[key];
+    if (!movie?.genre) continue;
+    if (!globalGenre[movie.genre]) globalGenre[movie.genre] = { wins: 0, losses: 0 };
+    globalGenre[movie.genre].wins += (s.wins || 0);
+    globalGenre[movie.genre].losses += (s.losses || 0);
   }
 
-  return Object.entries(userStats)
+  return Object.entries(userGenre)
     .map(([genre, s]) => {
       const total = s.wins + s.losses;
       const userRate = s.wins / total;
-      const gs = globalStats[genre];
+      const gs = globalGenre[genre];
       let globalRate = 0.5;
       let globalTotal = 0;
       if (gs) {
@@ -470,7 +377,7 @@ function computeGenrePreferenceScores(userVotes, allVotes, movieMap) {
         globalRate: Math.round(globalRate * 100),
         globalTotal,
         delta,
-        value: Math.max(0, Math.min(1, 0.5 + delta))  // clamped for chart
+        value: Math.max(0, Math.min(1, 0.5 + delta))
       };
     })
     .filter(g => g.total >= 6)
@@ -482,36 +389,22 @@ function computeGenrePreferenceScores(userVotes, allVotes, movieMap) {
 // PROFILE — BREAK FROM THE CROWD
 // ==========================================
 
-function computeBreakFromCrowd(userVotes, allVotes, movieMap) {
-  // Global per-movie stats
-  const globalStats = {};
-  for (const v of allVotes) {
-    if (!globalStats[v.winner]) globalStats[v.winner] = { wins: 0, losses: 0 };
-    globalStats[v.winner].wins++;
-    if (!globalStats[v.loser]) globalStats[v.loser] = { wins: 0, losses: 0 };
-    globalStats[v.loser].losses++;
-  }
-
-  // User per-movie stats
-  const userStats = {};
-  for (const v of userVotes) {
-    if (!userStats[v.winner]) userStats[v.winner] = { wins: 0, losses: 0 };
-    userStats[v.winner].wins++;
-    if (!userStats[v.loser]) userStats[v.loser] = { wins: 0, losses: 0 };
-    userStats[v.loser].losses++;
-  }
-
+function computeBreakFromCrowd(userStats, globalStats, movieMap) {
   const rows = [];
   for (const [key, us] of Object.entries(userStats)) {
-    const userTotal = us.wins + us.losses;
+    const uw = us.wins || 0;
+    const ul = us.losses || 0;
+    const userTotal = uw + ul;
     if (userTotal < 5) continue;
     const gs = globalStats[key];
     if (!gs) continue;
-    const globalTotal = gs.wins + gs.losses;
+    const gw = gs.wins || 0;
+    const gl = gs.losses || 0;
+    const globalTotal = gw + gl;
     if (globalTotal < 20) continue;
 
-    const userWinRate = Math.round(100 * us.wins / userTotal);
-    const globalWinRate = Math.round(100 * gs.wins / globalTotal);
+    const userWinRate = Math.round(100 * uw / userTotal);
+    const globalWinRate = Math.round(100 * gw / globalTotal);
     const delta = userWinRate - globalWinRate;
     if (delta === 0) continue;
 
@@ -519,8 +412,8 @@ function computeBreakFromCrowd(userVotes, allVotes, movieMap) {
       key,
       title: keyToTitle(key),
       year: key.split("|")[1],
-      userRecord: `${us.wins}W\u2013${us.losses}L`,
-      globalRecord: `${gs.wins}W\u2013${gs.losses}L`,
+      userRecord: `${uw}W\u2013${ul}L`,
+      globalRecord: `${gw}W\u2013${gl}L`,
       userWinRate,
       globalWinRate,
       delta

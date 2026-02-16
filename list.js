@@ -1,9 +1,9 @@
 import {
   db,
   onAuth,
+  doc,
+  getDoc,
   collection,
-  query,
-  where,
   getDocs
 } from "./firebase.js";
 
@@ -21,7 +21,7 @@ let normalizeKey = (k) => k; // identity until movie list loads
 
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
-const posterCache = {};    // movieKey -> poster URL (runtime TMDB lookups)
+const posterCache = {};
 
 async function initNormalizer() {
   try {
@@ -50,7 +50,6 @@ async function fetchPosterFromTMDB(title, year) {
   }
 }
 
-// Lazy-fetch posters for all img elements with data-needs-poster attribute
 async function lazyLoadPosters(container) {
   const imgs = container.querySelectorAll("img[data-needs-poster]");
   for (const img of imgs) {
@@ -71,13 +70,6 @@ async function lazyLoadPosters(container) {
     });
   }
 }
-
-// ==========================================
-// RAW VOTE STORAGE (for matchup modal)
-// ==========================================
-
-let globalVoteDocs = [];
-let personalVoteDocs = [];
 
 // ==========================================
 // WILSON SCORE
@@ -104,11 +96,12 @@ function confidenceLevel(n) {
 }
 
 // ==========================================
-// BUILD RANKED DATA
+// BUILD RANKED DATA FROM AGGREGATE STATS
 // ==========================================
 
-function buildRankedData(statsMap) {
-  return Object.entries(statsMap).map(([key, r]) => {
+function buildRankedData(statsObj) {
+  // statsObj shape: { "Title|Year": { wins: N, losses: N }, ... }
+  return Object.entries(statsObj).map(([key, r]) => {
     const title = key.split("|")[0];
     const year = key.split("|")[1] || "";
     const wins = r.wins || 0;
@@ -179,7 +172,7 @@ function renderTable(tbody, rows) {
   rows.forEach((m, i) => {
     const tr = document.createElement("tr");
     tr.style.cursor = "pointer";
-    tr.addEventListener("click", () => showMatchupModal(m.key));
+    tr.addEventListener("click", () => showMatchupModal(m));
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     tr.innerHTML = `
       <td class="col-rank">${i + 1}</td>
@@ -210,7 +203,7 @@ function renderCards(container, rows) {
     const card = document.createElement("div");
     card.className = "result-card";
     card.style.cursor = "pointer";
-    card.addEventListener("click", () => showMatchupModal(m.key));
+    card.addEventListener("click", () => showMatchupModal(m));
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
       ${posterHTML}
@@ -243,7 +236,7 @@ document.querySelectorAll(".results-tab").forEach(btn => {
 });
 
 // ==========================================
-// WIRING: GLOBAL
+// WIRING: GLOBAL (reads stats/global — 1 doc)
 // ==========================================
 
 let globalAllRows = [];
@@ -274,6 +267,9 @@ document.getElementById("global-show").addEventListener("change", applyGlobalFil
 document.getElementById("global-search").addEventListener("input", applyGlobalFilters);
 document.getElementById("global-hide-low").addEventListener("change", applyGlobalFilters);
 
+// Cached global stats for cross-tab use (e.g. Michael's global rank)
+let cachedGlobalStats = {};
+
 async function loadGlobalStats() {
   const countEl = document.getElementById("global-count");
   const tbody = document.getElementById("global-list");
@@ -282,25 +278,17 @@ async function loadGlobalStats() {
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
-    const snap = await getDocs(collection(db, "votes"));
-    countEl.textContent = `${snap.size.toLocaleString()} total votes across all users`;
+    // Read stats/global (1 Firestore read) + stats/meta (1 read)
+    const [globalSnap, metaSnap] = await Promise.all([
+      getDoc(doc(db, "stats", "global")),
+      getDoc(doc(db, "stats", "meta"))
+    ]);
 
-    const stats = {};
-    globalVoteDocs = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      const { winner, loser } = d;
-      if (!winner || !loser) return;
-      globalVoteDocs.push(d);
-      const w = normalizeKey(winner);
-      const l = normalizeKey(loser);
-      stats[w] = stats[w] || { wins: 0, losses: 0 };
-      stats[l] = stats[l] || { wins: 0, losses: 0 };
-      stats[w].wins++;
-      stats[l].losses++;
-    });
+    const totalVotes = metaSnap.exists() ? (metaSnap.data().totalVotes || 0) : 0;
+    countEl.textContent = `${totalVotes.toLocaleString()} total votes across all users`;
 
-    globalAllRows = buildRankedData(stats);
+    cachedGlobalStats = globalSnap.exists() ? (globalSnap.data().stats || {}) : {};
+    globalAllRows = buildRankedData(cachedGlobalStats);
     applyGlobalFilters();
   } catch (err) {
     console.error("loadGlobalStats error:", err);
@@ -311,7 +299,7 @@ async function loadGlobalStats() {
 }
 
 // ==========================================
-// WIRING: PERSONAL
+// WIRING: PERSONAL (reads stats/user_{uid} — 1 doc)
 // ==========================================
 
 let personalAllRows = [];
@@ -347,28 +335,20 @@ async function loadPersonalStats(uid) {
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
-    const snap = await getDocs(query(
-      collection(db, "votes"),
-      where("user", "==", uid)
-    ));
-    countEl.textContent = `${snap.size.toLocaleString()} votes`;
+    // Read stats/user_{uid} (1 Firestore read)
+    const snap = await getDoc(doc(db, "stats", `user_${uid}`));
+    const userStats = snap.exists() ? (snap.data().stats || {}) : {};
 
-    const stats = {};
-    personalVoteDocs = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      const { winner, loser } = d;
-      if (!winner || !loser) return;
-      personalVoteDocs.push(d);
-      const w = normalizeKey(winner);
-      const l = normalizeKey(loser);
-      stats[w] = stats[w] || { wins: 0, losses: 0 };
-      stats[l] = stats[l] || { wins: 0, losses: 0 };
-      stats[w].wins++;
-      stats[l].losses++;
-    });
+    // Count total votes from the aggregate
+    let totalVotes = 0;
+    for (const s of Object.values(userStats)) {
+      totalVotes += (s.wins || 0) + (s.losses || 0);
+    }
+    // Each vote creates one win + one loss entry, so total matchups = totalVotes / 2
+    const matchups = Math.round(totalVotes / 2);
+    countEl.textContent = `${matchups.toLocaleString()} votes`;
 
-    personalAllRows = buildRankedData(stats);
+    personalAllRows = buildRankedData(userStats);
     applyPersonalFilters();
   } catch (err) {
     console.error("loadPersonalStats error:", err);
@@ -379,7 +359,7 @@ async function loadPersonalStats(uid) {
 }
 
 // ==========================================
-// WIRING: TOUGH CALLS TAB
+// WIRING: TOUGH CALLS TAB (reads toughCalls — small collection)
 // ==========================================
 
 async function loadToughCallsTab() {
@@ -471,7 +451,7 @@ async function loadToughCallsTab() {
 }
 
 // ==========================================
-// MICHAEL'S RANKINGS TAB
+// MICHAEL'S RANKINGS TAB (reads stats/meta + stats/user_{mikeUid} — 2 docs)
 // ==========================================
 
 async function fetchTmdbRating(title, year) {
@@ -559,55 +539,36 @@ async function loadMichaelsRankings() {
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
-    const snap = await getDocs(collection(db, "votes"));
-
-    const votesByUser = {};
-    const globalStats = {};
-
-    snap.forEach(doc => {
-      const { winner, loser, user } = doc.data();
-      if (!winner || !loser) return;
-      const w = normalizeKey(winner);
-      const l = normalizeKey(loser);
-
-      globalStats[w] = globalStats[w] || { wins: 0, losses: 0 };
-      globalStats[l] = globalStats[l] || { wins: 0, losses: 0 };
-      globalStats[w].wins++;
-      globalStats[l].losses++;
-
-      if (user) {
-        votesByUser[user] = votesByUser[user] || { votes: 0, stats: {} };
-        votesByUser[user].votes++;
-        const s = votesByUser[user].stats;
-        s[w] = s[w] || { wins: 0, losses: 0 };
-        s[l] = s[l] || { wins: 0, losses: 0 };
-        s[w].wins++;
-        s[l].losses++;
-      }
-    });
-
-    let mikeUid = null;
-    let maxVotes = 0;
-    for (const [uid, data] of Object.entries(votesByUser)) {
-      if (data.votes > maxVotes) {
-        maxVotes = data.votes;
-        mikeUid = uid;
-      }
-    }
+    // Read stats/meta for Mike's UID (1 read)
+    const metaSnap = await getDoc(doc(db, "stats", "meta"));
+    const meta = metaSnap.exists() ? metaSnap.data() : {};
+    const mikeUid = meta.mikeUid;
 
     if (!mikeUid) {
-      statusEl.textContent = "No votes found.";
+      statusEl.textContent = "Michael's UID not configured.";
+      tbody.innerHTML = '<tr><td colspan="9" class="results-empty">Michael\'s rankings not available.</td></tr>';
+      cards.innerHTML = '<div class="results-empty">Not available.</div>';
+      return;
+    }
+
+    // Read Mike's per-user stats (1 read)
+    const mikeSnap = await getDoc(doc(db, "stats", `user_${mikeUid}`));
+    const mikeStats = mikeSnap.exists() ? (mikeSnap.data().stats || {}) : {};
+
+    if (Object.keys(mikeStats).length === 0) {
+      statusEl.textContent = "No votes found for Michael.";
       tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No votes found.</td></tr>';
       cards.innerHTML = '<div class="results-empty">No votes found.</div>';
       return;
     }
 
-    const globalRows = buildRankedData(globalStats);
+    // Build global rank map from cached global stats (already loaded, 0 extra reads)
+    const globalRows = buildRankedData(cachedGlobalStats);
     globalRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n);
     const globalRankMap = {};
     globalRows.forEach((r, i) => { globalRankMap[r.key] = i + 1; });
 
-    const mikeStats = votesByUser[mikeUid].stats;
+    // Build Mike's rankings
     let mikeRows = buildRankedData(mikeStats);
     mikeRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n || b.wins - a.wins);
     mikeRows = mikeRows.slice(0, 15);
@@ -616,12 +577,19 @@ async function loadMichaelsRankings() {
       r.globalRank = globalRankMap[r.key] || null;
     });
 
-    statusEl.textContent = `${maxVotes.toLocaleString()} total votes by Michael`;
+    // Count Mike's total votes
+    let totalMikeVotes = 0;
+    for (const s of Object.values(mikeStats)) {
+      totalMikeVotes += (s.wins || 0) + (s.losses || 0);
+    }
+    statusEl.textContent = `${Math.round(totalMikeVotes / 2).toLocaleString()} total votes by Michael`;
 
+    // Render immediately without TMDB ratings
     mikeRows.forEach(r => { r.tmdbRating = null; });
     renderMichaelsTable(tbody, mikeRows);
     renderMichaelsCards(cards, mikeRows);
 
+    // Fetch TMDB ratings in background and re-render
     const ratingPromises = mikeRows.map(async r => {
       r.tmdbRating = await fetchTmdbRating(r.title, r.year);
     });
@@ -638,69 +606,23 @@ async function loadMichaelsRankings() {
 }
 
 // ==========================================
-// MATCHUP MODAL
+// MATCHUP MODAL (aggregate-based, no vote scan)
 // ==========================================
 
-function getActiveVoteDocs() {
-  const activeTab = document.querySelector(".results-tab.active");
-  const tab = activeTab ? activeTab.dataset.tab : "global";
-  return tab === "personal" ? personalVoteDocs : globalVoteDocs;
-}
-
-function showMatchupModal(key) {
-  const votes = getActiveVoteDocs();
-  const title = key.split("|")[0];
-  const year = key.split("|")[1] || "";
-
-  const matchups = votes
-    .filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key)
-    .map(v => {
-      const won = normalizeKey(v.winner) === key;
-      const opponentKey = normalizeKey(won ? v.loser : v.winner);
-      const opponentTitle = opponentKey.split("|")[0];
-      const ts = v.timestamp ? (v.timestamp.toDate ? v.timestamp.toDate() : new Date(v.timestamp)) : null;
-      return { won, opponentKey, opponentTitle, ts };
-    })
-    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
-
-  const wins = matchups.filter(m => m.won).length;
-  const losses = matchups.length - wins;
-  const winPct = matchups.length ? ((wins / matchups.length) * 100).toFixed(1) : "0.0";
-
-  let streak = 0;
-  for (const m of matchups) {
-    if (m.won) streak++;
-    else break;
-  }
-
-  const oppCounts = {};
-  matchups.forEach(m => {
-    oppCounts[m.opponentTitle] = (oppCounts[m.opponentTitle] || 0) + 1;
-  });
-  const rival = Object.entries(oppCounts).sort((a, b) => b[1] - a[1])[0];
+function showMatchupModal(movie) {
+  const { key, title, year, wins, losses, n, winPct, displayScore } = movie;
 
   document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
 
   document.getElementById("matchup-modal-stats").innerHTML = `
     <div class="matchup-stat"><span class="matchup-stat-val">${wins}W - ${losses}L</span><span class="matchup-stat-label">Record</span></div>
-    <div class="matchup-stat"><span class="matchup-stat-val">${winPct}%</span><span class="matchup-stat-label">Win Rate</span></div>
-    <div class="matchup-stat"><span class="matchup-stat-val">${streak}</span><span class="matchup-stat-label">Win Streak</span></div>
-    ${rival ? `<div class="matchup-stat"><span class="matchup-stat-val">${rival[0]}</span><span class="matchup-stat-label">Rival (${rival[1]}x)</span></div>` : ""}
+    <div class="matchup-stat"><span class="matchup-stat-val">${winPct.toFixed(1)}%</span><span class="matchup-stat-label">Win Rate</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${n}</span><span class="matchup-stat-label">Matchups</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${displayScore.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
   `;
 
-  const listEl = document.getElementById("matchup-modal-list");
-  if (!matchups.length) {
-    listEl.innerHTML = '<div class="results-empty">No matchups found.</div>';
-  } else {
-    listEl.innerHTML = matchups.map(m => {
-      const dateStr = m.ts ? m.ts.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Unknown";
-      return `<div class="matchup-row ${m.won ? "matchup-row--win" : "matchup-row--loss"}">
-        <span class="matchup-row-result">${m.won ? "W" : "L"}</span>
-        <span class="matchup-row-opponent">${m.opponentTitle}</span>
-        <span class="matchup-row-date">${dateStr}</span>
-      </div>`;
-    }).join("");
-  }
+  document.getElementById("matchup-modal-list").innerHTML =
+    '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Detailed matchup history is not available in this view.</div>';
 
   document.getElementById("matchup-modal").classList.remove("hidden");
 }

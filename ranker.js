@@ -466,21 +466,41 @@ async function handleVote(choice) {
  */
 async function saveVoteToFirestore(winner, loser) {
   try {
-    // Save to votes collection
+    const winnerKey = getMovieKey(winner);
+    const loserKey = getMovieKey(loser);
+    const uid = auth.currentUser?.uid || null;
+
+    // 1. Audit log — individual vote doc (append-only, never scanned by UI)
     await addDoc(collection(db, "votes"), {
-      winner: getMovieKey(winner),
-      loser: getMovieKey(loser),
-      user: auth.currentUser?.uid || null,
+      winner: winnerKey,
+      loser: loserKey,
+      user: uid,
       timestamp: serverTimestamp()
     });
 
-    // Update aggregate stats
+    // 2. Update aggregate stats atomically
     const batch = writeBatch(db);
-    const statsRef = doc(db, "stats", "global");
 
-    batch.set(statsRef, {
-      [`stats.${getMovieKey(winner)}.wins`]: increment(1),
-      [`stats.${getMovieKey(loser)}.losses`]: increment(1)
+    // Global per-movie stats
+    const globalRef = doc(db, "stats", "global");
+    batch.set(globalRef, {
+      [`stats.${winnerKey}.wins`]: increment(1),
+      [`stats.${loserKey}.losses`]: increment(1)
+    }, { merge: true });
+
+    // Per-user per-movie stats
+    if (uid) {
+      const userStatsRef = doc(db, "stats", `user_${uid}`);
+      batch.set(userStatsRef, {
+        [`stats.${winnerKey}.wins`]: increment(1),
+        [`stats.${loserKey}.losses`]: increment(1)
+      }, { merge: true });
+    }
+
+    // Meta counters
+    const metaRef = doc(db, "stats", "meta");
+    batch.set(metaRef, {
+      totalVotes: increment(1)
     }, { merge: true });
 
     await batch.commit();
@@ -708,15 +728,16 @@ async function initializeApp() {
 }
 
 /**
- * Update the vote counter on the home page with global Firebase count
+ * Update the vote counter on the home page from stats/meta (1 read)
  */
 async function updateVoteCounter() {
   const el = document.getElementById("home-vote-count");
   if (!el) return;
 
   try {
-    const snap = await getDocs(collection(db, "votes"));
-    el.textContent = snap.size.toLocaleString();
+    const snap = await getDoc(doc(db, "stats", "meta"));
+    const total = snap.exists() ? (snap.data().totalVotes || 0) : 0;
+    el.textContent = total.toLocaleString();
   } catch (error) {
     console.warn("Could not fetch global vote count:", error);
     el.textContent = state.seenMatchups.length.toLocaleString();
