@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -52,7 +52,6 @@
     <div class="results-tabs">
       <button class="results-tab active" data-tab="global">Global Rankings</button>
       <button class="results-tab" data-tab="personal">Your Rankings</button>
-      <button class="results-tab" data-tab="recent">Recent Votes</button>
       <button class="results-tab" data-tab="toughcalls">Undecided Votes</button>
       <button class="results-tab" data-tab="michaels">Michael's Rankings</button>
     </div>
@@ -75,8 +74,7 @@
             <label for="global-show">Show</label>
             <select id="global-show">
               <option value="20" selected>Top 20</option>
-              <option value="50">Top 50</option>
-              <option value="all">All</option>
+              <option value="30">Top 30</option>
             </select>
           </div>
           <div class="control-group control-group--search">
@@ -96,26 +94,7 @@
         <span id="global-count">Loading...</span>
       </div>
 
-      <!-- Desktop table -->
-      <div class="results-table-wrap">
-        <table class="results-table" id="global-table">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th class="col-movie">Movie</th>
-              <th class="col-num" title="Total matchups played">Matchups</th>
-              <th class="col-num">Wins</th>
-              <th class="col-num">Losses</th>
-              <th class="col-num">Win %</th>
-              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
-            </tr>
-          </thead>
-          <tbody id="global-list"></tbody>
-        </table>
-      </div>
-
-      <!-- Mobile cards -->
-      <div class="results-cards" id="global-cards"></div>
+      <div class="rk-grid" id="global-grid"></div>
     </div>
 
     <!-- ===== PERSONAL TAB ===== -->
@@ -136,8 +115,7 @@
             <label for="personal-show">Show</label>
             <select id="personal-show">
               <option value="20" selected>Top 20</option>
-              <option value="50">Top 50</option>
-              <option value="all">All</option>
+              <option value="30">Top 30</option>
             </select>
           </div>
           <div class="control-group control-group--search">
@@ -151,43 +129,7 @@
         <span id="personal-count">Loading...</span>
       </div>
 
-      <div class="results-table-wrap">
-        <table class="results-table" id="personal-table">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th class="col-movie">Movie</th>
-              <th class="col-num" title="Total matchups played">Matchups</th>
-              <th class="col-num">Wins</th>
-              <th class="col-num">Losses</th>
-              <th class="col-num">Win %</th>
-              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
-            </tr>
-          </thead>
-          <tbody id="personal-list"></tbody>
-        </table>
-      </div>
-
-      <div class="results-cards" id="personal-cards"></div>
-    </div>
-
-    <!-- ===== RECENT TAB ===== -->
-    <div class="results-panel" id="panel-recent">
-      <div class="results-table-wrap">
-        <table class="results-table recent-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Winner</th>
-              <th>Loser</th>
-            </tr>
-          </thead>
-          <tbody id="recent-votes">
-            <tr><td colspan="3" class="results-empty">Loading recent votes...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="results-cards" id="recent-cards"></div>
+      <div class="rk-grid" id="personal-grid"></div>
     </div>
 
     <!-- ===== TOUGH CALLS TAB ===== -->
@@ -204,29 +146,7 @@
       <div class="results-meta">
         <span id="michaels-status">Loading Michael's rankings...</span>
       </div>
-
-      <!-- Desktop table -->
-      <div class="results-table-wrap">
-        <table class="results-table" id="michaels-table">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th class="col-movie">Movie</th>
-              <th class="col-num" title="Total matchups played by Michael">Matchups</th>
-              <th class="col-num">Wins</th>
-              <th class="col-num">Losses</th>
-              <th class="col-num">Win %</th>
-              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
-              <th class="col-num" title="This movie's rank in the global rankings">Global #</th>
-              <th class="col-num" title="TMDB community rating">Rating</th>
-            </tr>
-          </thead>
-          <tbody id="michaels-list"></tbody>
-        </table>
-      </div>
-
-      <!-- Mobile cards -->
-      <div class="results-cards" id="michaels-cards"></div>
+      <div class="rk-grid" id="michaels-grid"></div>
     </div>
 
     <a href="index.html" class="back-link">Back to Home</a>

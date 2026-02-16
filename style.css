@@ -1167,6 +1167,115 @@ tbody tr:last-child td { border-bottom: none; }
   padding: var(--s-2) var(--s-4);
 }
 
+
+/* =========================================================
+   9b) POSTER CARD GRID (VHS rental wall)
+   ========================================================= */
+
+.rk-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+}
+
+.rk-card {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
+  cursor: default;
+}
+
+.rk-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-poster);
+  border-color: var(--color-indigo-dim);
+}
+
+/* Poster wrap — fixed aspect ratio */
+.rk-card-poster-wrap {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  background: var(--color-bg-2);
+  overflow: hidden;
+}
+
+.rk-card-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+/* Rank badge overlay */
+.rk-card-rank {
+  position: absolute;
+  top: var(--s-2);
+  left: var(--s-2);
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 19, 25, 0.85);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-0);
+  font-weight: var(--fw-black);
+  color: var(--color-accent);
+  padding: 0 var(--s-1);
+  backdrop-filter: blur(4px);
+}
+
+/* Card body — info below poster */
+.rk-card-body {
+  padding: var(--s-3);
+}
+
+.rk-card-title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-1);
+  color: var(--color-text-0);
+  line-height: var(--lh-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rk-card-year {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  margin-top: 2px;
+}
+
+.rk-card-stats {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  font-size: var(--fs-0);
+  color: var(--color-text-1);
+  flex-wrap: wrap;
+}
+
+.rk-card-score {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  color: var(--color-accent);
+}
+
+.rk-card-extra {
+  font-size: 0.7rem;
+  color: var(--color-text-2);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px var(--s-1);
+  border-radius: var(--r-sm);
+}
+
+
 /* =========================================================
    10) RESPONSIVE
    ========================================================= */
@@ -1188,6 +1297,13 @@ tbody tr:last-child td { border-bottom: none; }
   :root { --container-pad: var(--s-8); }
   #compare-section { column-gap: var(--s-8); }
   .movie-block { max-width: 360px; }
+}
+
+/* Tablet: 3-column poster grid */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rk-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* Small screens */
@@ -1299,6 +1415,30 @@ tbody tr:last-child td { border-bottom: none; }
   .btn-info {
     width: 20px;
     height: 20px;
+    font-size: 0.65rem;
+  }
+
+  /* Poster grid: 2 columns on mobile */
+  .rk-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-3);
+  }
+
+  .rk-card-body {
+    padding: var(--s-2);
+  }
+
+  .rk-card-title {
+    font-size: var(--fs-0);
+  }
+
+  .rk-card-score {
+    font-size: var(--fs-2);
+  }
+
+  .rk-card-rank {
+    min-width: 24px;
+    height: 24px;
     font-size: 0.65rem;
   }
 

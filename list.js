@@ -16,15 +16,84 @@ import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 
 let normalizeKey = (k) => k; // identity until movie list loads
 
+// ==========================================
+// POSTER CACHE + LOOKUP
+// ==========================================
+
+const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
+const posterMap = {};      // movieKey -> poster URL (from JSON)
+const posterCache = {};    // movieKey -> poster URL (runtime TMDB lookups)
+const FALLBACK_POSTER = "./fallback.jpg";
+
 async function initNormalizer() {
   try {
     const res = await fetch("movie_list_cleaned.json");
     const allMovies = await res.json();
     const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
     normalizeKey = buildKeyNormalizer(movies);
+
+    // Build poster map from JSON data
+    movies.forEach(m => {
+      const key = makeMovieKey(m.title, m.year);
+      if (m.poster) {
+        posterMap[key] = m.poster;
+      }
+    });
   } catch (err) {
     console.warn("Could not load movie list for key normalization:", err);
   }
+}
+
+function getPosterUrl(movieKey) {
+  // 1. Check JSON-provided poster
+  if (posterMap[movieKey]) return posterMap[movieKey];
+  // 2. Check runtime cache
+  if (posterCache[movieKey]) return posterCache[movieKey];
+  // 3. Return null — will be fetched lazily
+  return null;
+}
+
+async function fetchPosterFromTMDB(title, year) {
+  try {
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const posterPath = data.results?.[0]?.poster_path;
+    return posterPath ? TMDB_IMAGE_BASE + posterPath : null;
+  } catch {
+    return null;
+  }
+}
+
+// Lazy-load posters for cards that don't have one from JSON.
+// Batches fetches and updates images in-place.
+async function lazyLoadPosters(container) {
+  const imgs = container.querySelectorAll("img[data-needs-poster]");
+  const fetches = [];
+
+  for (const img of imgs) {
+    const key = img.dataset.needsPoster;
+    if (!key) continue;
+
+    const title = key.split("|")[0];
+    const year = key.split("|")[1] || "";
+
+    fetches.push(
+      fetchPosterFromTMDB(title, year).then(url => {
+        if (url) {
+          posterCache[key] = url;
+          img.src = url;
+        } else {
+          posterCache[key] = FALLBACK_POSTER;
+          img.src = FALLBACK_POSTER;
+        }
+        img.removeAttribute("data-needs-poster");
+      })
+    );
+  }
+
+  await Promise.all(fetches);
 }
 
 // ==========================================
@@ -56,12 +125,6 @@ function confidenceLevel(n) {
   if (n < MIN_MATCHUPS) return "low";
   if (n < 15) return "med";
   return "high";
-}
-
-function confidenceLabel(level) {
-  if (level === "low") return "Low";
-  if (level === "med") return "Med";
-  return "High";
 }
 
 // ==========================================
@@ -112,59 +175,61 @@ function sortRows(rows, mode) {
 }
 
 // ==========================================
-// RENDERING
+// POSTER CARD GRID RENDERER
 // ==========================================
 
-function renderTable(tbody, rows) {
-  tbody.innerHTML = "";
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="results-empty">No results to display.</td></tr>';
-    return;
-  }
-  rows.forEach((m, i) => {
-    const tr = document.createElement("tr");
-    tr.style.cursor = "pointer";
-    tr.addEventListener("click", () => showMatchupModal(m.key));
-    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
-    tr.innerHTML = `
-      <td class="col-rank">${i + 1}</td>
-      <td class="col-movie"><span class="movie-name">${m.title}</span>${m.year ? ` <span class="movie-yr">${m.year}</span>` : ""}</td>
-      <td class="col-num">${m.n}</td>
-      <td class="col-num">${m.wins}</td>
-      <td class="col-num">${m.losses}</td>
-      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
-      <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderCards(container, rows) {
+function renderPosterGrid(container, rows, options = {}) {
   container.innerHTML = "";
+
   if (!rows.length) {
     container.innerHTML = '<div class="results-empty">No results to display.</div>';
     return;
   }
+
   rows.forEach((m, i) => {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    const poster = getPosterUrl(m.key);
+    const needsFetch = !poster;
+
     const card = document.createElement("div");
-    card.className = "result-card";
+    card.className = "rk-card";
     card.style.cursor = "pointer";
     card.addEventListener("click", () => showMatchupModal(m.key));
+
+    // Extra columns for Michael's tab
+    let extraStats = "";
+    if (options.showGlobalRank) {
+      const globalDisplay = m.globalRank != null ? `#${m.globalRank}` : "—";
+      const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
+      extraStats = `<span class="rk-card-extra">Global ${globalDisplay}</span><span class="rk-card-extra">TMDB ${ratingDisplay}</span>`;
+    }
+
     card.innerHTML = `
-      <div class="result-card-rank">${i + 1}</div>
-      <div class="result-card-body">
-        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
-        <div class="result-card-stats">
+      <div class="rk-card-poster-wrap">
+        <img class="rk-card-poster"
+             src="${poster || FALLBACK_POSTER}"
+             alt="${m.title}"
+             loading="lazy"
+             ${needsFetch ? `data-needs-poster="${m.key}"` : ""} />
+        <div class="rk-card-rank">${i + 1}</div>
+      </div>
+      <div class="rk-card-body">
+        <div class="rk-card-title">${m.title}</div>
+        <div class="rk-card-year">${m.year || ""}</div>
+        <div class="rk-card-stats">
           <span>${m.n} matchups</span>
-          <span>${m.wins}W / ${m.losses}L</span>
-          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
+          <span>${m.wins}W–${m.losses}L</span>
+          <span class="${pctClass}">${m.winPct.toFixed(0)}%</span>
+          <span class="rk-card-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</span>
+          ${extraStats}
         </div>
       </div>
-      <div class="result-card-score" title="Win rate adjusted for how many matchups the movie has played.">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</div>
     `;
     container.appendChild(card);
   });
+
+  // Lazy-load any posters not found in JSON
+  lazyLoadPosters(container);
 }
 
 // ==========================================
@@ -196,10 +261,15 @@ function applyGlobalFilters() {
   if (hideLow) filtered = filtered.filter(r => r.n >= MIN_MATCHUPS);
   if (search) filtered = filtered.filter(r => r.title.toLowerCase().includes(search));
   let sorted = sortRows(filtered, sort);
-  if (showVal !== "all") sorted = sorted.slice(0, parseInt(showVal));
 
-  renderTable(document.getElementById("global-list"), sorted);
-  renderCards(document.getElementById("global-cards"), sorted);
+  // In search mode: show up to 50 results, ignore "Show" dropdown
+  if (search) {
+    sorted = sorted.slice(0, 50);
+  } else {
+    sorted = sorted.slice(0, parseInt(showVal));
+  }
+
+  renderPosterGrid(document.getElementById("global-grid"), sorted);
 }
 
 document.getElementById("global-sort").addEventListener("change", applyGlobalFilters);
@@ -209,10 +279,8 @@ document.getElementById("global-hide-low").addEventListener("change", applyGloba
 
 async function loadGlobalStats() {
   const countEl = document.getElementById("global-count");
-  const tbody = document.getElementById("global-list");
-  const cards = document.getElementById("global-cards");
-  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading global rankings...</td></tr>';
-  cards.innerHTML = '<div class="results-empty">Loading...</div>';
+  const grid = document.getElementById("global-grid");
+  grid.innerHTML = '<div class="results-empty">Loading global rankings...</div>';
 
   try {
     const snap = await getDocs(collection(db, "votes"));
@@ -237,8 +305,7 @@ async function loadGlobalStats() {
     applyGlobalFilters();
   } catch (err) {
     console.error("loadGlobalStats error:", err);
-    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load global rankings.</td></tr>';
-    cards.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
+    grid.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
     countEl.textContent = "Unable to load";
   }
 }
@@ -257,10 +324,14 @@ function applyPersonalFilters() {
   let filtered = personalAllRows;
   if (search) filtered = filtered.filter(r => r.title.toLowerCase().includes(search));
   let sorted = sortRows(filtered, sort);
-  if (showVal !== "all") sorted = sorted.slice(0, parseInt(showVal));
 
-  renderTable(document.getElementById("personal-list"), sorted);
-  renderCards(document.getElementById("personal-cards"), sorted);
+  if (search) {
+    sorted = sorted.slice(0, 50);
+  } else {
+    sorted = sorted.slice(0, parseInt(showVal));
+  }
+
+  renderPosterGrid(document.getElementById("personal-grid"), sorted);
 }
 
 document.getElementById("personal-sort").addEventListener("change", applyPersonalFilters);
@@ -269,10 +340,8 @@ document.getElementById("personal-search").addEventListener("input", applyPerson
 
 async function loadPersonalStats(uid) {
   const countEl = document.getElementById("personal-count");
-  const tbody = document.getElementById("personal-list");
-  const cards = document.getElementById("personal-cards");
-  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading your rankings...</td></tr>';
-  cards.innerHTML = '<div class="results-empty">Loading...</div>';
+  const grid = document.getElementById("personal-grid");
+  grid.innerHTML = '<div class="results-empty">Loading your rankings...</div>';
 
   try {
     const snap = await getDocs(query(
@@ -300,83 +369,8 @@ async function loadPersonalStats(uid) {
     applyPersonalFilters();
   } catch (err) {
     console.error("loadPersonalStats error:", err);
-    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load personal rankings.</td></tr>';
-    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
+    grid.innerHTML = '<div class="results-empty results-error">Failed to load personal rankings.</div>';
     countEl.textContent = "Error";
-  }
-}
-
-// ==========================================
-// WIRING: RECENT VOTES
-// ==========================================
-
-function formatDate(timestamp) {
-  if (!timestamp) return "Unknown";
-  try {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch { return "Unknown"; }
-}
-
-async function loadRecentVotes(uid) {
-  const tbody = document.getElementById("recent-votes");
-  const cards = document.getElementById("recent-cards");
-  tbody.innerHTML = '<tr><td colspan="3" class="results-empty">Loading recent votes...</td></tr>';
-  cards.innerHTML = '<div class="results-empty">Loading...</div>';
-
-  try {
-    const snap = await getDocs(query(
-      collection(db, "votes"),
-      where("user", "==", uid),
-      limit(50)
-    ));
-
-    let votes = [];
-    snap.forEach(doc => {
-      const data = doc.data();
-      if (data.winner && data.loser) votes.push(data);
-    });
-
-    votes.sort((a, b) => {
-      const tA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
-      const tB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
-      return tB - tA;
-    });
-    votes = votes.slice(0, 10);
-
-    tbody.innerHTML = "";
-    cards.innerHTML = "";
-    if (!votes.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="results-empty">No votes found. Start voting!</td></tr>';
-      cards.innerHTML = '<div class="results-empty">No votes found.</div>';
-      return;
-    }
-
-    votes.forEach(({ winner, loser, timestamp }) => {
-      const wKey = typeof winner === "string" ? normalizeKey(winner) : "";
-      const lKey = typeof loser === "string" ? normalizeKey(loser) : "";
-      const w = wKey ? wKey.split("|")[0] : (winner?.title || "Unknown");
-      const l = lKey ? lKey.split("|")[0] : (loser?.title || "Unknown");
-      const d = formatDate(timestamp);
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${d}</td><td>${w}</td><td>${l}</td>`;
-      tbody.appendChild(tr);
-
-      const card = document.createElement("div");
-      card.className = "result-card result-card--recent";
-      card.innerHTML = `
-        <div class="result-card-body">
-          <div class="result-card-title">${w} <span class="movie-yr">beat</span> ${l}</div>
-          <div class="result-card-stats"><span>${d}</span></div>
-        </div>
-      `;
-      cards.appendChild(card);
-    });
-  } catch (err) {
-    console.error("loadRecentVotes error:", err);
-    tbody.innerHTML = '<tr><td colspan="3" class="results-empty results-error">Unable to load recent votes.</td></tr>';
-    cards.innerHTML = '<div class="results-empty results-error">Unable to load.</div>';
   }
 }
 
@@ -481,8 +475,6 @@ async function loadToughCallsTab() {
 // MICHAEL'S RANKINGS TAB
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-
 async function fetchTmdbRating(title, year) {
   try {
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
@@ -495,75 +487,16 @@ async function fetchTmdbRating(title, year) {
   }
 }
 
-function renderMichaelsTable(tbody, rows) {
-  tbody.innerHTML = "";
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No results to display.</td></tr>';
-    return;
-  }
-  rows.forEach((m, i) => {
-    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
-    const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
-    const globalDisplay = m.globalRank != null ? m.globalRank : "—";
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="col-rank">${i + 1}</td>
-      <td class="col-movie"><span class="movie-name">${m.title}</span>${m.year ? ` <span class="movie-yr">${m.year}</span>` : ""}</td>
-      <td class="col-num">${m.n}</td>
-      <td class="col-num">${m.wins}</td>
-      <td class="col-num">${m.losses}</td>
-      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
-      <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
-      <td class="col-num">${globalDisplay}</td>
-      <td class="col-num">${ratingDisplay}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderMichaelsCards(container, rows) {
-  container.innerHTML = "";
-  if (!rows.length) {
-    container.innerHTML = '<div class="results-empty">No results to display.</div>';
-    return;
-  }
-  rows.forEach((m, i) => {
-    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
-    const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
-    const globalDisplay = m.globalRank != null ? `#${m.globalRank}` : "—";
-    const card = document.createElement("div");
-    card.className = "result-card";
-    card.innerHTML = `
-      <div class="result-card-rank">${i + 1}</div>
-      <div class="result-card-body">
-        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
-        <div class="result-card-stats">
-          <span>${m.n} matchups</span>
-          <span>${m.wins}W / ${m.losses}L</span>
-          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
-          <span>Global: ${globalDisplay}</span>
-          <span>Rating: ${ratingDisplay}</span>
-        </div>
-      </div>
-      <div class="result-card-score" title="Adjusted score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</div>
-    `;
-    container.appendChild(card);
-  });
-}
-
 async function loadMichaelsRankings() {
   const statusEl = document.getElementById("michaels-status");
-  const tbody = document.getElementById("michaels-list");
-  const cards = document.getElementById("michaels-cards");
-  if (!tbody || !cards) return;
+  const grid = document.getElementById("michaels-grid");
+  if (!grid) return;
 
-  tbody.innerHTML = '<tr><td colspan="9" class="results-empty">Loading Michael\'s rankings...</td></tr>';
-  cards.innerHTML = '<div class="results-empty">Loading...</div>';
+  grid.innerHTML = '<div class="results-empty">Loading Michael\'s rankings...</div>';
 
   try {
     const snap = await getDocs(collection(db, "votes"));
 
-    // Group votes by user to find Michael (most active voter)
     const votesByUser = {};
     const globalStats = {};
 
@@ -573,13 +506,11 @@ async function loadMichaelsRankings() {
       const w = normalizeKey(winner);
       const l = normalizeKey(loser);
 
-      // Build global stats
       globalStats[w] = globalStats[w] || { wins: 0, losses: 0 };
       globalStats[l] = globalStats[l] || { wins: 0, losses: 0 };
       globalStats[w].wins++;
       globalStats[l].losses++;
 
-      // Group by user
       if (user) {
         votesByUser[user] = votesByUser[user] || { votes: 0, stats: {} };
         votesByUser[user].votes++;
@@ -591,7 +522,6 @@ async function loadMichaelsRankings() {
       }
     });
 
-    // Find Michael — the user with the most votes
     let mikeUid = null;
     let maxVotes = 0;
     for (const [uid, data] of Object.entries(votesByUser)) {
@@ -603,24 +533,20 @@ async function loadMichaelsRankings() {
 
     if (!mikeUid) {
       statusEl.textContent = "No votes found.";
-      tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No votes found.</td></tr>';
-      cards.innerHTML = '<div class="results-empty">No votes found.</div>';
+      grid.innerHTML = '<div class="results-empty">No votes found.</div>';
       return;
     }
 
-    // Build global rankings
     const globalRows = buildRankedData(globalStats);
     globalRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n);
     const globalRankMap = {};
     globalRows.forEach((r, i) => { globalRankMap[r.key] = i + 1; });
 
-    // Build Michael's rankings
     const mikeStats = votesByUser[mikeUid].stats;
     let mikeRows = buildRankedData(mikeStats);
     mikeRows.sort((a, b) => b.wilsonScore - a.wilsonScore || b.n - a.n || b.wins - a.wins);
     mikeRows = mikeRows.slice(0, 15);
 
-    // Add global rank
     mikeRows.forEach(r => {
       r.globalRank = globalRankMap[r.key] || null;
     });
@@ -629,22 +555,19 @@ async function loadMichaelsRankings() {
 
     // Render immediately without ratings
     mikeRows.forEach(r => { r.tmdbRating = null; });
-    renderMichaelsTable(tbody, mikeRows);
-    renderMichaelsCards(cards, mikeRows);
+    renderPosterGrid(grid, mikeRows, { showGlobalRank: true });
 
     // Fetch TMDB ratings in background and re-render
     const ratingPromises = mikeRows.map(async r => {
       r.tmdbRating = await fetchTmdbRating(r.title, r.year);
     });
     await Promise.all(ratingPromises);
-    renderMichaelsTable(tbody, mikeRows);
-    renderMichaelsCards(cards, mikeRows);
+    renderPosterGrid(grid, mikeRows, { showGlobalRank: true });
 
   } catch (err) {
     console.error("loadMichaelsRankings error:", err);
     statusEl.textContent = "Unable to load";
-    tbody.innerHTML = '<tr><td colspan="9" class="results-empty results-error">Failed to load Michael\'s rankings.</td></tr>';
-    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
+    grid.innerHTML = '<div class="results-empty results-error">Failed to load Michael\'s rankings.</div>';
   }
 }
 
@@ -663,7 +586,6 @@ function showMatchupModal(key) {
   const title = key.split("|")[0];
   const year = key.split("|")[1] || "";
 
-  // Filter votes involving this movie (normalize to catch legacy key variants)
   const matchups = votes
     .filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key)
     .map(v => {
@@ -675,26 +597,22 @@ function showMatchupModal(key) {
     })
     .sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
-  // Aggregate stats
   const wins = matchups.filter(m => m.won).length;
   const losses = matchups.length - wins;
   const winPct = matchups.length ? ((wins / matchups.length) * 100).toFixed(1) : "0.0";
 
-  // Win streak (current)
   let streak = 0;
   for (const m of matchups) {
     if (m.won) streak++;
     else break;
   }
 
-  // Biggest rival (most frequent opponent)
   const oppCounts = {};
   matchups.forEach(m => {
     oppCounts[m.opponentTitle] = (oppCounts[m.opponentTitle] || 0) + 1;
   });
   const rival = Object.entries(oppCounts).sort((a, b) => b[1] - a[1])[0];
 
-  // Render
   document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
 
   document.getElementById("matchup-modal-stats").innerHTML = `
@@ -725,7 +643,6 @@ function closeMatchupModal() {
   document.getElementById("matchup-modal").classList.add("hidden");
 }
 
-// Close on backdrop click or X button
 document.getElementById("matchup-modal").addEventListener("click", (e) => {
   if (e.target.id === "matchup-modal") closeMatchupModal();
 });
@@ -743,13 +660,9 @@ window.addEventListener("load", async () => {
   onAuth(async user => {
     if (user) {
       await loadPersonalStats(user.uid);
-      await loadRecentVotes(user.uid);
     } else {
-      document.getElementById("personal-list").innerHTML = '<tr><td colspan="7" class="results-empty">Log in to see your personal rankings.</td></tr>';
-      document.getElementById("personal-cards").innerHTML = '<div class="results-empty">Log in to see your rankings.</div>';
+      document.getElementById("personal-grid").innerHTML = '<div class="results-empty">Log in to see your personal rankings.</div>';
       document.getElementById("personal-count").textContent = "Log in to view";
-      document.getElementById("recent-votes").innerHTML = '<tr><td colspan="3" class="results-empty">Log in to see your recent votes.</td></tr>';
-      document.getElementById("recent-cards").innerHTML = '<div class="results-empty">Log in to see votes.</div>';
     }
     await loadGlobalStats();
     await loadToughCallsTab();
