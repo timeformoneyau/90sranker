@@ -17,14 +17,11 @@ import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 let normalizeKey = (k) => k; // identity until movie list loads
 
 // ==========================================
-// POSTER CACHE + LOOKUP
+// POSTER LOOKUP (from movie_list_cleaned.json)
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 const posterMap = {};      // movieKey -> poster URL (from JSON)
-const posterCache = {};    // movieKey -> poster URL (runtime TMDB lookups)
-const FALLBACK_POSTER = "./fallback.jpg";
+const FALLBACK_POSTER = "";
 
 async function initNormalizer() {
   try {
@@ -37,7 +34,8 @@ async function initNormalizer() {
     movies.forEach(m => {
       const key = makeMovieKey(m.title, m.year);
       if (m.poster) {
-        posterMap[key] = m.poster;
+        // Use w185 size for table thumbnails (smaller than w500 in JSON)
+        posterMap[key] = m.poster.replace("/w500/", "/w185/");
       }
     });
   } catch (err) {
@@ -46,54 +44,7 @@ async function initNormalizer() {
 }
 
 function getPosterUrl(movieKey) {
-  // 1. Check JSON-provided poster
-  if (posterMap[movieKey]) return posterMap[movieKey];
-  // 2. Check runtime cache
-  if (posterCache[movieKey]) return posterCache[movieKey];
-  // 3. Return null — will be fetched lazily
-  return null;
-}
-
-async function fetchPosterFromTMDB(title, year) {
-  try {
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const posterPath = data.results?.[0]?.poster_path;
-    return posterPath ? TMDB_IMAGE_BASE + posterPath : null;
-  } catch {
-    return null;
-  }
-}
-
-// Lazy-load posters for cards that don't have one from JSON.
-// Batches fetches and updates images in-place.
-async function lazyLoadPosters(container) {
-  const imgs = container.querySelectorAll("img[data-needs-poster]");
-  const fetches = [];
-
-  for (const img of imgs) {
-    const key = img.dataset.needsPoster;
-    if (!key) continue;
-
-    const title = key.split("|")[0];
-    const year = key.split("|")[1] || "";
-
-    fetches.push(
-      fetchPosterFromTMDB(title, year).then(url => {
-        if (url) {
-          posterCache[key] = url;
-          img.src = url;
-        } else {
-          posterCache[key] = FALLBACK_POSTER;
-          img.src = FALLBACK_POSTER;
-        }
-        img.removeAttribute("data-needs-poster");
-      })
-    );
-  }
-
-  await Promise.all(fetches);
+  return posterMap[movieKey] || FALLBACK_POSTER;
 }
 
 // ==========================================
@@ -175,61 +126,77 @@ function sortRows(rows, mode) {
 }
 
 // ==========================================
-// POSTER CARD GRID RENDERER
+// RENDERING — poster thumbnail in Movie cell
 // ==========================================
 
-function renderPosterGrid(container, rows, options = {}) {
-  container.innerHTML = "";
+function movieCellHTML(title, year, movieKey) {
+  const poster = getPosterUrl(movieKey);
+  const posterImg = poster
+    ? `<img class="poster-thumb" src="${poster}" alt="" loading="lazy" />`
+    : `<div class="poster-thumb poster-thumb--empty"></div>`;
+  return `
+    <div class="movie-row">
+      ${posterImg}
+      <div class="movie-meta">
+        <span class="movie-name">${title}</span>
+        ${year ? `<span class="movie-yr">${year}</span>` : ""}
+      </div>
+    </div>
+  `;
+}
 
+function renderTable(tbody, rows) {
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty">No results to display.</td></tr>';
+    return;
+  }
+  rows.forEach((m, i) => {
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.addEventListener("click", () => showMatchupModal(m.key));
+    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    tr.innerHTML = `
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-movie">${movieCellHTML(m.title, m.year, m.key)}</td>
+      <td class="col-num">${m.n}</td>
+      <td class="col-num">${m.wins}</td>
+      <td class="col-num">${m.losses}</td>
+      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
+      <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCards(container, rows) {
+  container.innerHTML = "";
   if (!rows.length) {
     container.innerHTML = '<div class="results-empty">No results to display.</div>';
     return;
   }
-
   rows.forEach((m, i) => {
     const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
     const poster = getPosterUrl(m.key);
-    const needsFetch = !poster;
-
     const card = document.createElement("div");
-    card.className = "rk-card";
+    card.className = "result-card";
     card.style.cursor = "pointer";
     card.addEventListener("click", () => showMatchupModal(m.key));
-
-    // Extra columns for Michael's tab
-    let extraStats = "";
-    if (options.showGlobalRank) {
-      const globalDisplay = m.globalRank != null ? `#${m.globalRank}` : "—";
-      const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
-      extraStats = `<span class="rk-card-extra">Global ${globalDisplay}</span><span class="rk-card-extra">TMDB ${ratingDisplay}</span>`;
-    }
-
     card.innerHTML = `
-      <div class="rk-card-poster-wrap">
-        <img class="rk-card-poster"
-             src="${poster || FALLBACK_POSTER}"
-             alt="${m.title}"
-             loading="lazy"
-             ${needsFetch ? `data-needs-poster="${m.key}"` : ""} />
-        <div class="rk-card-rank">${i + 1}</div>
-      </div>
-      <div class="rk-card-body">
-        <div class="rk-card-title">${m.title}</div>
-        <div class="rk-card-year">${m.year || ""}</div>
-        <div class="rk-card-stats">
+      <div class="result-card-rank">${i + 1}</div>
+      ${poster ? `<img class="poster-thumb poster-thumb--card" src="${poster}" alt="" loading="lazy" />` : ""}
+      <div class="result-card-body">
+        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
+        <div class="result-card-stats">
           <span>${m.n} matchups</span>
-          <span>${m.wins}W–${m.losses}L</span>
-          <span class="${pctClass}">${m.winPct.toFixed(0)}%</span>
-          <span class="rk-card-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</span>
-          ${extraStats}
+          <span>${m.wins}W / ${m.losses}L</span>
+          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
         </div>
       </div>
+      <div class="result-card-score" title="Win rate adjusted for how many matchups the movie has played.">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</div>
     `;
     container.appendChild(card);
   });
-
-  // Lazy-load any posters not found in JSON
-  lazyLoadPosters(container);
 }
 
 // ==========================================
@@ -262,14 +229,14 @@ function applyGlobalFilters() {
   if (search) filtered = filtered.filter(r => r.title.toLowerCase().includes(search));
   let sorted = sortRows(filtered, sort);
 
-  // In search mode: show up to 50 results, ignore "Show" dropdown
   if (search) {
     sorted = sorted.slice(0, 50);
   } else {
     sorted = sorted.slice(0, parseInt(showVal));
   }
 
-  renderPosterGrid(document.getElementById("global-grid"), sorted);
+  renderTable(document.getElementById("global-list"), sorted);
+  renderCards(document.getElementById("global-cards"), sorted);
 }
 
 document.getElementById("global-sort").addEventListener("change", applyGlobalFilters);
@@ -279,8 +246,10 @@ document.getElementById("global-hide-low").addEventListener("change", applyGloba
 
 async function loadGlobalStats() {
   const countEl = document.getElementById("global-count");
-  const grid = document.getElementById("global-grid");
-  grid.innerHTML = '<div class="results-empty">Loading global rankings...</div>';
+  const tbody = document.getElementById("global-list");
+  const cards = document.getElementById("global-cards");
+  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading global rankings...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
     const snap = await getDocs(collection(db, "votes"));
@@ -305,7 +274,8 @@ async function loadGlobalStats() {
     applyGlobalFilters();
   } catch (err) {
     console.error("loadGlobalStats error:", err);
-    grid.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load global rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
     countEl.textContent = "Unable to load";
   }
 }
@@ -331,7 +301,8 @@ function applyPersonalFilters() {
     sorted = sorted.slice(0, parseInt(showVal));
   }
 
-  renderPosterGrid(document.getElementById("personal-grid"), sorted);
+  renderTable(document.getElementById("personal-list"), sorted);
+  renderCards(document.getElementById("personal-cards"), sorted);
 }
 
 document.getElementById("personal-sort").addEventListener("change", applyPersonalFilters);
@@ -340,8 +311,10 @@ document.getElementById("personal-search").addEventListener("input", applyPerson
 
 async function loadPersonalStats(uid) {
   const countEl = document.getElementById("personal-count");
-  const grid = document.getElementById("personal-grid");
-  grid.innerHTML = '<div class="results-empty">Loading your rankings...</div>';
+  const tbody = document.getElementById("personal-list");
+  const cards = document.getElementById("personal-cards");
+  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading your rankings...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
     const snap = await getDocs(query(
@@ -369,7 +342,8 @@ async function loadPersonalStats(uid) {
     applyPersonalFilters();
   } catch (err) {
     console.error("loadPersonalStats error:", err);
-    grid.innerHTML = '<div class="results-empty results-error">Failed to load personal rankings.</div>';
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load personal rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
     countEl.textContent = "Error";
   }
 }
@@ -398,7 +372,6 @@ async function loadToughCallsTab() {
       }
     });
 
-    // Sort by total votes desc
     toughCalls.sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0));
     const top10 = toughCalls.slice(0, 10);
 
@@ -410,7 +383,6 @@ async function loadToughCallsTab() {
       return;
     }
 
-    // Desktop: table-style rendering
     let tableHTML = `<div class="results-table-wrap"><table class="results-table">
       <thead><tr>
         <th class="col-rank">#</th>
@@ -425,21 +397,18 @@ async function loadToughCallsTab() {
       const vA = tc.votesA || 0;
       const vB = tc.votesB || 0;
       const total = tc.totalVotes || 0;
-      const pctA = total ? Math.round((vA / total) * 100) : 0;
-      const pctB = total ? Math.round((vB / total) * 100) : 0;
 
       tableHTML += `<tr>
         <td class="col-rank">${i + 1}</td>
         <td class="col-movie"><span class="movie-name">${mA}</span> <span class="tc-vs-label">vs</span> <span class="movie-name">${mB}</span></td>
         <td class="col-num">${total}</td>
-        <td class="col-num"><span class="${pctA > pctB ? 'win-pct-high' : pctA < pctB ? 'win-pct-low' : ''}">${mA}: ${vA}</span> / <span class="${pctB > pctA ? 'win-pct-high' : pctB < pctA ? 'win-pct-low' : ''}">${mB}: ${vB}</span></td>
+        <td class="col-num"><span class="${vA > vB ? 'win-pct-high' : vA < vB ? 'win-pct-low' : ''}">${mA}: ${vA}</span> / <span class="${vB > vA ? 'win-pct-high' : vB < vA ? 'win-pct-low' : ''}">${mB}: ${vB}</span></td>
       </tr>`;
     });
 
     tableHTML += "</tbody></table></div>";
     gridEl.innerHTML = tableHTML;
 
-    // Mobile cards
     cardsEl.innerHTML = "";
     top10.forEach((tc, i) => {
       const mA = tc.movieAKey.split("|")[0];
@@ -475,6 +444,8 @@ async function loadToughCallsTab() {
 // MICHAEL'S RANKINGS TAB
 // ==========================================
 
+const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
+
 async function fetchTmdbRating(title, year) {
   try {
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
@@ -487,12 +458,72 @@ async function fetchTmdbRating(title, year) {
   }
 }
 
+function renderMichaelsTable(tbody, rows) {
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No results to display.</td></tr>';
+    return;
+  }
+  rows.forEach((m, i) => {
+    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
+    const globalDisplay = m.globalRank != null ? m.globalRank : "—";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-movie">${movieCellHTML(m.title, m.year, m.key)}</td>
+      <td class="col-num">${m.n}</td>
+      <td class="col-num">${m.wins}</td>
+      <td class="col-num">${m.losses}</td>
+      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
+      <td class="col-num col-score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</td>
+      <td class="col-num">${globalDisplay}</td>
+      <td class="col-num">${ratingDisplay}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderMichaelsCards(container, rows) {
+  container.innerHTML = "";
+  if (!rows.length) {
+    container.innerHTML = '<div class="results-empty">No results to display.</div>';
+    return;
+  }
+  rows.forEach((m, i) => {
+    const pctClass = m.winPct >= 70 ? "win-pct-high" : m.winPct >= 50 ? "win-pct-medium" : "win-pct-low";
+    const ratingDisplay = m.tmdbRating != null ? m.tmdbRating.toFixed(1) : "—";
+    const globalDisplay = m.globalRank != null ? `#${m.globalRank}` : "—";
+    const poster = getPosterUrl(m.key);
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <div class="result-card-rank">${i + 1}</div>
+      ${poster ? `<img class="poster-thumb poster-thumb--card" src="${poster}" alt="" loading="lazy" />` : ""}
+      <div class="result-card-body">
+        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
+        <div class="result-card-stats">
+          <span>${m.n} matchups</span>
+          <span>${m.wins}W / ${m.losses}L</span>
+          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
+          <span>Global: ${globalDisplay}</span>
+          <span>Rating: ${ratingDisplay}</span>
+        </div>
+      </div>
+      <div class="result-card-score" title="Adjusted score">${m.n === 0 ? "—" : m.displayScore.toFixed(1)}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
 async function loadMichaelsRankings() {
   const statusEl = document.getElementById("michaels-status");
-  const grid = document.getElementById("michaels-grid");
-  if (!grid) return;
+  const tbody = document.getElementById("michaels-list");
+  const cards = document.getElementById("michaels-cards");
+  if (!tbody || !cards) return;
 
-  grid.innerHTML = '<div class="results-empty">Loading Michael\'s rankings...</div>';
+  tbody.innerHTML = '<tr><td colspan="9" class="results-empty">Loading Michael\'s rankings...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
     const snap = await getDocs(collection(db, "votes"));
@@ -533,7 +564,8 @@ async function loadMichaelsRankings() {
 
     if (!mikeUid) {
       statusEl.textContent = "No votes found.";
-      grid.innerHTML = '<div class="results-empty">No votes found.</div>';
+      tbody.innerHTML = '<tr><td colspan="9" class="results-empty">No votes found.</td></tr>';
+      cards.innerHTML = '<div class="results-empty">No votes found.</div>';
       return;
     }
 
@@ -553,21 +585,22 @@ async function loadMichaelsRankings() {
 
     statusEl.textContent = `${maxVotes.toLocaleString()} total votes by Michael`;
 
-    // Render immediately without ratings
     mikeRows.forEach(r => { r.tmdbRating = null; });
-    renderPosterGrid(grid, mikeRows, { showGlobalRank: true });
+    renderMichaelsTable(tbody, mikeRows);
+    renderMichaelsCards(cards, mikeRows);
 
-    // Fetch TMDB ratings in background and re-render
     const ratingPromises = mikeRows.map(async r => {
       r.tmdbRating = await fetchTmdbRating(r.title, r.year);
     });
     await Promise.all(ratingPromises);
-    renderPosterGrid(grid, mikeRows, { showGlobalRank: true });
+    renderMichaelsTable(tbody, mikeRows);
+    renderMichaelsCards(cards, mikeRows);
 
   } catch (err) {
     console.error("loadMichaelsRankings error:", err);
     statusEl.textContent = "Unable to load";
-    grid.innerHTML = '<div class="results-empty results-error">Failed to load Michael\'s rankings.</div>';
+    tbody.innerHTML = '<tr><td colspan="9" class="results-empty results-error">Failed to load Michael\'s rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
   }
 }
 
@@ -661,7 +694,8 @@ window.addEventListener("load", async () => {
     if (user) {
       await loadPersonalStats(user.uid);
     } else {
-      document.getElementById("personal-grid").innerHTML = '<div class="results-empty">Log in to see your personal rankings.</div>';
+      document.getElementById("personal-list").innerHTML = '<tr><td colspan="7" class="results-empty">Log in to see your personal rankings.</td></tr>';
+      document.getElementById("personal-cards").innerHTML = '<div class="results-empty">Log in to see your rankings.</div>';
       document.getElementById("personal-count").textContent = "Log in to view";
     }
     await loadGlobalStats();

@@ -1023,7 +1023,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .results-page .results-table td {
-  padding: var(--s-3) var(--s-3);
+  padding: var(--s-2) var(--s-3);
   font-size: var(--fs-1);
   color: var(--color-text-0);
   border-bottom: 1px solid var(--color-border);
@@ -1169,110 +1169,54 @@ tbody tr:last-child td { border-bottom: none; }
 
 
 /* =========================================================
-   9b) POSTER CARD GRID (VHS rental wall)
+   9b) POSTER THUMBNAILS IN TABLE ROWS
    ========================================================= */
 
-.rk-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--s-4);
-  padding: var(--s-4) 0;
-}
-
-.rk-card {
-  background: var(--color-bg-1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
-  cursor: default;
-}
-
-.rk-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-poster);
-  border-color: var(--color-indigo-dim);
-}
-
-/* Poster wrap — fixed aspect ratio */
-.rk-card-poster-wrap {
-  position: relative;
-  aspect-ratio: 2 / 3;
-  background: var(--color-bg-2);
-  overflow: hidden;
-}
-
-.rk-card-poster {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: opacity 0.3s ease;
-}
-
-/* Rank badge overlay */
-.rk-card-rank {
-  position: absolute;
-  top: var(--s-2);
-  left: var(--s-2);
-  min-width: 28px;
-  height: 28px;
+/* Flex layout inside Movie column cell */
+.movie-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(14, 19, 25, 0.85);
-  border: 1px solid var(--color-accent-dim);
-  border-radius: var(--r-sm);
-  font-size: var(--fs-0);
-  font-weight: var(--fw-black);
-  color: var(--color-accent);
-  padding: 0 var(--s-1);
-  backdrop-filter: blur(4px);
+  gap: var(--s-3);
 }
 
-/* Card body — info below poster */
-.rk-card-body {
-  padding: var(--s-3);
+.movie-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.rk-card-title {
-  font-weight: var(--fw-semibold);
-  font-size: var(--fs-1);
-  color: var(--color-text-0);
-  line-height: var(--lh-tight);
+.movie-meta .movie-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.rk-card-year {
-  font-size: var(--fs-0);
-  color: var(--color-text-2);
+.movie-meta .movie-yr {
+  display: block;
+  margin-left: 0;
   margin-top: 2px;
 }
 
-.rk-card-stats {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-2);
-  margin-top: var(--s-2);
-  font-size: var(--fs-0);
-  color: var(--color-text-1);
-  flex-wrap: wrap;
-}
-
-.rk-card-score {
-  font-size: var(--fs-3);
-  font-weight: var(--fw-black);
-  color: var(--color-accent);
-}
-
-.rk-card-extra {
-  font-size: 0.7rem;
-  color: var(--color-text-2);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 1px var(--s-1);
+/* Poster thumbnail */
+.poster-thumb {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
   border-radius: var(--r-sm);
+  flex-shrink: 0;
+  background: var(--color-bg-2);
+}
+
+/* Empty placeholder when no poster available */
+.poster-thumb--empty {
+  border: 1px dashed var(--color-border);
+}
+
+/* Poster in mobile cards */
+.poster-thumb--card {
+  width: 36px;
+  height: 54px;
+  flex-shrink: 0;
 }
 
 
@@ -1297,13 +1241,6 @@ tbody tr:last-child td { border-bottom: none; }
   :root { --container-pad: var(--s-8); }
   #compare-section { column-gap: var(--s-8); }
   .movie-block { max-width: 360px; }
-}
-
-/* Tablet: 3-column poster grid */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .rk-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Small screens */
@@ -1418,28 +1355,15 @@ tbody tr:last-child td { border-bottom: none; }
     font-size: 0.65rem;
   }
 
-  /* Poster grid: 2 columns on mobile */
-  .rk-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--s-3);
+  /* Poster thumbnails: slightly smaller on mobile */
+  .poster-thumb {
+    width: 32px;
+    height: 48px;
   }
 
-  .rk-card-body {
-    padding: var(--s-2);
-  }
-
-  .rk-card-title {
-    font-size: var(--fs-0);
-  }
-
-  .rk-card-score {
-    font-size: var(--fs-2);
-  }
-
-  .rk-card-rank {
-    min-width: 24px;
-    height: 24px;
-    font-size: 0.65rem;
+  .poster-thumb--card {
+    width: 28px;
+    height: 42px;
   }
 
   /* Results: swap table for cards on mobile */

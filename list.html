@@ -94,7 +94,26 @@
         <span id="global-count">Loading...</span>
       </div>
 
-      <div class="rk-grid" id="global-grid"></div>
+      <!-- Desktop table -->
+      <div class="results-table-wrap">
+        <table class="results-table" id="global-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+            </tr>
+          </thead>
+          <tbody id="global-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="results-cards" id="global-cards"></div>
     </div>
 
     <!-- ===== PERSONAL TAB ===== -->
@@ -129,7 +148,24 @@
         <span id="personal-count">Loading...</span>
       </div>
 
-      <div class="rk-grid" id="personal-grid"></div>
+      <div class="results-table-wrap">
+        <table class="results-table" id="personal-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+            </tr>
+          </thead>
+          <tbody id="personal-list"></tbody>
+        </table>
+      </div>
+
+      <div class="results-cards" id="personal-cards"></div>
     </div>
 
     <!-- ===== TOUGH CALLS TAB ===== -->
@@ -146,7 +182,29 @@
       <div class="results-meta">
         <span id="michaels-status">Loading Michael's rankings...</span>
       </div>
-      <div class="rk-grid" id="michaels-grid"></div>
+
+      <!-- Desktop table -->
+      <div class="results-table-wrap">
+        <table class="results-table" id="michaels-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num" title="Total matchups played by Michael">Matchups</th>
+              <th class="col-num">Wins</th>
+              <th class="col-num">Losses</th>
+              <th class="col-num">Win %</th>
+              <th class="col-num col-score" title="Win rate adjusted for how many matchups the movie has played.">Adj. Score</th>
+              <th class="col-num" title="This movie's rank in the global rankings">Global #</th>
+              <th class="col-num" title="TMDB community rating">Rating</th>
+            </tr>
+          </thead>
+          <tbody id="michaels-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="results-cards" id="michaels-cards"></div>
     </div>
 
     <a href="index.html" class="back-link">Back to Home</a>
