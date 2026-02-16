@@ -813,13 +813,20 @@ async function handleUndecided() {
   // Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // Cinematic fade out with subtle burgundy flash → advance → fade in
+  // Show Face / Off toast (non-blocking)
+  const toast = document.getElementById("faceoff-toast");
+  if (toast) {
+    toast.classList.remove("hidden", "show");
+    void toast.offsetWidth; // force reflow
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1300);
+  }
+
+  // Fade out → advance → fade in
   const section = document.getElementById("compare-section");
   if (section) {
-    section.classList.add("burgundy-flash");
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
-    section.classList.remove("burgundy-flash");
     chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");

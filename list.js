@@ -368,7 +368,7 @@ async function loadToughCallsTab() {
   const cardsEl = document.getElementById("toughcalls-cards");
   if (!gridEl) return;
 
-  gridEl.innerHTML = '<div class="results-empty">Loading tough calls...</div>';
+  gridEl.innerHTML = '<div class="results-empty">Loading Face / Off matchups...</div>';
   cardsEl.innerHTML = '<div class="results-empty">Loading...</div>';
 
   try {
@@ -385,11 +385,11 @@ async function loadToughCallsTab() {
     toughCalls.sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0));
     const top10 = toughCalls.slice(0, 10);
 
-    countEl.textContent = `${toughCalls.length} tough call${toughCalls.length !== 1 ? "s" : ""} with votes`;
+    countEl.textContent = `${toughCalls.length} Face / Off matchup${toughCalls.length !== 1 ? "s" : ""} with votes`;
 
     if (top10.length === 0) {
-      gridEl.innerHTML = '<div class="results-empty">No tough call votes yet. Flag a matchup from the home page!</div>';
-      cardsEl.innerHTML = '<div class="results-empty">No tough call votes yet.</div>';
+      gridEl.innerHTML = '<div class="results-empty">No Face / Off votes yet. Flag a matchup from the home page!</div>';
+      cardsEl.innerHTML = '<div class="results-empty">No Face / Off votes yet.</div>';
       return;
     }
 
@@ -398,26 +398,31 @@ async function loadToughCallsTab() {
         <th class="col-rank">#</th>
         <th class="col-movie">Matchup</th>
         <th class="col-num">Total Votes</th>
-        <th class="col-num">Breakdown</th>
+        <th class="col-num">Split</th>
       </tr></thead><tbody>`;
 
     top10.forEach((tc, i) => {
       const mA = tc.movieAKey.split("|")[0];
+      const yA = tc.movieAKey.split("|")[1] || "";
       const mB = tc.movieBKey.split("|")[0];
+      const yB = tc.movieBKey.split("|")[1] || "";
       const vA = tc.votesA || 0;
       const vB = tc.votesB || 0;
       const total = tc.totalVotes || 0;
+      const pctA = total ? Math.round((vA / total) * 100) : 50;
+      const pctB = total ? 100 - pctA : 50;
 
       tableHTML += `<tr>
         <td class="col-rank">${i + 1}</td>
-        <td class="col-movie"><span class="movie-name">${mA}</span> <span class="tc-vs-label">vs</span> <span class="movie-name">${mB}</span></td>
+        <td class="col-movie">${movieCellHTML(mA, yA, tc.movieAKey)} <span class="tc-vs-label">vs</span> ${movieCellHTML(mB, yB, tc.movieBKey)}</td>
         <td class="col-num">${total}</td>
-        <td class="col-num"><span class="${vA > vB ? 'win-pct-high' : vA < vB ? 'win-pct-low' : ''}">${mA}: ${vA}</span> / <span class="${vB > vA ? 'win-pct-high' : vB < vA ? 'win-pct-low' : ''}">${mB}: ${vB}</span></td>
+        <td class="col-num"><span class="${pctA >= pctB ? 'win-pct-high' : 'win-pct-low'}">${pctA}%</span> <span class="tc-vs-label">vs</span> <span class="${pctB >= pctA ? 'win-pct-high' : 'win-pct-low'}">${pctB}%</span></td>
       </tr>`;
     });
 
     tableHTML += "</tbody></table></div>";
     gridEl.innerHTML = tableHTML;
+    lazyLoadPosters(gridEl);
 
     cardsEl.innerHTML = "";
     top10.forEach((tc, i) => {
@@ -426,6 +431,8 @@ async function loadToughCallsTab() {
       const vA = tc.votesA || 0;
       const vB = tc.votesB || 0;
       const total = tc.totalVotes || 0;
+      const pctA = total ? Math.round((vA / total) * 100) : 50;
+      const pctB = total ? 100 - pctA : 50;
 
       const card = document.createElement("div");
       card.className = "result-card";
@@ -435,8 +442,7 @@ async function loadToughCallsTab() {
           <div class="result-card-title">${mA} <span class="tc-vs-label">vs</span> ${mB}</div>
           <div class="result-card-stats">
             <span>${total} votes</span>
-            <span>${mA}: ${vA}</span>
-            <span>${mB}: ${vB}</span>
+            <span class="${pctA >= pctB ? 'win-pct-high' : 'win-pct-low'}">${pctA}%</span> vs <span class="${pctB >= pctA ? 'win-pct-high' : 'win-pct-low'}">${pctB}%</span>
           </div>
         </div>
       `;
@@ -444,7 +450,7 @@ async function loadToughCallsTab() {
     });
   } catch (err) {
     console.error("loadToughCallsTab error:", err);
-    gridEl.innerHTML = '<div class="results-empty results-error">Failed to load tough calls.</div>';
+    gridEl.innerHTML = '<div class="results-empty results-error">Failed to load Face / Off matchups.</div>';
     cardsEl.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
     countEl.textContent = "Error";
   }

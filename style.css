@@ -746,14 +746,46 @@ tbody tr:last-child td { border-bottom: none; }
   background: var(--color-burgundy-dark);
 }
 
-/* Burgundy overlay flash on undecided click */
-@keyframes burgundy-flash {
-  0%   { background-color: rgba(92, 58, 58, 0.06); }
-  100% { background-color: transparent; }
+/* Face / Off toast */
+.faceoff-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(20, 14, 28, 0.95);
+  border: 1px solid var(--color-indigo);
+  border-radius: 12px;
+  padding: 1.5rem 2.5rem;
+  text-align: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
 }
 
-.burgundy-flash {
-  animation: burgundy-flash 350ms ease-out forwards;
+.faceoff-toast.show {
+  animation: faceoff-pop 1.2s ease-out forwards;
+}
+
+@keyframes faceoff-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  30%  { transform: translate(-50%, -50%) scale(1.0); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+}
+
+.faceoff-toast-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.faceoff-toast-text {
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-text-0);
+  letter-spacing: 0.02em;
 }
 
 /* Disabled state during transition — prevents double-clicks */

@@ -76,11 +76,11 @@ async function loadToughCalls() {
 
   if (!currentUid) {
     statusEl.textContent = "";
-    gridEl.innerHTML = '<div class="tc-login-prompt">Log in to vote on tough calls.</div>';
+    gridEl.innerHTML = '<div class="tc-login-prompt">Log in to vote on Face / Off matchups.</div>';
     return;
   }
 
-  statusEl.textContent = "Loading tough calls...";
+  statusEl.textContent = "Loading Face / Off matchups...";
 
   try {
     // Load user's previously voted tough calls
@@ -96,8 +96,6 @@ async function loadToughCalls() {
 
       // Exclude: created by this user
       if (data.createdByUid === currentUid) return;
-      // Exclude: flagged by this user (they've already seen this matchup)
-      if (data.flaggedBy && data.flaggedBy[currentUid]) return;
       // Exclude: already voted on
       if (votedTcIds.has(tcId)) return;
 
@@ -123,8 +121,8 @@ async function loadToughCalls() {
 
     renderGrid();
   } catch (err) {
-    console.error("Failed to load tough calls:", err);
-    statusEl.textContent = "Failed to load tough calls. Please refresh.";
+    console.error("Failed to load Face / Off matchups:", err);
+    statusEl.textContent = "Failed to load Face / Off matchups. Please refresh.";
   }
 }
 
@@ -252,6 +250,17 @@ async function handleToughCallVote(index, choice) {
       [`stats.${winnerKey}.wins`]: increment(1),
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
+
+    // Update user stats (so tough call votes appear in "Your Rankings")
+    const userStatsRef = doc(db, "stats", `user_${currentUid}`);
+    batch.set(userStatsRef, {
+      [`stats.${winnerKey}.wins`]: increment(1),
+      [`stats.${loserKey}.losses`]: increment(1)
+    }, { merge: true });
+
+    // Update meta (total vote count)
+    const metaRef = doc(db, "stats", "meta");
+    batch.set(metaRef, { totalVotes: increment(1) }, { merge: true });
 
     await batch.commit();
   } catch (err) {
