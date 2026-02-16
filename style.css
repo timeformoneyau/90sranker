@@ -803,21 +803,228 @@ tbody tr:last-child td { border-bottom: none; }
   padding: var(--s-8) 0 var(--s-6);
 }
 
-.vote-counter-value {
-  font-family: var(--font-serif);
-  font-size: var(--fs-7);
-  font-weight: var(--fw-bold);
-  color: var(--color-accent);
-  letter-spacing: 0.08em;
-}
-
 .vote-counter-sub {
   font-size: 0.55rem;
   font-weight: var(--fw-bold);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-2);
-  margin-top: var(--s-1);
+  margin-top: var(--s-3);
+}
+
+/* ---- Flip Counter (Analog Alarm Clock) ---- */
+.flip-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #0a0d14;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--r-lg);
+  padding: 10px 16px;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 -1px 4px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  perspective: 300px;
+}
+
+.flip-separator {
+  font-family: var(--font-family);
+  font-size: 1.6rem;
+  font-weight: var(--fw-black);
+  color: var(--color-text-2);
+  line-height: 1;
+  width: 8px;
+  text-align: center;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.flip-digit {
+  position: relative;
+  width: 32px;
+  height: 52px;
+  perspective: 200px;
+  flex-shrink: 0;
+}
+
+/* Static panels (top + bottom halves) */
+.flip-digit .panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: #151a24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flip-digit .panel span {
+  font-family: var(--font-family);
+  font-size: 2rem;
+  font-weight: var(--fw-black);
+  color: var(--color-accent);
+  line-height: 1;
+  user-select: none;
+}
+
+.flip-digit .panel.top {
+  top: 0;
+  border-radius: 4px 4px 0 0;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
+}
+
+.flip-digit .panel.top span {
+  transform: translateY(50%);
+}
+
+.flip-digit .panel.bottom {
+  bottom: 0;
+  border-radius: 0 0 4px 4px;
+  align-items: flex-start;
+}
+
+.flip-digit .panel.bottom span {
+  transform: translateY(-50%);
+}
+
+/* Subtle inner shadow on panels */
+.flip-digit .panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.flip-digit .panel.top::after {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.flip-digit .panel.bottom::after {
+  box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Center divider line (mechanical flap look) */
+.flip-digit::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Flip overlays — only visible during animation */
+.flip-digit .flip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.flip-digit .flip span {
+  font-family: var(--font-family);
+  font-size: 2rem;
+  font-weight: var(--fw-black);
+  color: var(--color-accent);
+  line-height: 1;
+  user-select: none;
+}
+
+.flip-digit .top-flip {
+  top: 0;
+  background: #151a24;
+  border-radius: 4px 4px 0 0;
+  transform-origin: bottom center;
+  transform: rotateX(0deg);
+  align-items: flex-end;
+  opacity: 0;
+}
+
+.flip-digit .top-flip span {
+  transform: translateY(50%);
+}
+
+.flip-digit .bottom-flip {
+  bottom: 0;
+  background: #151a24;
+  border-radius: 0 0 4px 4px;
+  transform-origin: top center;
+  transform: rotateX(90deg);
+  align-items: flex-start;
+  opacity: 0;
+}
+
+.flip-digit .bottom-flip span {
+  transform: translateY(-50%);
+}
+
+/* Animation: top flap folds down */
+.flip-digit.flipping .top-flip {
+  opacity: 1;
+  animation: flip-top 400ms ease-in forwards;
+}
+
+/* Animation: bottom flap unfolds into place */
+.flip-digit.flipping .bottom-flip {
+  opacity: 1;
+  animation: flip-bottom 400ms ease-out 200ms forwards;
+}
+
+@keyframes flip-top {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+
+@keyframes flip-bottom {
+  0%   { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Reduced motion: no flip animation */
+@media (prefers-reduced-motion: reduce) {
+  .flip-digit.flipping .top-flip,
+  .flip-digit.flipping .bottom-flip {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .flip-counter {
+    padding: 8px 10px;
+    gap: 2px;
+  }
+
+  .flip-digit {
+    width: 24px;
+    height: 40px;
+  }
+
+  .flip-digit .panel span,
+  .flip-digit .flip span {
+    font-size: 1.5rem;
+  }
+
+  .flip-separator {
+    font-size: 1.2rem;
+    width: 6px;
+  }
 }
 
 

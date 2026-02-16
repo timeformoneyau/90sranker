@@ -727,6 +727,169 @@ async function initializeApp() {
   }
 }
 
+// ==========================================
+// FLIP COUNTER (Analog Alarm Clock)
+// ==========================================
+
+const flipCounter = {
+  el: null,
+  currentValue: 0,
+  currentDigits: [],
+  animating: false,
+  queued: null,
+  reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+
+  init(containerEl, value) {
+    this.el = containerEl;
+    this.currentValue = value;
+    this.currentDigits = this._toDigits(value);
+    this._render(this.currentDigits);
+  },
+
+  update(newValue) {
+    if (newValue === this.currentValue) return;
+    if (this.animating) {
+      this.queued = newValue;
+      return;
+    }
+    this._animate(newValue);
+  },
+
+  _toDigits(n) {
+    const str = String(n);
+    return str.split("").map(ch => ch);
+  },
+
+  _render(digits) {
+    if (!this.el) return;
+    this.el.innerHTML = "";
+    // Insert commas for thousands grouping
+    const formatted = Number(digits.join("")).toLocaleString();
+    for (const ch of formatted) {
+      if (ch === ",") {
+        const sep = document.createElement("div");
+        sep.className = "flip-separator";
+        sep.textContent = ",";
+        this.el.appendChild(sep);
+      } else {
+        this.el.appendChild(this._createDigitEl(ch));
+      }
+    }
+  },
+
+  _createDigitEl(digit) {
+    const el = document.createElement("div");
+    el.className = "flip-digit";
+    el.dataset.digit = digit;
+    el.innerHTML = `
+      <div class="panel top"><span>${digit}</span></div>
+      <div class="panel bottom"><span>${digit}</span></div>
+      <div class="flip top-flip"><span>${digit}</span></div>
+      <div class="flip bottom-flip"><span>${digit}</span></div>
+    `;
+    return el;
+  },
+
+  _animate(newValue) {
+    this.animating = true;
+    const newDigits = this._toDigits(newValue);
+    const oldDigits = this.currentDigits;
+
+    // If digit count changed, re-render entirely then flip changed digits
+    const oldFormatted = Number(oldDigits.join("")).toLocaleString();
+    const newFormatted = Number(newDigits.join("")).toLocaleString();
+
+    if (oldFormatted.length !== newFormatted.length) {
+      // Re-render with new structure, then flip all digits
+      this._render(newDigits);
+      this.currentValue = newValue;
+      this.currentDigits = newDigits;
+      this.animating = false;
+      this._processQueue();
+      return;
+    }
+
+    // Same structure: flip only changed digit positions
+    const digitEls = this.el.querySelectorAll(".flip-digit");
+    const oldChars = oldFormatted.replace(/,/g, "");
+    const newChars = newFormatted.replace(/,/g, "");
+    let flipCount = 0;
+    let flipsCompleted = 0;
+
+    digitEls.forEach((el, i) => {
+      const oldD = oldChars[i];
+      const newD = newChars[i];
+      if (oldD === newD) return;
+
+      flipCount++;
+
+      if (this.reducedMotion) {
+        // Instant update, no animation
+        el.querySelector(".panel.top span").textContent = newD;
+        el.querySelector(".panel.bottom span").textContent = newD;
+        el.dataset.digit = newD;
+        flipsCompleted++;
+        if (flipsCompleted === flipCount) this._finishAnimate(newValue, newDigits);
+        return;
+      }
+
+      // Set up flip overlays
+      el.querySelector(".top-flip span").textContent = oldD; // old digit folds away
+      el.querySelector(".bottom-flip span").textContent = newD; // new digit unfolds
+
+      // Trigger animation
+      el.classList.add("flipping");
+
+      const onEnd = () => {
+        el.classList.remove("flipping");
+        // Update static panels to new digit
+        el.querySelector(".panel.top span").textContent = newD;
+        el.querySelector(".panel.bottom span").textContent = newD;
+        // Reset flip overlays
+        el.querySelector(".top-flip").style.opacity = "0";
+        el.querySelector(".bottom-flip").style.opacity = "0";
+        el.dataset.digit = newD;
+
+        flipsCompleted++;
+        if (flipsCompleted === flipCount) {
+          this._finishAnimate(newValue, newDigits);
+        }
+      };
+
+      // Listen for the bottom-flip animation end (it finishes last)
+      const bottomFlip = el.querySelector(".bottom-flip");
+      bottomFlip.addEventListener("animationend", onEnd, { once: true });
+
+      // Fallback timeout in case animationend doesn't fire
+      setTimeout(() => {
+        if (flipsCompleted < flipCount && el.classList.contains("flipping")) {
+          onEnd();
+        }
+      }, 700);
+    });
+
+    // If no digits changed (shouldn't happen), finish immediately
+    if (flipCount === 0) {
+      this._finishAnimate(newValue, newDigits);
+    }
+  },
+
+  _finishAnimate(newValue, newDigits) {
+    this.currentValue = newValue;
+    this.currentDigits = newDigits;
+    this.animating = false;
+    this._processQueue();
+  },
+
+  _processQueue() {
+    if (this.queued !== null) {
+      const next = this.queued;
+      this.queued = null;
+      this.update(next);
+    }
+  }
+};
+
 /**
  * Update the vote counter on the home page from stats/meta (1 read)
  */
@@ -737,10 +900,20 @@ async function updateVoteCounter() {
   try {
     const snap = await getDoc(doc(db, "stats", "meta"));
     const total = snap.exists() ? (snap.data().totalVotes || 0) : 0;
-    el.textContent = total.toLocaleString();
+
+    if (!flipCounter.el) {
+      flipCounter.init(el, total);
+    } else {
+      flipCounter.update(total);
+    }
   } catch (error) {
     console.warn("Could not fetch global vote count:", error);
-    el.textContent = state.seenMatchups.length.toLocaleString();
+    const fallback = state.seenMatchups.length;
+    if (!flipCounter.el) {
+      flipCounter.init(el, fallback);
+    } else {
+      flipCounter.update(fallback);
+    }
   }
 }
 
