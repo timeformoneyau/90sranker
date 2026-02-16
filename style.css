@@ -1326,6 +1326,26 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--color-error);
 }
 
+/* Personal tab section headings */
+.personal-section-heading {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-0);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 var(--s-3);
+}
+
+.personal-section-heading--worst {
+  margin-top: var(--s-8);
+}
+
+.worst-movies-sub {
+  font-size: var(--fs-0);
+  color: var(--color-text-2);
+  margin: 0 0 var(--s-3);
+}
+
 /* Back link */
 .results-page .back-link {
   display: inline-block;

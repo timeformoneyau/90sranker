@@ -148,6 +148,8 @@
         <span id="personal-count">Loading...</span>
       </div>
 
+      <h3 class="personal-section-heading">Your Top Picks</h3>
+
       <div class="results-table-wrap">
         <table class="results-table" id="personal-table">
           <thead>
@@ -166,6 +168,29 @@
       </div>
 
       <div class="results-cards" id="personal-cards"></div>
+
+      <!-- Worst Movies Section -->
+      <div id="worst-movies-section" class="worst-movies-section" style="display:none">
+        <h3 class="personal-section-heading personal-section-heading--worst">Your Worst Movies</h3>
+        <p class="worst-movies-sub">Movies you consistently pick against.</p>
+
+        <div class="results-table-wrap">
+          <table class="results-table" id="worst-table">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-movie">Movie</th>
+                <th class="col-num">Record</th>
+                <th class="col-num">Your Win %</th>
+                <th class="col-num" title="Community win rate (global rankings)">Community</th>
+              </tr>
+            </thead>
+            <tbody id="worst-list"></tbody>
+          </table>
+        </div>
+
+        <div class="results-cards" id="worst-cards"></div>
+      </div>
     </div>
 
     <!-- ===== TOUGH CALLS TAB ===== -->

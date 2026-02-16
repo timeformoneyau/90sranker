@@ -359,6 +359,111 @@ async function loadPersonalStats(uid) {
 }
 
 // ==========================================
+// WORST MOVIES (within Personal tab, reuses personalAllRows + cachedGlobalStats)
+// ==========================================
+
+const WORST_MIN_MATCHUPS = 5;
+const WORST_LIMIT = 10;
+const WORST_GLOBAL_MIN = 20;
+
+function renderWorstMovies(allRows) {
+  const section = document.getElementById("worst-movies-section");
+  const tbody = document.getElementById("worst-list");
+  const cards = document.getElementById("worst-cards");
+  if (!section || !tbody || !cards) return;
+
+  // Filter: minimum matchups threshold
+  const eligible = allRows.filter(r => r.n >= WORST_MIN_MATCHUPS);
+
+  if (eligible.length === 0) {
+    section.style.display = "";
+    tbody.innerHTML = '<tr><td colspan="5" class="results-empty">Vote more to reveal your worst movies (min 5 matchups each).</td></tr>';
+    cards.innerHTML = '<div class="results-empty">Vote more to reveal your worst movies.</div>';
+    return;
+  }
+
+  // Sort ascending by win rate, then by more matchups first, then more losses first
+  const sorted = eligible.slice().sort((a, b) =>
+    a.winPct - b.winPct || b.n - a.n || b.losses - a.losses
+  );
+
+  const worst = sorted.slice(0, WORST_LIMIT);
+
+  // Build global win-rate lookup from cached stats (already in memory, 0 reads)
+  const globalWinRates = {};
+  if (cachedGlobalStats) {
+    for (const [key, s] of Object.entries(cachedGlobalStats)) {
+      const gw = s.wins || 0;
+      const gl = s.losses || 0;
+      const gn = gw + gl;
+      if (gn >= WORST_GLOBAL_MIN) {
+        globalWinRates[key] = ((gw / gn) * 100).toFixed(1);
+      }
+    }
+  }
+
+  section.style.display = "";
+
+  // Render table
+  tbody.innerHTML = "";
+  worst.forEach((m, i) => {
+    const tr = document.createElement("tr");
+    const pctClass = m.winPct <= 30 ? "win-pct-low" : m.winPct <= 50 ? "win-pct-medium" : "";
+    const communityPct = globalWinRates[m.key];
+    const communityHTML = communityPct != null
+      ? `<span class="${parseFloat(communityPct) >= 50 ? 'win-pct-high' : parseFloat(communityPct) >= 30 ? 'win-pct-medium' : 'win-pct-low'}">${communityPct}%</span>`
+      : "—";
+    tr.innerHTML = `
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-movie">${movieCellHTML(m.title, m.year, m.key)}</td>
+      <td class="col-num">${m.wins}W – ${m.losses}L</td>
+      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
+      <td class="col-num">${communityHTML}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  lazyLoadPosters(tbody);
+
+  // Render mobile cards
+  cards.innerHTML = "";
+  worst.forEach((m, i) => {
+    const pctClass = m.winPct <= 30 ? "win-pct-low" : m.winPct <= 50 ? "win-pct-medium" : "";
+    const communityPct = globalWinRates[m.key];
+    const communityText = communityPct != null ? `Community: ${communityPct}%` : "";
+    const cached = getPosterUrl(m.key);
+    const posterHTML = cached
+      ? `<img class="poster-thumb poster-thumb--card" src="${cached}" alt="" loading="lazy" />`
+      : `<img class="poster-thumb poster-thumb--card" src="" alt="" loading="lazy" style="opacity:0" data-needs-poster="${m.key}" />`;
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <div class="result-card-rank">${i + 1}</div>
+      ${posterHTML}
+      <div class="result-card-body">
+        <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
+        <div class="result-card-stats">
+          <span>${m.wins}W – ${m.losses}L</span>
+          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
+          ${communityText ? `<span>${communityText}</span>` : ""}
+        </div>
+      </div>
+    `;
+    cards.appendChild(card);
+  });
+  lazyLoadPosters(cards);
+
+  // Show note if fewer than 10 eligible
+  if (eligible.length < WORST_LIMIT) {
+    const note = document.createElement("div");
+    note.className = "results-empty";
+    note.style.paddingTop = "var(--s-2)";
+    note.style.paddingBottom = "0";
+    note.textContent = "Vote more to reveal more worst movies.";
+    cards.after(note);
+  }
+}
+
+// ==========================================
 // WIRING: TOUGH CALLS TAB (reads toughCalls — small collection)
 // ==========================================
 
@@ -660,6 +765,10 @@ window.addEventListener("load", async () => {
       document.getElementById("personal-count").textContent = "Log in to view";
     }
     await loadGlobalStats();
+    // Render worst movies after global stats are loaded (for community comparison)
+    if (user && personalAllRows.length > 0) {
+      renderWorstMovies(personalAllRows);
+    }
     await loadToughCallsTab();
     await loadMichaelsRankings();
   });
