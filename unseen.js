@@ -7,13 +7,14 @@ import {
   onAuth, arrayRemove
 } from "./firebase.js";
 
-import { makeMovieKey } from "./movieKeys.js";
+import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 
 // ==========================================
 // STATE
 // ==========================================
 
-let unseenKeys = [];       // raw "seen" array from Firestore (haven't-seen keys)
+let unseenKeys = [];       // deduplicated canonical keys for display
+let rawKeysByCanonical = {};  // canonical key → [raw Firestore keys] for removal
 let movieMap = {};         // key → movie object from movie_list_cleaned.json
 let userStats = {};        // key → { wins, losses } from user's aggregate stats
 let currentSort = "votes";
@@ -57,19 +58,35 @@ async function loadUnseenPage() {
     unseenKeys = Array.isArray(userData.seen) ? [...userData.seen] : [];
     const inferredSeen = new Set(Array.isArray(userData.inferredSeen) ? userData.inferredSeen : []);
 
-    // Filter out movies that have since been inferred as seen (voted on)
-    unseenKeys = unseenKeys.filter(k => !inferredSeen.has(k));
-
     // Parse user stats
     userStats = statsSnap.exists() ? (statsSnap.data().stats || {}) : {};
 
-    // Build movie map
+    // Build movie map and key normalizer
     const allMovies = await moviesRes.json();
     const movies = allMovies.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
     movieMap = {};
     for (const m of movies) {
       movieMap[makeMovieKey(m.title, m.year)] = m;
     }
+
+    // Normalize keys before filtering — legacy data may have mismatched formats
+    const normalizeKey = buildKeyNormalizer(movies);
+    const normalizedInferred = new Set([...inferredSeen].map(k => normalizeKey(k)));
+
+    // Filter out movies that have since been inferred as seen (voted on)
+    unseenKeys = unseenKeys.filter(k => !normalizedInferred.has(normalizeKey(k)));
+
+    // Deduplicate unseen keys (e.g. "Title|Year" and "Title Year|Year" → same movie)
+    // Also build a reverse map so Put Back can remove all raw variants from Firestore
+    const deduped = new Set();
+    rawKeysByCanonical = {};
+    for (const raw of unseenKeys) {
+      const canonical = normalizeKey(raw);
+      deduped.add(canonical);
+      if (!rawKeysByCanonical[canonical]) rawKeysByCanonical[canonical] = [];
+      if (!rawKeysByCanonical[canonical].includes(raw)) rawKeysByCanonical[canonical].push(raw);
+    }
+    unseenKeys = [...deduped];
 
     if (unseenKeys.length === 0) {
       statusEl.textContent = "";
@@ -258,11 +275,12 @@ async function handlePutBack(key, btn) {
   // Remove from local state
   unseenKeys = unseenKeys.filter(k => k !== key);
 
-  // Persist to Firestore (atomic arrayRemove — no full array overwrite)
+  // Persist to Firestore — remove all raw key variants (canonical + legacy duplicates)
+  const rawKeys = rawKeysByCanonical[key] || [key];
   if (auth.currentUser) {
     try {
       await setDoc(doc(db, "users", auth.currentUser.uid), {
-        seen: arrayRemove(key)
+        seen: arrayRemove(...rawKeys)
       }, { merge: true });
     } catch (err) {
       console.error("Failed to put back:", err);
