@@ -1002,35 +1002,43 @@ async function handleUndecided() {
   state.seenMatchups.push(matchupKey);
   saveMatchupToFirestore(matchupKey);
 
-  // Upsert to toughCalls collection (fire-and-forget for UI speed)
+  // Upsert to toughCalls collection
   if (uid) {
+    console.log(`Face / Off: writing tough call ${tcId} for user ${uid}`);
     const tcRef = doc(db, "toughCalls", tcId);
-    runTransaction(db, async (transaction) => {
-      const snap = await transaction.get(tcRef);
-      const now = new Date();
-      if (snap.exists()) {
-        const data = snap.data();
-        transaction.update(tcRef, {
-          flagCount: (data.flagCount || 0) + 1,
-          lastFlaggedAt: now,
-          [`flaggedBy.${uid}`]: true
-        });
-      } else {
-        transaction.set(tcRef, {
-          movieAKey: minKey,
-          movieBKey: maxKey,
-          createdAt: now,
-          createdByUid: uid,
-          createdByName: auth.currentUser?.email || "",
-          flagCount: 1,
-          lastFlaggedAt: now,
-          flaggedBy: { [uid]: true },
-          votesA: 0,
-          votesB: 0,
-          totalVotes: 0
-        });
-      }
-    }).catch(err => console.error("Failed to flag tough call:", err));
+    try {
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(tcRef);
+        const now = new Date();
+        if (snap.exists()) {
+          const data = snap.data();
+          transaction.update(tcRef, {
+            flagCount: (data.flagCount || 0) + 1,
+            lastFlaggedAt: now,
+            [`flaggedBy.${uid}`]: true
+          });
+        } else {
+          transaction.set(tcRef, {
+            movieAKey: minKey,
+            movieBKey: maxKey,
+            createdAt: now,
+            createdByUid: uid,
+            createdByName: auth.currentUser?.displayName || auth.currentUser?.email || "",
+            flagCount: 1,
+            lastFlaggedAt: now,
+            flaggedBy: { [uid]: true },
+            votesA: 0,
+            votesB: 0,
+            totalVotes: 0
+          });
+        }
+      });
+      console.log(`Face / Off: successfully wrote tough call ${tcId}`);
+    } catch (err) {
+      console.error("Failed to flag tough call:", err);
+    }
+  } else {
+    console.warn("Face / Off: skipped write — no uid (user not logged in)");
   }
 
   // Disable buttons to prevent double-clicks
