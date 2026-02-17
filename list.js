@@ -4,7 +4,10 @@ import {
   doc,
   getDoc,
   collection,
-  getDocs
+  getDocs,
+  query,
+  where,
+  limit
 } from "./firebase.js";
 
 import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
@@ -717,10 +720,75 @@ async function loadMichaelsRankings() {
 }
 
 // ==========================================
-// MATCHUP MODAL (aggregate-based, no vote scan)
+// MATCHUP MODAL — with matchup history
 // ==========================================
 
-function showMatchupModal(movie) {
+let cachedUserVotes = null;
+let cachedUserUid = null;
+
+function getActiveTab() {
+  const active = document.querySelector(".results-tab.active");
+  return active ? active.dataset.tab : "global";
+}
+
+async function fetchUserVotes(uid) {
+  if (cachedUserVotes && cachedUserUid === uid) return cachedUserVotes;
+  const q = query(collection(db, "votes"), where("user", "==", uid));
+  const snap = await getDocs(q);
+  const votes = [];
+  snap.forEach(d => votes.push(d.data()));
+  cachedUserVotes = votes;
+  cachedUserUid = uid;
+  return votes;
+}
+
+async function fetchGlobalMovieVotes(movieKey) {
+  const [winSnap, loseSnap] = await Promise.all([
+    getDocs(query(collection(db, "votes"), where("winner", "==", movieKey), limit(25))),
+    getDocs(query(collection(db, "votes"), where("loser", "==", movieKey), limit(25)))
+  ]);
+  const votes = [];
+  winSnap.forEach(d => votes.push(d.data()));
+  loseSnap.forEach(d => votes.push(d.data()));
+  return votes;
+}
+
+function renderMatchupHistory(votes, movieKey) {
+  if (!votes.length) {
+    return '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">No matchups recorded yet for this title.</div>';
+  }
+
+  // Sort by timestamp descending (votes without timestamp go last)
+  votes.sort((a, b) => {
+    const ta = a.timestamp?.toMillis?.() || a.timestamp?.seconds * 1000 || 0;
+    const tb = b.timestamp?.toMillis?.() || b.timestamp?.seconds * 1000 || 0;
+    return tb - ta;
+  });
+
+  return votes.map(v => {
+    const isWin = v.winner === movieKey;
+    const opponentKey = isWin ? v.loser : v.winner;
+    const opponentTitle = opponentKey.split("|")[0];
+    const opponentYear = opponentKey.split("|")[1] || "";
+    const resultClass = isWin ? "matchup-row--win" : "matchup-row--loss";
+    const resultLabel = isWin ? "W" : "L";
+
+    let dateStr = "";
+    const ts = v.timestamp?.toMillis?.() || (v.timestamp?.seconds ? v.timestamp.seconds * 1000 : 0);
+    if (ts) {
+      const d = new Date(ts);
+      dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    return `<div class="matchup-row ${resultClass}">
+      <span class="matchup-row-result">${resultLabel}</span>
+      <span class="matchup-row-opponent">${opponentTitle}${opponentYear ? ` (${opponentYear})` : ""}</span>
+      <span class="matchup-row-date">${dateStr}</span>
+    </div>`;
+  }).join("");
+}
+
+async function showMatchupModal(movie) {
   const { key, title, year, wins, losses, n, winPct, displayScore } = movie;
 
   document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
@@ -732,10 +800,38 @@ function showMatchupModal(movie) {
     <div class="matchup-stat"><span class="matchup-stat-val">${displayScore.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
   `;
 
-  document.getElementById("matchup-modal-list").innerHTML =
-    '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Detailed matchup history is not available in this view.</div>';
-
+  const listEl = document.getElementById("matchup-modal-list");
   document.getElementById("matchup-modal").classList.remove("hidden");
+
+  const activeTab = getActiveTab();
+
+  if (activeTab === "personal") {
+    listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
+    try {
+      const uid = cachedUserUid || (await new Promise(resolve => onAuth(u => resolve(u?.uid))));
+      if (!uid) {
+        listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Log in to see your matchup history.</div>';
+        return;
+      }
+      const votes = await fetchUserVotes(uid);
+      const movieVotes = votes.filter(v => v.winner === key || v.loser === key);
+      listEl.innerHTML = renderMatchupHistory(movieVotes, key);
+    } catch (err) {
+      console.error("Matchup history error:", err);
+      listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
+    }
+  } else if (activeTab === "global") {
+    listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
+    try {
+      const votes = await fetchGlobalMovieVotes(key);
+      listEl.innerHTML = renderMatchupHistory(votes, key);
+    } catch (err) {
+      console.error("Matchup history error:", err);
+      listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
+    }
+  } else {
+    listEl.innerHTML = '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Matchup history is available in Your Rankings and Global Rankings.</div>';
+  }
 }
 
 function closeMatchupModal() {
