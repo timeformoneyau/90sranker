@@ -818,19 +818,43 @@ tbody tr:last-child td { border-bottom: none; }
   pointer-events: none;
   z-index: 999;
   opacity: 0;
-  background: radial-gradient(ellipse at center, rgba(154, 68, 68, 0.25) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(220, 230, 255, 0.9) 0%, rgba(140, 180, 255, 0.4) 40%, transparent 75%);
 }
 
 .faceoff-flash.active {
-  animation: lightning-flash 400ms ease-out forwards;
+  animation: lightning-crash 700ms ease-out forwards;
 }
 
-@keyframes lightning-flash {
+@keyframes lightning-crash {
   0%   { opacity: 0; }
-  10%  { opacity: 1; }
-  20%  { opacity: 0.3; }
-  35%  { opacity: 0.8; }
+  5%   { opacity: 1; }
+  12%  { opacity: 0.15; }
+  18%  { opacity: 0.95; }
+  28%  { opacity: 0.1; }
+  35%  { opacity: 0.85; }
+  50%  { opacity: 0.3; }
   100% { opacity: 0; }
+}
+
+/* Screen shake during Face/Off flash */
+.screen-shake {
+  animation: screen-shake 700ms ease-out;
+}
+
+@keyframes screen-shake {
+  0%   { transform: translate(0, 0); }
+  6%   { transform: translate(-3px, 2px); }
+  12%  { transform: translate(4px, -2px); }
+  18%  { transform: translate(-2px, 3px); }
+  24%  { transform: translate(3px, -1px); }
+  32%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(1px, -1px); }
+  50%  { transform: translate(0, 0); }
+  100% { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-shake { animation: none; }
 }
 
 /* Disabled state during transition — prevents double-clicks */
@@ -1113,23 +1137,20 @@ tbody tr:last-child td { border-bottom: none; }
 
 .confetti-dot {
   position: fixed;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
   opacity: 1;
   z-index: 1000;
 }
 
 @keyframes confettiFall {
   0% {
-    transform: translate(-50%, -50%) scale(0.3);
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
     opacity: 1;
   }
-  60% {
+  50% {
     opacity: 1;
   }
   100% {
-    transform: translate(calc(-50% + var(--end-x, 0px)), calc(-50% + var(--end-y, -80px))) scale(1);
+    transform: translate(calc(-50% + var(--end-x, 0px)), calc(-50% + var(--end-y, -80px))) scale(1) rotate(var(--spin, 180deg));
     opacity: 0;
   }
 }
@@ -1140,16 +1161,18 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
-/* Winner dance — brief celebratory pulse on the chosen poster */
+/* Winner dance — celebratory bounce on the chosen poster */
 .poster-winner-dance {
-  animation: winner-dance 500ms ease-out;
+  animation: winner-dance 700ms ease-out;
 }
 
 @keyframes winner-dance {
   0%   { transform: scale(1) rotate(0deg); }
-  20%  { transform: scale(1.06) rotate(-1.5deg); }
-  40%  { transform: scale(1.04) rotate(1deg); }
-  60%  { transform: scale(1.02) rotate(-0.5deg); }
+  15%  { transform: scale(1.1) rotate(-2.5deg); }
+  30%  { transform: scale(1.07) rotate(2deg); }
+  45%  { transform: scale(1.09) rotate(-1.5deg); }
+  60%  { transform: scale(1.04) rotate(1deg); }
+  80%  { transform: scale(1.02) rotate(-0.5deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
 

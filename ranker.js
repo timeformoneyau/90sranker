@@ -414,7 +414,7 @@ function spawnConfetti(originEl) {
   document.body.appendChild(container);
 
   const colors = ["#e8a317", "#d4543a", "#4ea8de", "#5ebd72", "#c084fc", "#f472b6"];
-  const count = 28;
+  const count = 55;
 
   for (let i = 0; i < count; i++) {
     const dot = document.createElement("div");
@@ -423,19 +423,30 @@ function spawnConfetti(originEl) {
     dot.style.left = cx + "px";
     dot.style.top = cy + "px";
 
+    // Mixed shapes and sizes
+    const size = 5 + Math.random() * 5;
+    const isRect = Math.random() > 0.5;
+    dot.style.width = size + "px";
+    dot.style.height = (isRect ? size * 1.6 : size) + "px";
+    dot.style.borderRadius = isRect ? "2px" : "50%";
+
     const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-    const dist = 60 + Math.random() * 100;
+    const dist = 80 + Math.random() * 160;
     const endX = Math.cos(angle) * dist;
-    const endY = Math.sin(angle) * dist - 40;
+    const endY = Math.sin(angle) * dist - 50;
 
     dot.style.setProperty("--end-x", endX + "px");
     dot.style.setProperty("--end-y", endY + "px");
-    dot.style.animation = `confettiFall ${400 + Math.random() * 300}ms ease-out forwards`;
+    dot.style.setProperty("--spin", (Math.random() * 360 - 180) + "deg");
+    const delay = Math.random() * 150;
+    dot.style.animation = `confettiFall ${500 + Math.random() * 400}ms ease-in ${delay}ms forwards`;
+    dot.style.opacity = "0";
+    dot.style.animationFillMode = "forwards";
 
     container.appendChild(dot);
   }
 
-  setTimeout(() => container.remove(), 800);
+  setTimeout(() => container.remove(), 1200);
 }
 
 // ==========================================
@@ -490,8 +501,8 @@ async function handleVote(choice) {
 
   const section = document.getElementById("compare-section");
 
-  // Wait for the highlight moment (150ms), then fade out
-  await new Promise(r => setTimeout(r, 150));
+  // Wait for the highlight moment (350ms), then fade out
+  await new Promise(r => setTimeout(r, 350));
 
   if (section) {
     section.classList.add("matchup-fade-out");
@@ -1048,13 +1059,19 @@ async function handleUndecided() {
   // Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // Lightning flash feedback (non-blocking)
+  // Lightning flash + screen shake feedback (non-blocking)
   const flash = document.getElementById("faceoff-flash");
+  const shakeTarget = document.getElementById("compare-section");
   if (flash && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     flash.classList.remove("active");
+    if (shakeTarget) shakeTarget.classList.remove("screen-shake");
     void flash.offsetWidth; // force reflow
     flash.classList.add("active");
-    setTimeout(() => flash.classList.remove("active"), 400);
+    if (shakeTarget) shakeTarget.classList.add("screen-shake");
+    setTimeout(() => {
+      flash.classList.remove("active");
+      if (shakeTarget) shakeTarget.classList.remove("screen-shake");
+    }, 700);
   }
 
   // Fade out → advance → fade in
