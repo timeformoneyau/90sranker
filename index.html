@@ -21,7 +21,6 @@
         <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
       </svg>
     </div>
-    <p class="site-subtitle">Mapping your cinematic record.</p>
   </header>
 
   <!-- Navigation Bar -->
@@ -31,7 +30,7 @@
       <li><a href="list.html">Voting Results</a></li>
       <li><a href="engine.html">Recommended For You</a></li>
       <li><a href="toughCalls.html">Face / Off</a></li>
-      <li><a href="unseen.html">Haven't Seen</a></li>
+      <li><a href="unseen.html">Unwatched List</a></li>
       <li><a href="account.html">Your Account</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
     </ul>
@@ -51,16 +50,16 @@
           <span class="movie-title" id="movieA">Movie A</span>
           <span class="movie-year" id="movieA-year"></span>
         </div>
-        <button class="btn-remind" onclick="showMovieInfo('A')">Remind Me</button>
+        <button class="btn-remind" onclick="showMovieInfo('A')">Summary</button>
         <button class="btn-select" onclick="vote('A')">SELECT</button>
-        <button class="btn-unseen" onclick="markUnseen(movieA)">Haven't Seen</button>
+        <button class="btn-unseen" onclick="markUnseen(movieA)">Unwatched List</button>
       </div>
 
       <!-- Undecided (centered between columns) -->
       <div class="matchup-undecided">
         <button class="btn-undecided" onclick="handleUndecided()">
           <span class="btn-undecided-label">Face / Off</span>
-          <span class="btn-undecided-sub">Can't decide?</span>
+          <span class="btn-undecided-sub">Send to Community</span>
         </button>
       </div>
 
@@ -73,9 +72,9 @@
           <span class="movie-title" id="movieB">Movie B</span>
           <span class="movie-year" id="movieB-year"></span>
         </div>
-        <button class="btn-remind" onclick="showMovieInfo('B')">Remind Me</button>
+        <button class="btn-remind" onclick="showMovieInfo('B')">Summary</button>
         <button class="btn-select" onclick="vote('B')">SELECT</button>
-        <button class="btn-unseen" onclick="markUnseen(movieB)">Haven't Seen</button>
+        <button class="btn-unseen" onclick="markUnseen(movieB)">Unwatched List</button>
       </div>
 
     </section>
@@ -102,10 +101,7 @@
     </div>
   </div>
 
-  <div id="faceoff-toast" class="faceoff-toast hidden">
-    <div class="faceoff-toast-icon">🎭</div>
-    <div class="faceoff-toast-text">Sent to Community Face / Off.</div>
-  </div>
+  <div id="faceoff-flash" class="faceoff-flash"></div>
 
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>

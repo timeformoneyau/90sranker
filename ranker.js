@@ -283,7 +283,7 @@ function chooseTwoMovies() {
   const available = getAvailableMovies();
 
   if (available.length < 2) {
-    alert("Not enough movies available. Please un-mark some movies from 'Haven't Seen'.");
+    alert("Not enough movies available. Please un-mark some movies from your Unwatched List.");
     return;
   }
 
@@ -481,10 +481,10 @@ async function handleVote(choice) {
   // 5. Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // 6. Brief highlight on chosen poster, confetti burst, then cinematic fade transition
+  // 6. Brief highlight on chosen poster, winner dance, confetti burst, then cinematic fade transition
   const chosenPoster = document.getElementById(choice === "A" ? "posterA" : "posterB");
   if (chosenPoster) {
-    chosenPoster.classList.add("poster-selected");
+    chosenPoster.classList.add("poster-selected", "poster-winner-dance");
     spawnConfetti(chosenPoster);
   }
 
@@ -496,7 +496,7 @@ async function handleVote(choice) {
   if (section) {
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
-    if (chosenPoster) chosenPoster.classList.remove("poster-selected");
+    if (chosenPoster) chosenPoster.classList.remove("poster-selected", "poster-winner-dance");
     chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
@@ -505,7 +505,7 @@ async function handleVote(choice) {
       setMatchupButtonsDisabled(false);
     }, { once: true });
   } else {
-    if (chosenPoster) chosenPoster.classList.remove("poster-selected");
+    if (chosenPoster) chosenPoster.classList.remove("poster-selected", "poster-winner-dance");
     chooseTwoMovies();
     setMatchupButtonsDisabled(false);
   }
@@ -900,6 +900,10 @@ const flipCounter = {
         el.querySelector(".bottom-flip").style.opacity = "0";
         el.dataset.digit = newD;
 
+        // Momentum overshoot
+        el.classList.add("momentum");
+        setTimeout(() => el.classList.remove("momentum"), 320);
+
         flipsCompleted++;
         if (flipsCompleted === flipCount) {
           this._finishAnimate(newValue, newDigits);
@@ -1044,13 +1048,13 @@ async function handleUndecided() {
   // Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // Show Face / Off toast (non-blocking)
-  const toast = document.getElementById("faceoff-toast");
-  if (toast) {
-    toast.classList.remove("hidden", "show");
-    void toast.offsetWidth; // force reflow
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 1300);
+  // Lightning flash feedback (non-blocking)
+  const flash = document.getElementById("faceoff-flash");
+  if (flash && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    flash.classList.remove("active");
+    void flash.offsetWidth; // force reflow
+    flash.classList.add("active");
+    setTimeout(() => flash.classList.remove("active"), 400);
   }
 
   // Fade out → advance → fade in

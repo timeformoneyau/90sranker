@@ -1,4 +1,4 @@
-// unseen.js — Haven't Seen management page
+// unseen.js — Unwatched List management page
 // Shows movies the user marked as unseen, sorted by vote count.
 // Allows reversing the designation to put movies back into voting rotation.
 
@@ -37,7 +37,7 @@ async function loadUnseenPage() {
     controlsEl.style.display = "none";
     tableWrap.style.display = "none";
     emptyEl.style.display = "";
-    emptyEl.textContent = "Log in to see your Haven't Seen list.";
+    emptyEl.textContent = "Log in to see your Unwatched List.";
     document.getElementById("unseen-cards").innerHTML = "";
     return;
   }
@@ -83,7 +83,7 @@ async function loadUnseenPage() {
     // Populate genre filter
     populateGenreFilter();
 
-    statusEl.textContent = `${unseenKeys.length} movie${unseenKeys.length !== 1 ? "s" : ""} marked as Haven't Seen`;
+    statusEl.textContent = `${unseenKeys.length} movie${unseenKeys.length !== 1 ? "s" : ""} on your Unwatched List`;
     controlsEl.style.display = "";
     tableWrap.style.display = "";
     emptyEl.style.display = "none";
@@ -304,7 +304,7 @@ async function handlePutBack(key, btn) {
       document.getElementById("unseen-table-wrap").style.display = "none";
       document.getElementById("unseen-empty").style.display = "";
     } else {
-      statusEl.textContent = `${unseenKeys.length} movie${unseenKeys.length !== 1 ? "s" : ""} marked as Haven't Seen`;
+      statusEl.textContent = `${unseenKeys.length} movie${unseenKeys.length !== 1 ? "s" : ""} on your Unwatched List`;
     }
   }, 300);
 }

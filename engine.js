@@ -689,7 +689,7 @@ function buildCardHTML(item, index) {
     : "";
 
   const unseenBadge = isUnseen
-    ? `<div class="engine-card-unseen-badge">Haven't Seen</div>`
+    ? `<div class="engine-card-unseen-badge">Unwatched</div>`
     : "";
 
   return `
@@ -1143,7 +1143,7 @@ function renderProgressCard({ totalMovies, comparedCount, voteCount, unseenCount
       </div>
       <div class="progress-stat">
         <div class="progress-stat-val">${unseenCount.toLocaleString()}</div>
-        <div class="progress-stat-label">Haven't Seen (${unseenPct}%)</div>
+        <div class="progress-stat-label">Unwatched (${unseenPct}%)</div>
       </div>
       <div class="progress-stat">
         <div class="progress-stat-val">${notInterestedCount.toLocaleString()}</div>

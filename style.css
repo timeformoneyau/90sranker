@@ -269,12 +269,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
 }
 
 .site-subtitle {
-  margin: var(--s-3) 0 0;
-  color: var(--color-text-2);
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-weight: var(--fw-bold);
+  display: none;
 }
 
 
@@ -658,7 +653,7 @@ tbody tr:last-child td { border-bottom: none; }
   letter-spacing: 0.08em;
 }
 
-/* "Remind Me" link — opens info modal */
+/* "Summary" link — opens info modal */
 .btn-remind {
   background: none;
   border: none;
@@ -678,7 +673,7 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--color-text-0);
 }
 
-/* Haven't Seen button */
+/* Unwatched List button */
 .btn-unseen,
 .movie-block .tertiary,
 .movie-block .btn-haven-seen {
@@ -690,9 +685,9 @@ tbody tr:last-child td { border-bottom: none; }
   max-width: 200px;
   padding: 0.4rem 1rem;
   border-radius: var(--r-md);
-  border: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-2);
+  border: 1px solid var(--color-text-2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-1);
   font-family: inherit;
   font-size: 0.7rem;
   font-weight: var(--fw-semibold);
@@ -704,9 +699,9 @@ tbody tr:last-child td { border-bottom: none; }
 .btn-unseen:hover,
 .movie-block .tertiary:hover,
 .movie-block .btn-haven-seen:hover {
-  border-color: var(--color-text-1);
-  color: var(--color-text-1);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--color-text-0);
+  color: var(--color-text-0);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .btn-unseen:active,
@@ -816,46 +811,26 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
-/* Face / Off toast */
-.faceoff-toast {
+/* Face / Off lightning flash */
+.faceoff-flash {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
-  background: rgba(20, 14, 28, 0.95);
-  border: 1px solid var(--color-indigo);
-  border-radius: 12px;
-  padding: 1.5rem 2.5rem;
-  text-align: center;
-  z-index: 1000;
-  opacity: 0;
+  inset: 0;
   pointer-events: none;
-  transition: none;
+  z-index: 999;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(154, 68, 68, 0.25) 0%, transparent 70%);
 }
 
-.faceoff-toast.show {
-  animation: faceoff-pop 1.2s ease-out forwards;
+.faceoff-flash.active {
+  animation: lightning-flash 400ms ease-out forwards;
 }
 
-@keyframes faceoff-pop {
-  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
-  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-  30%  { transform: translate(-50%, -50%) scale(1.0); }
-  80%  { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
-}
-
-.faceoff-toast-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-}
-
-.faceoff-toast-text {
-  font-family: var(--font-family);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--color-text-0);
-  letter-spacing: 0.02em;
+@keyframes lightning-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  20%  { opacity: 0.3; }
+  35%  { opacity: 0.8; }
+  100% { opacity: 0; }
 }
 
 /* Disabled state during transition — prevents double-clicks */
@@ -1163,6 +1138,36 @@ tbody tr:last-child td { border-bottom: none; }
   .confetti-container {
     display: none;
   }
+}
+
+/* Winner dance — brief celebratory pulse on the chosen poster */
+.poster-winner-dance {
+  animation: winner-dance 500ms ease-out;
+}
+
+@keyframes winner-dance {
+  0%   { transform: scale(1) rotate(0deg); }
+  20%  { transform: scale(1.06) rotate(-1.5deg); }
+  40%  { transform: scale(1.04) rotate(1deg); }
+  60%  { transform: scale(1.02) rotate(-0.5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Flip counter momentum — overshoot bounce on digit change */
+.flip-digit.momentum .panel span {
+  animation: digit-momentum 300ms ease-out;
+}
+
+@keyframes digit-momentum {
+  0%   { transform: translateY(100%); }
+  60%  { transform: translateY(-6%); }
+  80%  { transform: translateY(2%); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-winner-dance { animation: none; }
+  .flip-digit.momentum .panel span { animation: none; }
 }
 
 
@@ -1756,8 +1761,9 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .site-title {
-    font-size: clamp(1.6rem, 9vw, 2.4rem);
-    letter-spacing: 0.15em;
+    font-size: clamp(1.2rem, 7vw, 2.4rem);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
   }
 
   .site-logo {
@@ -1770,8 +1776,7 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .site-subtitle {
-    font-size: 0.55rem;
-    letter-spacing: 0.15em;
+    display: none;
   }
 
   .account-indicator {
@@ -2192,7 +2197,7 @@ tbody tr:last-child td { border-bottom: none; }
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-/* "Haven't Seen" badge */
+/* "Unwatched" badge */
 .engine-card-unseen-badge {
   position: absolute;
   top: var(--s-2);
