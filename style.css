@@ -1849,14 +1849,14 @@ tbody tr:last-child td { border-bottom: none; }
 
   .nav-links {
     padding: var(--s-2) var(--s-2);
-    gap: var(--s-3);
+    gap: var(--s-1) var(--s-3);
   }
 
   .nav-links li a {
-    min-height: 36px;
-    padding: var(--s-1) var(--s-1);
-    font-size: 0.65rem;
-    letter-spacing: 0.05em;
+    min-height: var(--tap-min);
+    padding: var(--s-2) var(--s-3);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
   }
 
   #compare-section {
@@ -2014,9 +2014,9 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .nav-links li a {
-    min-height: 32px;
-    padding: var(--s-1) var(--s-2);
-    font-size: 0.65rem;
+    min-height: var(--tap-min);
+    padding: var(--s-2) var(--s-3);
+    font-size: 0.7rem;
   }
 
   #compare-section {
