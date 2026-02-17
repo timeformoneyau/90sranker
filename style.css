@@ -1860,14 +1860,14 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   #compare-section {
-    grid-template-columns: 1fr auto 1fr;
-    column-gap: var(--s-1);
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--s-3);
     row-gap: 0;
     padding: var(--s-4) var(--s-2);
   }
 
   .movie-block {
-    gap: var(--s-1);
+    gap: var(--s-2);
   }
 
   .movie-title-row {
@@ -1908,18 +1908,22 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .matchup-undecided {
-    padding-bottom: calc(28px + var(--s-1));
+    grid-column: 1 / -1;
+    align-self: center;
+    padding-bottom: 0;
+    padding-top: var(--s-2);
   }
 
   .matchup-undecided::before {
-    top: 15%;
-    bottom: calc(28px + var(--s-1) + 36px + var(--s-1));
+    display: none;
   }
 
   .btn-undecided {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.6rem;
-    min-height: 36px;
+    padding: 0.5rem 1.4rem;
+    font-size: var(--fs-0);
+    min-height: 40px;
+    width: 100%;
+    max-width: 260px;
   }
 
   .btn-info {
