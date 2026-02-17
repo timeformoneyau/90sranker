@@ -1864,6 +1864,18 @@ tbody tr:last-child td { border-bottom: none; }
     column-gap: var(--s-3);
     row-gap: 0;
     padding: var(--s-4) var(--s-2);
+    justify-items: center;
+  }
+
+  /* Force movie blocks into row 1, undecided into row 2 */
+  #movieA-block {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #movieB-block {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .movie-block {
@@ -1909,9 +1921,11 @@ tbody tr:last-child td { border-bottom: none; }
 
   .matchup-undecided {
     grid-column: 1 / -1;
+    grid-row: 2;
     align-self: center;
+    justify-self: center;
     padding-bottom: 0;
-    padding-top: var(--s-2);
+    padding-top: var(--s-3);
   }
 
   .matchup-undecided::before {
