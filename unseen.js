@@ -17,9 +17,13 @@ let unseenKeys = [];       // deduplicated canonical keys for display
 let rawKeysByCanonical = {};  // canonical key → [raw Firestore keys] for removal
 let movieMap = {};         // key → movie object from movie_list_cleaned.json
 let userStats = {};        // key → { wins, losses } from user's aggregate stats
+let globalStats = {};      // key → { wins, losses } from community aggregate
+let tmdbRatings = {};      // key → number (TMDB rating, used as IMDB proxy)
 let currentSort = "votes";
 let currentGenre = "all";
 let currentSearch = "";
+
+const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 
 // ==========================================
 // LOAD DATA
@@ -46,10 +50,11 @@ async function loadUnseenPage() {
   const uid = auth.currentUser.uid;
 
   try {
-    // 3 reads: user doc, user stats, movie list (local JSON)
-    const [userSnap, statsSnap, moviesRes] = await Promise.all([
+    // 4 reads: user doc, user stats, global stats, movie list (local JSON)
+    const [userSnap, statsSnap, globalSnap, moviesRes] = await Promise.all([
       getDoc(doc(db, "users", uid)),
       getDoc(doc(db, "stats", `user_${uid}`)),
+      getDoc(doc(db, "stats", "global")),
       fetch("movie_list_cleaned.json")
     ]);
 
@@ -58,8 +63,9 @@ async function loadUnseenPage() {
     unseenKeys = Array.isArray(userData.seen) ? [...userData.seen] : [];
     const inferredSeen = new Set(Array.isArray(userData.inferredSeen) ? userData.inferredSeen : []);
 
-    // Parse user stats
+    // Parse user stats + global community stats
     userStats = statsSnap.exists() ? (statsSnap.data().stats || {}) : {};
+    globalStats = globalSnap.exists() ? (globalSnap.data().stats || {}) : {};
 
     // Build movie map and key normalizer
     const allMovies = await moviesRes.json();
@@ -106,6 +112,9 @@ async function loadUnseenPage() {
     emptyEl.style.display = "none";
 
     renderList();
+
+    // Load IMDB ratings in the background (progressive — re-renders as they arrive)
+    loadTmdbRatings();
   } catch (err) {
     console.error("Failed to load unseen page:", err);
     statusEl.textContent = "Failed to load. Please refresh.";
@@ -135,8 +144,51 @@ function populateGenreFilter() {
 }
 
 // ==========================================
+// TMDB RATINGS
+// ==========================================
+
+async function fetchTmdbRating(title, year) {
+  try {
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const movie = data.results?.[0];
+    return movie ? movie.vote_average : null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadTmdbRatings() {
+  // Fetch ratings in small batches to avoid hammering the API
+  const BATCH = 5;
+  const keys = [...unseenKeys];
+  for (let i = 0; i < keys.length; i += BATCH) {
+    const batch = keys.slice(i, i + BATCH);
+    const results = await Promise.all(batch.map(key => {
+      const movie = movieMap[key];
+      if (!movie) return Promise.resolve(null);
+      return fetchTmdbRating(movie.title, movie.year);
+    }));
+    results.forEach((rating, j) => {
+      if (rating != null) tmdbRatings[batch[j]] = rating;
+    });
+    // Re-render after each batch so ratings appear progressively
+    renderList();
+  }
+}
+
+// ==========================================
 // SORTING + FILTERING
 // ==========================================
+
+function getCommunityWinPct(key) {
+  const gs = globalStats[key];
+  if (!gs) return null;
+  const total = (gs.wins || 0) + (gs.losses || 0);
+  if (total === 0) return null;
+  return ((gs.wins || 0) / total) * 100;
+}
 
 function getFilteredSorted() {
   // Build enriched list
@@ -145,6 +197,7 @@ function getFilteredSorted() {
     const stats = userStats[key] || {};
     const wins = stats.wins || 0;
     const losses = stats.losses || 0;
+    const communityPct = getCommunityWinPct(key);
     return {
       key,
       title: movie?.title || key.split("|")[0],
@@ -153,7 +206,9 @@ function getFilteredSorted() {
       tone: movie?.tone || "",
       voteCount: wins + losses,
       wins,
-      losses
+      losses,
+      communityPct,
+      imdbRating: tmdbRatings[key] ?? null
     };
   });
 
@@ -169,18 +224,25 @@ function getFilteredSorted() {
   }
 
   // Sort
+  const cmp = (a, b) => a.title.localeCompare(b.title);
   switch (currentSort) {
     case "votes":
-      items.sort((a, b) => b.voteCount - a.voteCount || a.title.localeCompare(b.title));
+      items.sort((a, b) => b.voteCount - a.voteCount || cmp(a, b));
       break;
     case "genre":
-      items.sort((a, b) => a.genre.localeCompare(b.genre) || a.title.localeCompare(b.title));
+      items.sort((a, b) => a.genre.localeCompare(b.genre) || cmp(a, b));
       break;
     case "title":
-      items.sort((a, b) => a.title.localeCompare(b.title));
+      items.sort((a, b) => cmp(a, b));
       break;
     case "year":
-      items.sort((a, b) => parseInt(b.year) - parseInt(a.year) || a.title.localeCompare(b.title));
+      items.sort((a, b) => parseInt(b.year) - parseInt(a.year) || cmp(a, b));
+      break;
+    case "community":
+      items.sort((a, b) => (b.communityPct ?? -1) - (a.communityPct ?? -1) || cmp(a, b));
+      break;
+    case "imdb":
+      items.sort((a, b) => (b.imdbRating ?? -1) - (a.imdbRating ?? -1) || cmp(a, b));
       break;
   }
 
@@ -202,7 +264,7 @@ function renderTable(items) {
   tbody.innerHTML = "";
 
   if (items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="results-empty">No movies match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty">No movies match your filters.</td></tr>';
     return;
   }
 
@@ -212,11 +274,22 @@ function renderTable(items) {
     const votesDisplay = m.voteCount > 0
       ? `${m.voteCount} (${m.wins}W\u2013${m.losses}L)`
       : "\u2014";
+    const communityDisplay = m.communityPct != null
+      ? `${m.communityPct.toFixed(1)}%`
+      : "\u2014";
+    const communityClass = m.communityPct != null
+      ? (m.communityPct >= 60 ? "win-pct-high" : m.communityPct >= 45 ? "win-pct-medium" : "win-pct-low")
+      : "";
+    const imdbDisplay = m.imdbRating != null
+      ? m.imdbRating.toFixed(1)
+      : "\u2014";
     tr.innerHTML = `
       <td class="col-rank">${i + 1}</td>
       <td class="col-movie"><span class="movie-name">${m.title}</span> <span class="movie-yr">${m.year}</span></td>
       <td class="col-num">${m.genre || "\u2014"}</td>
       <td class="col-num">${votesDisplay}</td>
+      <td class="col-num ${communityClass}">${communityDisplay}</td>
+      <td class="col-num">${imdbDisplay}</td>
       <td class="col-num"><button class="unseen-put-back-btn" data-key="${m.key}">Put Back</button></td>
     `;
     tbody.appendChild(tr);
@@ -241,6 +314,12 @@ function renderCards(items) {
     const votesDisplay = m.voteCount > 0
       ? `${m.voteCount} votes (${m.wins}W\u2013${m.losses}L)`
       : "No votes yet";
+    const communityDisplay = m.communityPct != null
+      ? `Community: ${m.communityPct.toFixed(1)}%`
+      : "";
+    const imdbDisplay = m.imdbRating != null
+      ? `IMDB: ${m.imdbRating.toFixed(1)}`
+      : "";
     card.innerHTML = `
       <div class="result-card-rank">${i + 1}</div>
       <div class="result-card-body">
@@ -248,6 +327,8 @@ function renderCards(items) {
         <div class="result-card-stats">
           <span>${m.genre || "Unknown"}</span>
           <span>${votesDisplay}</span>
+          ${communityDisplay ? `<span>${communityDisplay}</span>` : ""}
+          ${imdbDisplay ? `<span>${imdbDisplay}</span>` : ""}
         </div>
       </div>
       <div class="result-card-action">
