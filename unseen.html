@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Unseen Movies | The Rewind Room</title>
+  <title>Haven't Seen | The Rewind Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
@@ -20,42 +20,84 @@
         <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
       </svg>
     </div>
-    <p class="site-subtitle">Your Unseen 90s Classics</p>
+    <p class="site-subtitle">Movies you've marked as unseen</p>
   </header>
 
-  <!-- 🔷 Navigation Bar -->
+  <!-- Navigation Bar -->
   <nav class="nav-bar">
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html">Voting Results</a></li>
       <li><a href="engine.html">Recommended For You</a></li>
       <li><a href="toughCalls.html">Face / Off</a></li>
-      <li style="display:none"><a href="unseen.html" class="active">Haven't Seen</a></li>
+      <li><a href="unseen.html" class="active">Haven't Seen</a></li>
       <li><a href="account.html">Your Account</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
     </ul>
     <div id="login-status"></div>
   </nav>
 
-  <div class="user-info" style="display:none; text-align:center; margin-top:1rem;"></div>
+  <div class="results-page">
 
-  <div class="container">
-    <h2>🙈 Most Recommended Movies You Haven’t Seen</h2>
-    <p style="color:#a8b8cc;">These are your unseen movies, sorted by TMDB rating.</p>
-    <table class="ranking-table">
-      <thead>
-        <tr>
-          <th>Movie</th>
-          <th>Year</th>
-          <th>TMDB Rating</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="unseen-list"></tbody>
-    </table>
+    <div class="results-intro">
+      <h1 class="results-headline">Your Haven't Seen List</h1>
+      <p class="results-desc">Movies you've marked as "Haven't Seen" during matchups. Put them back into voting rotation, or keep them sidelined.</p>
+    </div>
+
+    <!-- Status / count -->
+    <div id="unseen-status" class="unseen-status"></div>
+
+    <!-- Controls bar -->
+    <div id="unseen-controls" class="unseen-controls" style="display:none">
+      <div class="unseen-controls-row">
+        <div class="unseen-sort">
+          <label class="unseen-sort-label">Sort by</label>
+          <select id="unseen-sort-select" class="unseen-sort-select">
+            <option value="votes">Your Votes (most first)</option>
+            <option value="genre">Genre (A-Z)</option>
+            <option value="title">Title (A-Z)</option>
+            <option value="year">Year (newest first)</option>
+          </select>
+        </div>
+        <div class="unseen-filter">
+          <label class="unseen-sort-label">Genre</label>
+          <select id="unseen-genre-filter" class="unseen-sort-select">
+            <option value="all">All Genres</option>
+          </select>
+        </div>
+        <div class="unseen-search">
+          <input type="text" id="unseen-search-input" class="unseen-search-input" placeholder="Search movies..." />
+        </div>
+      </div>
+    </div>
+
+    <!-- Table (desktop) -->
+    <div id="unseen-table-wrap" class="results-table-wrap" style="display:none">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-movie">Movie</th>
+            <th class="col-num">Genre</th>
+            <th class="col-num">Your Votes</th>
+            <th class="col-num">Action</th>
+          </tr>
+        </thead>
+        <tbody id="unseen-list"></tbody>
+      </table>
+    </div>
+
+    <!-- Cards (mobile) -->
+    <div id="unseen-cards" class="result-cards"></div>
+
+    <!-- Empty state -->
+    <div id="unseen-empty" class="results-empty" style="display:none">
+      You haven't marked any movies as unseen. When you encounter a movie you haven't watched during voting, click "Haven't Seen" to add it here.
+    </div>
+
   </div>
 
-  <!-- 🧩 Scripts -->
+  <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="unseen.js"></script>
   <script type="module" src="loginStatus.js"></script>
