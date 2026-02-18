@@ -947,27 +947,27 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: var(--s-3);
 }
 
-/* Missing a Tape? request form */
+/* Movie request form */
 .request-section {
   max-width: 480px;
-  margin: var(--s-6) auto var(--s-8);
-  padding: var(--s-4) var(--s-5);
+  margin: var(--s-4) auto var(--s-6);
+  padding: var(--s-3) var(--s-4);
   background: var(--color-bg-1);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   text-align: center;
 }
-.request-heading {
-  font-family: var(--font-serif);
-  font-size: var(--fs-3);
-  font-weight: var(--fw-bold);
-  color: var(--color-text-0);
-  margin: 0 0 var(--s-1);
+.request-section--compact {
+  max-width: 100%;
+  margin: var(--s-5) 0 var(--s-2);
 }
 .request-desc {
-  font-size: var(--fs-0);
+  font-size: 0.8rem;
   color: var(--color-text-2);
-  margin: 0 0 var(--s-3);
+  margin: 0 0 var(--s-2);
+}
+.request-desc strong {
+  color: var(--color-text-1);
 }
 .request-form-row {
   display: flex;
@@ -975,26 +975,26 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .request-input {
   flex: 1;
-  padding: 0.6em 0.75em;
+  padding: 0.45em 0.65em;
   border: 1px solid var(--color-border);
   border-radius: var(--r-sm);
   background: var(--color-bg-2);
   color: var(--color-text-0);
   font-family: var(--font-family);
-  font-size: var(--fs-1);
+  font-size: 0.8rem;
 }
 .request-input:focus {
   border-color: var(--color-accent);
   outline: none;
 }
 .request-btn {
-  padding: 0.6em 1.2em;
+  padding: 0.45em 1em;
   background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: var(--r-sm);
   font-family: var(--font-family);
-  font-size: var(--fs-0);
+  font-size: 0.7rem;
   font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;

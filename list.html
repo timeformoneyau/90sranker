@@ -52,7 +52,6 @@
     <div class="results-tabs">
       <button class="results-tab active" data-tab="global">Global Rankings</button>
       <button class="results-tab" data-tab="personal">Your Rankings</button>
-      <button class="results-tab" data-tab="toughcalls">Face / Off</button>
       <button class="results-tab" data-tab="michaels">Michael's Rankings</button>
     </div>
 
@@ -193,15 +192,6 @@
       </div>
     </div>
 
-    <!-- ===== TOUGH CALLS TAB ===== -->
-    <div class="results-panel" id="panel-toughcalls">
-      <div class="results-meta">
-        <span id="toughcalls-count">Loading...</span>
-      </div>
-      <div class="tc-results-grid" id="toughcalls-grid"></div>
-      <div class="results-cards" id="toughcalls-cards"></div>
-    </div>
-
     <!-- ===== MICHAEL'S RANKINGS TAB ===== -->
     <div class="results-panel" id="panel-michaels">
       <div class="results-meta">
@@ -232,6 +222,16 @@
       <div class="results-cards" id="michaels-cards"></div>
     </div>
 
+    <!-- Suggest a Movie -->
+    <div id="request-section" class="request-section request-section--compact hidden">
+      <p class="request-desc">Don't see a movie? <strong>Suggest one.</strong></p>
+      <div class="request-form-row">
+        <input type="text" id="request-input" placeholder='e.g. "The Matrix (1999)"' maxlength="100" class="request-input" />
+        <button id="request-submit-btn" class="request-btn">Submit</button>
+      </div>
+      <div id="request-status" class="status-message hidden" style="margin-top:0.4em; text-align:center; font-size:0.8rem;"></div>
+    </div>
+
     <a href="index.html" class="back-link">Back to Home</a>
 
     <!-- Matchup Detail Modal -->
@@ -250,6 +250,7 @@
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="list.js"></script>
+  <script type="module" src="movieRequests.js"></script>
   <script type="module" src="loginStatus.js"></script>
 </body>
 </html>
