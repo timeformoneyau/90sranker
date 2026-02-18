@@ -281,7 +281,7 @@ function pickTwoRandom(arr) {
  */
 let initialLoadDone = false;
 
-function chooseTwoMovies() {
+async function chooseTwoMovies() {
   const available = getAvailableMovies();
 
   if (available.length < 2) {
@@ -300,7 +300,7 @@ function chooseTwoMovies() {
         const movieB = available.find(m => getMovieKey(m) === b);
         if (movieA && movieB) {
           [state.currentMovies.A, state.currentMovies.B] = [movieA, movieB];
-          displayMovies();
+          await displayMovies();
           return;
         }
       }
@@ -312,14 +312,14 @@ function chooseTwoMovies() {
     const pair = pickCompetitiveMatch(available);
     if (pair) {
       [state.currentMovies.A, state.currentMovies.B] = pair;
-      displayMovies();
+      await displayMovies();
       return;
     }
   }
 
   // Default: pure random
   [state.currentMovies.A, state.currentMovies.B] = pickTwoRandom(available);
-  displayMovies();
+  await displayMovies();
 }
 
 /**
@@ -356,6 +356,20 @@ function pickCompetitiveMatch(available) {
 /**
  * Display current movies in the UI
  */
+/**
+ * Preload an image and resolve when it's decoded (ready to paint).
+ * Falls back after 4s to avoid blocking forever on slow networks.
+ */
+function preloadImage(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const timeout = setTimeout(() => resolve(url), 4000);
+    img.onload = () => { clearTimeout(timeout); resolve(url); };
+    img.onerror = () => { clearTimeout(timeout); resolve(url); };
+    img.src = url;
+  });
+}
+
 async function displayMovies() {
   const { A, B } = state.currentMovies;
 
@@ -365,22 +379,23 @@ async function displayMovies() {
   }
 
   try {
-    // Update titles and years
+    // Fetch poster URLs and preload images in parallel — wait for both
+    // to be fully decoded before touching the DOM at all
+    const [posterA, posterB] = await Promise.all([
+      fetchPosterUrl(A.title, A.year),
+      fetchPosterUrl(B.title, B.year)
+    ]);
+    await Promise.all([preloadImage(posterA), preloadImage(posterB)]);
+
+    // All assets ready — update DOM in one synchronous batch
     document.getElementById("movieA").textContent = A.title;
     document.getElementById("movieA-year").textContent = A.year;
     document.getElementById("movieB").textContent = B.title;
     document.getElementById("movieB-year").textContent = B.year;
 
-    // Fetch and update posters
-    const [posterA, posterB] = await Promise.all([
-      fetchPosterUrl(A.title, A.year),
-      fetchPosterUrl(B.title, B.year)
-    ]);
-
     document.getElementById("posterA").src = posterA;
     document.getElementById("posterB").src = posterB;
 
-    // Update poster button aria-labels with actual movie titles
     const btnA = document.getElementById("posterBtnA");
     const btnB = document.getElementById("posterBtnB");
     if (btnA) btnA.setAttribute("aria-label", `Select ${A.title}`);
@@ -536,7 +551,7 @@ async function handleVote(choice) {
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
     if (chosenPoster) chosenPoster.classList.remove("poster-selected", "poster-winner-dance");
-    chooseTwoMovies();
+    await chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
     section.addEventListener("animationend", () => {
@@ -545,7 +560,7 @@ async function handleVote(choice) {
     }, { once: true });
   } else {
     if (chosenPoster) chosenPoster.classList.remove("poster-selected", "poster-winner-dance");
-    chooseTwoMovies();
+    await chooseTwoMovies();
     setMatchupButtonsDisabled(false);
   }
 }
@@ -1107,7 +1122,7 @@ async function handleUndecided() {
   if (section) {
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
-    chooseTwoMovies();
+    await chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
     section.addEventListener("animationend", () => {
@@ -1115,7 +1130,7 @@ async function handleUndecided() {
       setMatchupButtonsDisabled(false);
     }, { once: true });
   } else {
-    chooseTwoMovies();
+    await chooseTwoMovies();
     setMatchupButtonsDisabled(false);
   }
 }
