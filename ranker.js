@@ -279,12 +279,32 @@ function pickTwoRandom(arr) {
  * ~30% of the time: competitive match (strong vs strong)
  * ~70% of the time: pure random
  */
+let initialLoadDone = false;
+
 function chooseTwoMovies() {
   const available = getAvailableMovies();
 
   if (available.length < 2) {
     alert("Not enough movies available. Please un-mark some movies from your Unwatched List.");
     return;
+  }
+
+  // On first call only (page load), restore last matchup from sessionStorage
+  if (!initialLoadDone) {
+    initialLoadDone = true;
+    try {
+      const saved = sessionStorage.getItem("currentMatchup");
+      if (saved) {
+        const { a, b } = JSON.parse(saved);
+        const movieA = available.find(m => getMovieKey(m) === a);
+        const movieB = available.find(m => getMovieKey(m) === b);
+        if (movieA && movieB) {
+          [state.currentMovies.A, state.currentMovies.B] = [movieA, movieB];
+          displayMovies();
+          return;
+        }
+      }
+    } catch { /* ignore parse errors */ }
   }
 
   // Try competitive match ~30% of the time
@@ -365,6 +385,14 @@ async function displayMovies() {
     const btnB = document.getElementById("posterBtnB");
     if (btnA) btnA.setAttribute("aria-label", `Select ${A.title}`);
     if (btnB) btnB.setAttribute("aria-label", `Select ${B.title}`);
+
+    // Persist current matchup so it survives page refresh
+    try {
+      sessionStorage.setItem("currentMatchup", JSON.stringify({
+        a: getMovieKey(A),
+        b: getMovieKey(B)
+      }));
+    } catch { /* sessionStorage may be unavailable */ }
   } catch (error) {
     console.error("Error displaying movies:", error);
   }
