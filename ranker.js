@@ -1102,26 +1102,14 @@ async function handleUndecided() {
   // Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // Lightning flash + screen shake feedback (non-blocking)
-  const flash = document.getElementById("faceoff-flash");
-  const shakeTarget = document.getElementById("compare-section");
-  if (flash && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    flash.classList.remove("active");
-    if (shakeTarget) shakeTarget.classList.remove("screen-shake");
-    void flash.offsetWidth; // force reflow
-    flash.classList.add("active");
-    if (shakeTarget) shakeTarget.classList.add("screen-shake");
-    setTimeout(() => {
-      flash.classList.remove("active");
-      if (shakeTarget) shakeTarget.classList.remove("screen-shake");
-    }, 700);
-  }
+  // VHS eject + static sweep animation, then advance
+  await triggerFaceOffAnimation();
 
-  // Fade out → advance → fade in
+  // Fade out → load next matchup → fade in
   const section = document.getElementById("compare-section");
   if (section) {
     section.classList.add("matchup-fade-out");
-    await new Promise(r => setTimeout(r, 450));
+    await new Promise(r => setTimeout(r, 200));
     await chooseTwoMovies();
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
@@ -1133,6 +1121,43 @@ async function handleUndecided() {
     await chooseTwoMovies();
     setMatchupButtonsDisabled(false);
   }
+}
+
+/**
+ * VHS eject + static sweep animation for Face / Off.
+ * Resolves when the animation is complete (~350ms total).
+ */
+function triggerFaceOffAnimation() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    // 1. Poster eject — apply to both poster buttons
+    const posterA = document.getElementById("posterBtnA");
+    const posterB = document.getElementById("posterBtnB");
+    [posterA, posterB].forEach(el => {
+      if (!el) return;
+      el.classList.remove("vhs-eject");
+      void el.offsetWidth;
+      el.classList.add("vhs-eject");
+    });
+
+    // 2. Static sweep overlay
+    const flash = document.getElementById("faceoff-flash");
+    if (flash) {
+      flash.classList.remove("active");
+      void flash.offsetWidth;
+      flash.classList.add("active");
+    }
+
+    // 3. Resolve after animation completes (~350ms)
+    setTimeout(() => {
+      [posterA, posterB].forEach(el => el?.classList.remove("vhs-eject"));
+      if (flash) flash.classList.remove("active");
+      resolve();
+    }, 350);
+  });
 }
 
 // ==========================================

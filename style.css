@@ -850,50 +850,77 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
-/* Face / Off lightning flash */
+/* Face / Off — VHS eject + static sweep */
+
+/* Poster eject: brief pull-down then snap back */
+.vhs-eject {
+  animation: vhs-eject 200ms var(--ease-out-3, ease-out);
+}
+
+@keyframes vhs-eject {
+  0%   { transform: translateY(0) scale(1); }
+  60%  { transform: translateY(12px) scale(0.99); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Static sweep overlay — thin band that crosses top→bottom */
 .faceoff-flash {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 999;
   opacity: 0;
-  background: radial-gradient(ellipse at center, rgba(220, 230, 255, 0.9) 0%, rgba(140, 180, 255, 0.4) 40%, transparent 75%);
+  overflow: hidden;
+}
+
+.faceoff-flash .vhs-static-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px;
+  top: -60px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.06) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255,255,255,0.04) 3px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(180,200,220,0.3) 0%,
+      rgba(200,210,230,0.5) 30%,
+      rgba(180,200,220,0.3) 50%,
+      rgba(200,210,230,0.5) 70%,
+      rgba(180,200,220,0.3) 100%
+    );
+  filter: blur(1px);
 }
 
 .faceoff-flash.active {
-  animation: lightning-crash 700ms ease-out forwards;
+  opacity: 1;
 }
 
-@keyframes lightning-crash {
-  0%   { opacity: 0; }
-  5%   { opacity: 1; }
-  12%  { opacity: 0.15; }
-  18%  { opacity: 0.95; }
-  28%  { opacity: 0.1; }
-  35%  { opacity: 0.85; }
-  50%  { opacity: 0.3; }
-  100% { opacity: 0; }
+.faceoff-flash.active .vhs-static-band {
+  animation: vhs-sweep 150ms linear forwards, vhs-flicker 150ms steps(3) forwards;
 }
 
-/* Screen shake during Face/Off flash */
-.screen-shake {
-  animation: screen-shake 700ms var(--ease-spring-3, ease-out);
+@keyframes vhs-sweep {
+  0%   { top: -60px; }
+  100% { top: 100vh; }
 }
 
-@keyframes screen-shake {
-  0%   { transform: translate(0, 0); }
-  6%   { transform: translate(-3px, 2px); }
-  12%  { transform: translate(4px, -2px); }
-  18%  { transform: translate(-2px, 3px); }
-  24%  { transform: translate(3px, -1px); }
-  32%  { transform: translate(-2px, 1px); }
-  40%  { transform: translate(1px, -1px); }
-  50%  { transform: translate(0, 0); }
-  100% { transform: translate(0, 0); }
+@keyframes vhs-flicker {
+  0%   { opacity: 0.9; }
+  33%  { opacity: 0.4; }
+  66%  { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .screen-shake { animation: none; }
+  .vhs-eject { animation: none; }
+  .faceoff-flash.active .vhs-static-band { animation: none; }
 }
 
 /* Disabled state during transition — prevents double-clicks */
