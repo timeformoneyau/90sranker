@@ -1,13 +1,16 @@
-// toughCalls.js — Tough Calls voting page
+// toughCalls.js — Face / Off community voting page
 import {
   db,
   auth,
   onAuth,
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   where,
+  orderBy,
+  limit,
   serverTimestamp,
   increment,
   writeBatch
@@ -19,17 +22,15 @@ import {
 
 const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
-const VISIBLE_COUNT = 10;
+const PAGE_SIZE = 10;
 
 // ==========================================
 // STATE
 // ==========================================
 
 let currentUid = null;
-let allToughCalls = [];       // all fetched tough call docs (filtered for this user)
-let displayedItems = [];      // currently visible on screen (up to 10)
-let overflowQueue = [];       // extras waiting to fill in
-let votedTcIds = new Set();   // tough call IDs this user has already voted on
+let faceoffs = [];          // 10 most recent faceoffs
+let userVotes = {};         // { faceoffId: "A" | "B" }
 const posterCache = {};
 
 // ==========================================
@@ -54,75 +55,59 @@ async function fetchPosterUrl(title, year) {
 }
 
 // ==========================================
-// LOAD TOUGH CALLS
+// LOAD FACE/OFFS
 // ==========================================
 
-async function loadVotedToughCalls(uid) {
-  try {
-    const snap = await getDocs(query(
-      collection(db, "toughCallVotes"),
-      where("uid", "==", uid)
-    ));
-    snap.forEach(d => votedTcIds.add(d.data().toughCallId));
-  } catch (err) {
-    console.error("Failed to load voted tough calls:", err);
-  }
+async function loadUserVotes(uid, faceoffIds) {
+  userVotes = {};
+  if (!uid || !faceoffIds.length) return;
+
+  // Read each deterministic vote doc: {faceoffId}__{uid}
+  const reads = faceoffIds.map(id => getDoc(doc(db, "toughCallVotes", `${id}__${uid}`)));
+  const snaps = await Promise.all(reads);
+  snaps.forEach((snap, i) => {
+    if (snap.exists()) {
+      userVotes[faceoffIds[i]] = snap.data().vote || true; // true = voted but no choice stored (legacy)
+    }
+  });
 }
 
-async function loadToughCalls() {
+async function loadFaceoffs() {
   const statusEl = document.getElementById("tc-status");
   const gridEl = document.getElementById("tc-grid");
   const emptyEl = document.getElementById("tc-empty");
 
-  if (!currentUid) {
-    statusEl.textContent = "";
-    gridEl.innerHTML = '<div class="tc-login-prompt">Log in to vote on Face / Off matchups.</div>';
-    return;
-  }
-
   statusEl.textContent = "Loading Face / Off matchups...";
+  gridEl.innerHTML = "";
+  emptyEl.style.display = "none";
 
   try {
-    // Load user's previously voted tough calls
-    await loadVotedToughCalls(currentUid);
+    // Get 10 most recent faceoffs, globally
+    const q = query(
+      collection(db, "toughCalls"),
+      orderBy("createdAt", "desc"),
+      limit(PAGE_SIZE)
+    );
+    const snap = await getDocs(q);
+    faceoffs = [];
+    snap.forEach(d => faceoffs.push({ id: d.id, ...d.data() }));
 
-    // Fetch all tough calls
-    const snap = await getDocs(collection(db, "toughCalls"));
-    const candidates = [];
-
-    snap.forEach(d => {
-      const data = d.data();
-      const tcId = d.id;
-
-      // Exclude: created by this user
-      if (data.createdByUid === currentUid) return;
-      // Exclude: already voted on
-      if (votedTcIds.has(tcId)) return;
-
-      candidates.push({ id: tcId, ...data });
-    });
-
-    // Shuffle for variety
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
-
-    allToughCalls = candidates;
-    displayedItems = candidates.slice(0, VISIBLE_COUNT);
-    overflowQueue = candidates.slice(VISIBLE_COUNT);
-
-    statusEl.textContent = "";
-
-    if (displayedItems.length === 0) {
+    if (faceoffs.length === 0) {
+      statusEl.textContent = "";
       emptyEl.style.display = "";
       return;
     }
 
-    renderGrid();
+    // Load current user's votes for these faceoffs
+    if (currentUid) {
+      await loadUserVotes(currentUid, faceoffs.map(f => f.id));
+    }
+
+    statusEl.textContent = "";
+    await renderGrid();
   } catch (err) {
     console.error("Failed to load Face / Off matchups:", err);
-    statusEl.textContent = "Failed to load Face / Off matchups. Please refresh.";
+    statusEl.textContent = "Failed to load matchups. Please refresh.";
   }
 }
 
@@ -135,57 +120,118 @@ function parseKey(key) {
   return { title: parts[0] || "Unknown", year: parts[1] || "" };
 }
 
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
 async function renderGrid() {
   const gridEl = document.getElementById("tc-grid");
   gridEl.innerHTML = "";
 
-  for (let i = 0; i < displayedItems.length; i++) {
-    const tc = displayedItems[i];
-    const card = await buildCard(tc, i);
-    gridEl.appendChild(card);
-  }
+  // Build all cards in parallel for poster fetching
+  const cards = await Promise.all(faceoffs.map((tc, i) => buildCard(tc, i)));
+  cards.forEach(c => gridEl.appendChild(c));
 }
 
 async function buildCard(tc, index) {
   const movieA = parseKey(tc.movieAKey);
   const movieB = parseKey(tc.movieBKey);
+  const isSender = currentUid && (tc.createdByUid === currentUid || (tc.flaggedBy && tc.flaggedBy[currentUid]));
+  const hasVoted = !!userVotes[tc.id];
+  const userChoice = typeof userVotes[tc.id] === "string" ? userVotes[tc.id] : null;
+  const totalVotes = (tc.votesA || 0) + (tc.votesB || 0);
+
+  // Show results if: sender with at least 1 vote, or non-sender who has voted
+  const showResults = (isSender && totalVotes > 0) || (!isSender && hasVoted);
+  // Show vote buttons if: not sender, not voted, and logged in
+  const showVoteButtons = currentUid && !isSender && !hasVoted;
 
   const card = document.createElement("div");
   card.className = "tc-card";
-  card.dataset.index = index;
+  card.dataset.tcId = tc.id;
 
-  // Fetch posters in parallel
   const [posterA, posterB] = await Promise.all([
     fetchPosterUrl(movieA.title, movieA.year),
     fetchPosterUrl(movieB.title, movieB.year)
   ]);
 
+  // Date
+  let dateStr = "";
+  if (tc.createdAt) {
+    const d = tc.createdAt.toDate ? tc.createdAt.toDate() : new Date(tc.createdAt);
+    dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
+  // Results bar percentages
+  const pctA = totalVotes > 0 ? Math.round(((tc.votesA || 0) / totalVotes) * 100) : 0;
+  const pctB = totalVotes > 0 ? 100 - pctA : 0;
+
+  // Status line
+  let statusLine = "";
+  if (!currentUid) {
+    statusLine = `<div class="tc-card-status">Log in to vote</div>`;
+  } else if (isSender && !showResults) {
+    statusLine = `<div class="tc-card-status">Your submission &mdash; waiting for votes</div>`;
+  } else if (isSender && showResults) {
+    statusLine = `<div class="tc-card-status">Your submission</div>`;
+  }
+
+  // Build movie column HTML
+  function movieCol(movie, poster, side) {
+    let bottom = "";
+    if (showVoteButtons) {
+      bottom = `<button class="tc-card-vote" data-tc-id="${tc.id}" data-choice="${side}">Select</button>`;
+    } else if (showResults) {
+      const pct = side === "A" ? pctA : pctB;
+      const votes = side === "A" ? (tc.votesA || 0) : (tc.votesB || 0);
+      const isWinner = (side === "A" ? (tc.votesA || 0) : (tc.votesB || 0)) >= (side === "A" ? (tc.votesB || 0) : (tc.votesA || 0)) && totalVotes > 0;
+      const highlight = userChoice === side ? " tc-result-yours" : "";
+      bottom = `
+        <div class="tc-result${highlight}">
+          <div class="tc-result-bar-track">
+            <div class="tc-result-bar-fill${isWinner ? " tc-result-bar-lead" : ""}" style="width:${pct}%"></div>
+          </div>
+          <div class="tc-result-numbers">
+            <span class="tc-result-pct">${pct}%</span>
+            <span class="tc-result-count">${votes} vote${votes !== 1 ? "s" : ""}</span>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="tc-card-movie">
+        <img src="${poster}" alt="${escapeHtml(movie.title)}" class="tc-card-poster" />
+        <div class="tc-card-title">${escapeHtml(movie.title)}</div>
+        <div class="tc-card-year">${movie.year}</div>
+        ${bottom}
+      </div>`;
+  }
+
+  const votedNote = hasVoted && userChoice
+    ? `<div class="tc-card-voted-note">You voted for ${escapeHtml(userChoice === "A" ? movieA.title : movieB.title)}</div>`
+    : "";
+
   card.innerHTML = `
     <div class="tc-card-matchup">
-      <div class="tc-card-movie">
-        <img src="${posterA}" alt="${movieA.title}" class="tc-card-poster" />
-        <div class="tc-card-title">${movieA.title}</div>
-        <div class="tc-card-year">${movieA.year}</div>
-        <button class="tc-card-vote" data-index="${index}" data-choice="A">Pick</button>
-      </div>
+      ${movieCol(movieA, posterA, "A")}
       <div class="tc-card-vs">vs</div>
-      <div class="tc-card-movie">
-        <img src="${posterB}" alt="${movieB.title}" class="tc-card-poster" />
-        <div class="tc-card-title">${movieB.title}</div>
-        <div class="tc-card-year">${movieB.year}</div>
-        <button class="tc-card-vote" data-index="${index}" data-choice="B">Pick</button>
-      </div>
+      ${movieCol(movieB, posterB, "B")}
     </div>
-    <div class="tc-card-flag-count">${tc.flagCount > 1 ? `Flagged by ${tc.flagCount} users` : "Flagged by 1 user"}</div>
+    <div class="tc-card-meta">
+      <span class="tc-card-date">${dateStr}</span>
+      <span class="tc-card-flag-count">${tc.flagCount > 1 ? `${tc.flagCount} users couldn't decide` : "1 user couldn't decide"}</span>
+    </div>
+    ${statusLine}
+    ${votedNote}
   `;
 
   // Wire vote buttons
   card.querySelectorAll(".tc-card-vote").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const idx = parseInt(btn.dataset.index);
-      const choice = btn.dataset.choice;
-      handleToughCallVote(idx, choice);
+      handleVote(tc.id, btn.dataset.choice, card);
     });
   });
 
@@ -196,27 +242,29 @@ async function buildCard(tc, index) {
 // VOTING
 // ==========================================
 
-async function handleToughCallVote(index, choice) {
-  const tc = displayedItems[index];
-  if (!tc || !currentUid) return;
+async function handleVote(tcId, choice, card) {
+  if (!currentUid) return;
 
-  // Disable buttons on this card to prevent double-clicks
-  const gridEl = document.getElementById("tc-grid");
-  const card = gridEl.children[index];
-  if (!card) return;
+  const tc = faceoffs.find(f => f.id === tcId);
+  if (!tc) return;
+
+  // Prevent sender from voting (client-side guardrail)
+  if (tc.createdByUid === currentUid || (tc.flaggedBy && tc.flaggedBy[currentUid])) return;
+
+  // Prevent double-voting (client-side)
+  if (userVotes[tcId]) return;
+
+  // Disable buttons immediately
   card.querySelectorAll(".tc-card-vote").forEach(btn => btn.disabled = true);
 
   const winnerKey = choice === "A" ? tc.movieAKey : tc.movieBKey;
   const loserKey = choice === "A" ? tc.movieBKey : tc.movieAKey;
   const voteField = choice === "A" ? "votesA" : "votesB";
 
-  // 1. Write normal vote (with source="tough_call")
-  // 2. Write toughCallVotes record
-  // 3. Update aggregate counts on toughCalls doc
   try {
     const batch = writeBatch(db);
 
-    // Normal vote
+    // Normal vote record
     const voteRef = doc(collection(db, "votes"));
     batch.set(voteRef, {
       winner: winnerKey,
@@ -224,109 +272,68 @@ async function handleToughCallVote(index, choice) {
       user: currentUid,
       timestamp: serverTimestamp(),
       source: "tough_call",
-      toughCallId: tc.id
+      toughCallId: tcId
     });
 
-    // ToughCallVotes record (user-specific, prevents re-showing)
-    const tcvId = `${tc.id}__${currentUid}`;
+    // ToughCallVotes record (deterministic ID prevents double-voting)
+    const tcvId = `${tcId}__${currentUid}`;
     const tcvRef = doc(db, "toughCallVotes", tcvId);
     batch.set(tcvRef, {
-      toughCallId: tc.id,
+      toughCallId: tcId,
       uid: currentUid,
+      vote: choice,
       votedAt: serverTimestamp()
     });
 
-    // Update aggregate stats on the toughCalls doc
-    const tcRef = doc(db, "toughCalls", tc.id);
+    // Update aggregate on toughCalls doc
+    const tcRef = doc(db, "toughCalls", tcId);
     batch.update(tcRef, {
       [voteField]: increment(1),
       totalVotes: increment(1),
       lastVotedAt: serverTimestamp()
     });
 
-    // Update global stats (same as normal vote)
+    // Global stats
     const statsRef = doc(db, "stats", "global");
     batch.set(statsRef, {
       [`stats.${winnerKey}.wins`]: increment(1),
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
 
-    // Update user stats (so tough call votes appear in "Your Rankings")
+    // User stats
     const userStatsRef = doc(db, "stats", `user_${currentUid}`);
     batch.set(userStatsRef, {
       [`stats.${winnerKey}.wins`]: increment(1),
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
 
-    // Update meta (total vote count)
+    // Meta total
     const metaRef = doc(db, "stats", "meta");
     batch.set(metaRef, { totalVotes: increment(1) }, { merge: true });
 
     await batch.commit();
   } catch (err) {
-    console.error("Failed to save tough call vote:", err);
-    // Re-enable buttons on failure
+    console.error("Failed to save vote:", err);
     card.querySelectorAll(".tc-card-vote").forEach(btn => btn.disabled = false);
     return;
   }
 
-  // Mark as voted locally
-  votedTcIds.add(tc.id);
+  // Update local state and re-render just this card
+  userVotes[tcId] = choice;
+  if (choice === "A") {
+    tc.votesA = (tc.votesA || 0) + 1;
+  } else {
+    tc.votesB = (tc.votesB || 0) + 1;
+  }
+  tc.totalVotes = (tc.totalVotes || 0) + 1;
 
-  // Animate card out
-  card.classList.add("tc-card-exit");
-
-  // After animation, remove and replace
-  setTimeout(async () => {
-    // Get replacement from overflow
-    const replacement = overflowQueue.shift() || null;
-
-    if (replacement) {
-      // Update displayedItems
-      displayedItems[index] = replacement;
-
-      // Build new card
-      const newCard = await buildCard(replacement, index);
-      newCard.classList.add("tc-card-enter");
-
-      // Replace in DOM
-      if (gridEl.children[index]) {
-        gridEl.replaceChild(newCard, gridEl.children[index]);
-      }
-
-      // Remove enter class after animation
-      setTimeout(() => newCard.classList.remove("tc-card-enter"), 450);
-    } else {
-      // No replacement — remove card
-      displayedItems.splice(index, 1);
-      card.remove();
-
-      // Re-index remaining cards
-      reindexCards();
-
-      // Show empty message if none left
-      if (displayedItems.length === 0) {
-        document.getElementById("tc-empty").style.display = "";
-      }
-    }
-  }, 400);
-}
-
-function reindexCards() {
-  const gridEl = document.getElementById("tc-grid");
-  Array.from(gridEl.children).forEach((card, i) => {
-    card.dataset.index = i;
-    card.querySelectorAll(".tc-card-vote").forEach(btn => {
-      btn.dataset.index = i;
-      // Re-wire event listener
-      const newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
-      newBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        handleToughCallVote(i, newBtn.dataset.choice);
-      });
-    });
-  });
+  const idx = faceoffs.findIndex(f => f.id === tcId);
+  if (idx !== -1) {
+    const newCard = await buildCard(tc, idx);
+    newCard.classList.add("tc-card-enter");
+    card.replaceWith(newCard);
+    setTimeout(() => newCard.classList.remove("tc-card-enter"), 450);
+  }
 }
 
 // ==========================================
@@ -335,11 +342,7 @@ function reindexCards() {
 
 window.addEventListener("load", () => {
   onAuth(async (user) => {
-    if (user) {
-      currentUid = user.uid;
-    } else {
-      currentUid = null;
-    }
-    await loadToughCalls();
+    currentUid = user ? user.uid : null;
+    await loadFaceoffs();
   });
 });
