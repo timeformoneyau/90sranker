@@ -236,6 +236,33 @@
       </div>
     </div>
 
+    <!-- Movie Requests -->
+    <div class="diag-section" id="admin-requests" style="display:none">
+      <h3>Movie Requests</h3>
+      <div class="diag-controls" id="req-filters">
+        <button id="req-filter-new" class="active">New</button>
+        <button id="req-filter-reviewing">Reviewing</button>
+        <button id="req-filter-accepted">Accepted</button>
+        <button id="req-filter-rejected">Rejected</button>
+        <button id="req-filter-all">All</button>
+      </div>
+      <div id="requests-status" style="font-size:0.85rem; color:var(--color-text-2); margin-bottom:0.75rem;"></div>
+      <div class="diag-table-wrap">
+        <table class="diag-table" id="requests-table">
+          <thead>
+            <tr>
+              <th>Movie</th>
+              <th>Requested By</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="requests-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Summary cards -->
     <div class="diag-summary" id="diag-summary"></div>
 

@@ -947,6 +947,22 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: var(--s-3);
 }
 
+.missing-tape-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+}
+.missing-tape-link a {
+  color: var(--color-text-2);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.missing-tape-link a:hover {
+  opacity: 1;
+  color: var(--color-accent);
+}
+
 /* ---- Flip Counter (Analog Alarm Clock) ---- */
 .flip-counter {
   display: inline-flex;

@@ -1,4 +1,4 @@
-import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword } from "./firebase.js";
+import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, orderBy, serverTimestamp } from "./firebase.js";
 import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
@@ -43,8 +43,11 @@ window.onload = () => {
     if (toolsEl) toolsEl.style.display = "";
     const usersEl = document.getElementById("admin-users");
     if (usersEl) usersEl.style.display = "";
+    const requestsEl = document.getElementById("admin-requests");
+    if (requestsEl) requestsEl.style.display = "";
     loadDiagnostics();
     loadUserManagement();
+    loadMovieRequests();
   });
 };
 
@@ -553,5 +556,127 @@ async function handleResetPassword(e) {
     btn.textContent = "Reset Password";
     btn.disabled = false;
     setTimeout(() => { statusSpan.textContent = ""; }, 3000);
+  }
+}
+
+// ==========================================
+// MOVIE REQUESTS (ADMIN)
+// ==========================================
+
+let allRequests = [];
+let requestFilter = "new";
+
+async function loadMovieRequests() {
+  const statusEl = document.getElementById("requests-status");
+  const tbody = document.getElementById("requests-tbody");
+  if (!tbody) return;
+
+  statusEl.textContent = "Loading requests...";
+
+  try {
+    const q = query(collection(db, "movieRequests"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+
+    allRequests = [];
+    snap.forEach(d => {
+      allRequests.push({ id: d.id, ...d.data() });
+    });
+
+    statusEl.textContent = `${allRequests.length} request${allRequests.length !== 1 ? "s" : ""} total`;
+    renderRequests();
+    setupRequestFilters();
+  } catch (err) {
+    console.error("Movie requests error:", err);
+    statusEl.textContent = "Error loading requests: " + err.message;
+  }
+}
+
+function renderRequests() {
+  const tbody = document.getElementById("requests-tbody");
+  tbody.innerHTML = "";
+
+  const filtered = requestFilter === "all"
+    ? allRequests
+    : allRequests.filter(r => r.status === requestFilter);
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--color-text-2); font-style:italic;">No ${requestFilter === "all" ? "" : requestFilter + " "}requests.</td></tr>`;
+    return;
+  }
+
+  for (const r of filtered) {
+    const tr = document.createElement("tr");
+    const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : "—";
+    const badgeColor = {
+      new: "var(--color-accent)",
+      reviewing: "var(--color-warning)",
+      accepted: "var(--color-success)",
+      rejected: "var(--color-error)"
+    }[r.status] || "var(--color-text-2)";
+
+    tr.innerHTML = `
+      <td>${escapeHtml(r.requestText)}</td>
+      <td>${escapeHtml(r.userDisplayName || "unknown")}</td>
+      <td>${date}</td>
+      <td><span style="color:${badgeColor}; font-weight:700; text-transform:uppercase; font-size:0.7rem;">${escapeHtml(r.status)}</span></td>
+      <td class="req-actions" data-id="${r.id}">
+        ${r.status !== "accepted" ? `<button class="admin-btn req-btn" data-action="accepted">Accept</button>` : ""}
+        ${r.status !== "rejected" ? `<button class="admin-btn req-btn" data-action="rejected">Reject</button>` : ""}
+        ${r.status !== "reviewing" ? `<button class="admin-btn req-btn" data-action="reviewing">Reviewing</button>` : ""}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // Wire up action buttons
+  tbody.querySelectorAll(".req-btn").forEach(btn => {
+    btn.addEventListener("click", handleRequestAction);
+  });
+}
+
+async function handleRequestAction(e) {
+  const btn = e.target;
+  const newStatus = btn.dataset.action;
+  const cell = btn.closest(".req-actions");
+  const reqId = cell.dataset.id;
+
+  btn.disabled = true;
+  btn.textContent = "...";
+
+  try {
+    await updateDoc(doc(db, "movieRequests", reqId), {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+
+    // Update local data
+    const req = allRequests.find(r => r.id === reqId);
+    if (req) req.status = newStatus;
+    renderRequests();
+  } catch (err) {
+    console.error("Request update failed:", err);
+    btn.disabled = false;
+    btn.textContent = btn.dataset.action === "accepted" ? "Accept" : btn.dataset.action === "rejected" ? "Reject" : "Reviewing";
+  }
+}
+
+function setupRequestFilters() {
+  const filterMap = {
+    "req-filter-new": "new",
+    "req-filter-reviewing": "reviewing",
+    "req-filter-accepted": "accepted",
+    "req-filter-rejected": "rejected",
+    "req-filter-all": "all"
+  };
+
+  for (const [id, val] of Object.entries(filterMap)) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.addEventListener("click", () => {
+      requestFilter = val;
+      document.querySelectorAll("#req-filters button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderRequests();
+    });
   }
 }
