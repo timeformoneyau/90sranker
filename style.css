@@ -947,20 +947,67 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: var(--s-3);
 }
 
-.missing-tape-link {
+/* Missing a Tape? request form */
+.request-section {
+  max-width: 480px;
+  margin: var(--s-6) auto var(--s-8);
+  padding: var(--s-4) var(--s-5);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
   text-align: center;
-  margin-top: 1rem;
-  font-size: 0.8rem;
 }
-.missing-tape-link a {
+.request-heading {
+  font-family: var(--font-serif);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-0);
+  margin: 0 0 var(--s-1);
+}
+.request-desc {
+  font-size: var(--fs-0);
   color: var(--color-text-2);
-  text-decoration: none;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  margin: 0 0 var(--s-3);
 }
-.missing-tape-link a:hover {
-  opacity: 1;
-  color: var(--color-accent);
+.request-form-row {
+  display: flex;
+  gap: var(--s-2);
+}
+.request-input {
+  flex: 1;
+  padding: 0.6em 0.75em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  background: var(--color-bg-2);
+  color: var(--color-text-0);
+  font-family: var(--font-family);
+  font-size: var(--fs-1);
+}
+.request-input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+.request-btn {
+  padding: 0.6em 1.2em;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-family);
+  font-size: var(--fs-0);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background var(--t-base);
+  white-space: nowrap;
+}
+.request-btn:hover {
+  background: var(--color-primary-dark);
+}
+.request-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---- Flip Counter (Analog Alarm Clock) ---- */

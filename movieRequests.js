@@ -3,11 +3,17 @@ import { auth, db, collection, addDoc, serverTimestamp, onAuth, getDoc, doc } fr
 const THROTTLE_MS = 60000; // 60 seconds between requests
 
 document.addEventListener("DOMContentLoaded", () => {
+  const section = document.getElementById("request-section");
   const submitBtn = document.getElementById("request-submit-btn");
   const input = document.getElementById("request-input");
   const statusEl = document.getElementById("request-status");
 
-  if (!submitBtn || !input || !statusEl) return;
+  if (!section || !submitBtn || !input || !statusEl) return;
+
+  // Show/hide based on auth state
+  onAuth(user => {
+    section.classList.toggle("hidden", !user);
+  });
 
   submitBtn.addEventListener("click", handleSubmit);
   input.addEventListener("keydown", (e) => {
@@ -18,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = input.value.trim();
     statusEl.classList.add("hidden");
 
-    // Validate
     if (!text || text.length < 3) {
       showStatus("Please enter a movie title (at least 3 characters).", "error");
       return;
@@ -28,14 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Check auth
     const user = auth.currentUser;
     if (!user) {
       showStatus("You must be logged in to submit a request.", "error");
       return;
     }
 
-    // Throttle
     const lastRequest = localStorage.getItem("lastMovieRequest");
     if (lastRequest && Date.now() - parseInt(lastRequest, 10) < THROTTLE_MS) {
       const secsLeft = Math.ceil((THROTTLE_MS - (Date.now() - parseInt(lastRequest, 10))) / 1000);
@@ -47,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.textContent = "Submitting...";
 
     try {
-      // Fetch username
       let displayName = user.email;
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists() && userDoc.data().username) {
@@ -73,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showStatus("Something went wrong. Please try again.", "error");
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Request";
+      submitBtn.textContent = "Submit";
     }
   }
 

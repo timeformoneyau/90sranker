@@ -100,9 +100,17 @@
       </div>
       <div class="vote-counter-sub">Votes Cast</div>
     </div>
-    <div class="missing-tape-link">
-      <a href="account.html#request-section">Missing a tape? Suggest one</a>
+  </div>
+
+  <!-- Missing a Tape? -->
+  <div id="request-section" class="request-section hidden">
+    <h3 class="request-heading">Missing a Tape?</h3>
+    <p class="request-desc">Suggest a 90s movie to add to the voting pool.</p>
+    <div class="request-form-row">
+      <input type="text" id="request-input" placeholder='e.g. "The Matrix (1999)"' maxlength="100" class="request-input" />
+      <button id="request-submit-btn" class="request-btn">Submit</button>
     </div>
+    <div id="request-status" class="status-message hidden" style="margin-top:0.5em; text-align:center;"></div>
   </div>
 
   <div id="faceoff-flash" class="faceoff-flash"><div class="vhs-static-band"></div></div>
@@ -110,6 +118,7 @@
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="ranker.js"></script>
+  <script type="module" src="movieRequests.js"></script>
   <script type="module" src="loginStatus.js"></script>
 </body>
 </html>
