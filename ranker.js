@@ -287,21 +287,6 @@ function chooseTwoMovies() {
     return;
   }
 
-  // Restore last matchup from sessionStorage if still valid
-  try {
-    const saved = sessionStorage.getItem("currentMatchup");
-    if (saved) {
-      const { a, b } = JSON.parse(saved);
-      const movieA = available.find(m => getMovieKey(m) === a);
-      const movieB = available.find(m => getMovieKey(m) === b);
-      if (movieA && movieB) {
-        [state.currentMovies.A, state.currentMovies.B] = [movieA, movieB];
-        displayMovies();
-        return;
-      }
-    }
-  } catch { /* ignore parse errors */ }
-
   // Try competitive match ~30% of the time
   if (state.globalStats && Math.random() < 0.3) {
     const pair = pickCompetitiveMatch(available);
@@ -380,14 +365,6 @@ async function displayMovies() {
     const btnB = document.getElementById("posterBtnB");
     if (btnA) btnA.setAttribute("aria-label", `Select ${A.title}`);
     if (btnB) btnB.setAttribute("aria-label", `Select ${B.title}`);
-
-    // Persist current matchup so it survives page refresh
-    try {
-      sessionStorage.setItem("currentMatchup", JSON.stringify({
-        a: getMovieKey(A),
-        b: getMovieKey(B)
-      }));
-    } catch { /* sessionStorage may be unavailable */ }
   } catch (error) {
     console.error("Error displaying movies:", error);
   }
