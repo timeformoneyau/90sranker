@@ -3124,51 +3124,59 @@ tbody tr:last-child td { border-bottom: none; }
 
 
 /* =========================================================
-   TOUGH CALLS — Voting page
+   TOUGH CALLS — Face / Off voting page
    ========================================================= */
 
 .tc-page {
-  max-width: 900px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: var(--s-6) var(--s-4) var(--s-10);
+  padding: var(--s-4) var(--s-4) var(--s-10);
 }
 
+/* ── Header ───────────────────────────────────────────── */
 .tc-intro {
   text-align: center;
-  margin-bottom: var(--s-6);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tc-headline {
-  font-family: var(--font-serif);
-  font-size: var(--fs-7);
-  font-weight: var(--fw-bold);
+  font-family: var(--font-family);
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-text-0);
   margin: 0 0 var(--s-2);
+  line-height: 1;
+}
+
+.tc-headline::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  background: var(--color-accent);
+  margin: var(--s-2) auto 0;
+  border-radius: 1px;
 }
 
 .tc-desc {
-  font-size: var(--fs-2);
-  color: var(--color-text-1);
+  font-size: var(--fs-1);
+  color: var(--color-text-2);
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .tc-status {
   text-align: center;
   color: var(--color-accent);
   font-size: var(--fs-1);
-  margin-bottom: var(--s-4);
+  margin-bottom: var(--s-3);
 }
 
-.tc-login-prompt {
-  text-align: center;
-  padding: var(--s-8) var(--s-4);
-  font-size: var(--fs-3);
-  color: var(--color-text-1);
-  background: var(--color-bg-1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-lg);
-}
-
+.tc-login-prompt,
 .tc-empty {
   text-align: center;
   padding: var(--s-8) var(--s-4);
@@ -3176,18 +3184,25 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--color-text-2);
 }
 
+.tc-login-prompt {
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+}
+
+/* ── Grid ─────────────────────────────────────────────── */
 .tc-grid {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
+  gap: 0.5rem;
 }
 
-/* Individual tough call card */
+/* ── Individual card ──────────────────────────────────── */
 .tc-card {
   background: var(--color-bg-1);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
-  padding: var(--s-4);
+  padding: 0.625rem var(--s-3);
   transition: opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease;
   max-height: 400px;
   overflow: hidden;
@@ -3196,7 +3211,7 @@ tbody tr:last-child td { border-bottom: none; }
 .tc-card-matchup {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: var(--s-4);
+  gap: var(--s-3);
   align-items: center;
 }
 
@@ -3204,13 +3219,13 @@ tbody tr:last-child td { border-bottom: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--s-2);
+  gap: var(--s-1);
   text-align: center;
 }
 
 .tc-card-poster {
   width: 100%;
-  max-width: 140px;
+  max-width: 120px;
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: var(--r-sm);
@@ -3233,22 +3248,39 @@ tbody tr:last-child td { border-bottom: none; }
   letter-spacing: 0.1em;
 }
 
+/* ── VS divider ───────────────────────────────────────── */
 .tc-card-vs {
-  font-family: var(--font-serif);
-  font-size: var(--fs-5);
-  font-weight: var(--fw-bold);
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: var(--fw-black);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--color-accent);
-  font-style: italic;
+  padding: 0 var(--s-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
+.tc-card-vs::before,
+.tc-card-vs::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+}
+
+/* ── Vote button ──────────────────────────────────────── */
 .tc-card-vote {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
+  min-height: 32px;
   width: 100%;
-  max-width: 140px;
-  padding: 0.5rem 1rem;
+  max-width: 120px;
+  padding: 0.4rem 0.75rem;
   border-radius: var(--r-md);
   border: none;
   background: var(--color-primary);
@@ -3262,80 +3294,65 @@ tbody tr:last-child td { border-bottom: none; }
   transition: transform var(--t-fast), background-color var(--t-base), box-shadow var(--t-base);
 }
 
-.tc-card-vote:hover {
-  background: var(--color-primary-dark);
-  box-shadow: var(--shadow-1);
-}
+.tc-card-vote:hover  { background: var(--color-primary-dark); box-shadow: var(--shadow-1); }
+.tc-card-vote:active { transform: translateY(1px); }
+.tc-card-vote:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.tc-card-vote:active {
-  transform: translateY(1px);
-}
-
-.tc-card-vote:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+/* ── Meta bar (date · count · badge) ─────────────────── */
 .tc-card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--s-3);
-  padding-top: var(--s-2);
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  padding-top: var(--s-1);
   border-top: 1px solid var(--color-border);
 }
 
-.tc-card-date {
+.tc-card-meta-info {
   font-size: var(--fs-0);
   color: var(--color-text-2);
   letter-spacing: 0.02em;
 }
 
-.tc-card-flag-count {
-  font-size: var(--fs-0);
-  color: var(--color-text-2);
-  letter-spacing: 0.02em;
+/* Status badges inline in meta bar */
+.tc-meta-badge {
+  font-size: 0.65rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.tc-card-status {
-  text-align: center;
-  font-size: var(--fs-0);
-  color: var(--color-accent);
-  margin-top: var(--s-2);
-  font-style: italic;
-}
+.tc-meta-badge--yours   { background: rgba(212,162,74,0.12); color: var(--color-accent); }
+.tc-meta-badge--waiting { background: rgba(212,162,74,0.08); color: var(--color-text-2); }
+.tc-meta-badge--voted   { background: rgba(34,197,94,0.10);  color: var(--color-success); }
+.tc-meta-badge--neutral { background: var(--color-bg-2);     color: var(--color-text-2); }
 
-.tc-card-voted-note {
-  text-align: center;
-  font-size: var(--fs-0);
-  color: var(--color-text-2);
-  margin-top: var(--s-1);
-  font-style: italic;
-}
-
-/* Result bars */
+/* ── Result bars ──────────────────────────────────────── */
 .tc-result {
   width: 100%;
-  max-width: 140px;
+  max-width: 120px;
 }
 
 .tc-result-bar-track {
-  height: 8px;
+  height: 10px;
   background: var(--color-bg-2);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
 .tc-result-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--color-text-2);
   transition: width 0.4s ease;
 }
 
-.tc-result-bar-lead {
-  background: var(--color-accent);
-}
+.tc-result-bar-lead { background: var(--color-accent); }
 
 .tc-result-yours .tc-result-bar-track {
   box-shadow: 0 0 0 1px var(--color-accent);
@@ -3344,21 +3361,22 @@ tbody tr:last-child td { border-bottom: none; }
 .tc-result-numbers {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   margin-top: 3px;
 }
 
 .tc-result-pct {
-  font-size: 0.75rem;
-  font-weight: var(--fw-bold);
+  font-size: 0.875rem;
+  font-weight: var(--fw-black);
   color: var(--color-text-0);
 }
 
 .tc-result-count {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--color-text-2);
 }
 
-/* Card exit/enter animations */
+/* ── Card animations ──────────────────────────────────── */
 @keyframes tc-card-exit {
   0%   { opacity: 1; transform: translateX(0); max-height: 400px; }
   60%  { opacity: 0; transform: translateX(40px); max-height: 400px; }
@@ -3370,14 +3388,8 @@ tbody tr:last-child td { border-bottom: none; }
   100% { opacity: 1; transform: translateX(0); }
 }
 
-.tc-card-exit {
-  animation: tc-card-exit 0.4s ease-in forwards;
-  pointer-events: none;
-}
-
-.tc-card-enter {
-  animation: tc-card-enter 0.45s ease-out forwards;
-}
+.tc-card-exit  { animation: tc-card-exit 0.4s ease-in forwards; pointer-events: none; }
+.tc-card-enter { animation: tc-card-enter 0.45s ease-out forwards; }
 
 /* Results tab "vs" label */
 .tc-vs-label {
@@ -3387,44 +3399,16 @@ tbody tr:last-child td { border-bottom: none; }
   margin: 0 0.3em;
 }
 
-/* Tough Calls page mobile */
+/* ── Mobile ───────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .tc-card-matchup {
-    grid-template-columns: 1fr auto 1fr;
-    gap: var(--s-2);
-  }
-
-  .tc-card-poster {
-    max-width: 100px;
-  }
-
-  .tc-card-title {
-    font-size: var(--fs-0);
-  }
-
-  .tc-card-vote {
-    max-width: 100px;
-    font-size: 0.65rem;
-    padding: 0.4rem 0.5rem;
-  }
-
-  .tc-result {
-    max-width: 100px;
-  }
-
-  .tc-card-vs {
-    font-size: var(--fs-3);
-  }
-
-  .tc-headline {
-    font-size: var(--fs-6);
-  }
-
-  .tc-card-meta {
-    flex-direction: column;
-    gap: 2px;
-    align-items: center;
-  }
+  .tc-card-matchup { gap: var(--s-2); }
+  .tc-card-poster  { max-width: 90px; }
+  .tc-card-title   { font-size: var(--fs-0); }
+  .tc-card-vote    { max-width: 90px; font-size: 0.6rem; padding: 0.35rem 0.4rem; }
+  .tc-result       { max-width: 90px; }
+  .tc-card-vs      { font-size: 0.65rem; padding: 0 var(--s-1); }
+  .tc-headline     { font-size: var(--fs-5); }
+  .tc-card-meta    { flex-wrap: wrap; }
 }
 
 /* =========================================================

@@ -168,14 +168,22 @@ async function buildCard(tc, index) {
   const pctA = totalVotes > 0 ? Math.round(((tc.votesA || 0) / totalVotes) * 100) : 0;
   const pctB = totalVotes > 0 ? 100 - pctA : 0;
 
-  // Status line
-  let statusLine = "";
+  // Compact meta: date · couldn't-decide count on one line
+  const undecidedCount = tc.flagCount || 1;
+  const metaInfo = dateStr
+    ? `${dateStr} · ${undecidedCount} couldn't decide`
+    : `${undecidedCount} couldn't decide`;
+
+  // Status badge — lives in the meta bar instead of floating below the card
+  let metaBadge = "";
   if (!currentUid) {
-    statusLine = `<div class="tc-card-status">Log in to vote</div>`;
+    metaBadge = `<span class="tc-meta-badge tc-meta-badge--neutral">Log in to vote</span>`;
   } else if (isSender && !showResults) {
-    statusLine = `<div class="tc-card-status">Your submission &mdash; waiting for votes</div>`;
-  } else if (isSender && showResults) {
-    statusLine = `<div class="tc-card-status">Your submission</div>`;
+    metaBadge = `<span class="tc-meta-badge tc-meta-badge--waiting">Waiting for votes</span>`;
+  } else if (isSender) {
+    metaBadge = `<span class="tc-meta-badge tc-meta-badge--yours">Your submission</span>`;
+  } else if (hasVoted && userChoice) {
+    metaBadge = `<span class="tc-meta-badge tc-meta-badge--voted">Picked: ${escapeHtml(userChoice === "A" ? movieA.title : movieB.title)}</span>`;
   }
 
   // Build movie column HTML
@@ -209,22 +217,16 @@ async function buildCard(tc, index) {
       </div>`;
   }
 
-  const votedNote = hasVoted && userChoice
-    ? `<div class="tc-card-voted-note">You voted for ${escapeHtml(userChoice === "A" ? movieA.title : movieB.title)}</div>`
-    : "";
-
   card.innerHTML = `
     <div class="tc-card-matchup">
       ${movieCol(movieA, posterA, "A")}
-      <div class="tc-card-vs">vs</div>
+      <div class="tc-card-vs">VS</div>
       ${movieCol(movieB, posterB, "B")}
     </div>
     <div class="tc-card-meta">
-      <span class="tc-card-date">${dateStr}</span>
-      <span class="tc-card-flag-count">${tc.flagCount > 1 ? `${tc.flagCount} users couldn't decide` : "1 user couldn't decide"}</span>
+      <span class="tc-card-meta-info">${metaInfo}</span>
+      ${metaBadge}
     </div>
-    ${statusLine}
-    ${votedNote}
   `;
 
   // Wire vote buttons
