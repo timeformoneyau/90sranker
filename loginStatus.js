@@ -145,9 +145,20 @@ export function updateLoginStatus() {
       accountNavLink.textContent = user ? "Your Account" : "Log In";
     }
 
-    // Show admin link only for admin email
+    // Show admin link for super-admin email; also check custom claims for granted admins
     if (adminNavLink) {
-      adminNavLink.style.display = (user && user.email === ADMIN_EMAIL) ? "" : "none";
+      if (user && user.email === ADMIN_EMAIL) {
+        adminNavLink.style.display = "";
+      } else if (user) {
+        try {
+          const tokenResult = await user.getIdTokenResult();
+          adminNavLink.style.display = tokenResult.claims.admin === true ? "" : "none";
+        } catch {
+          adminNavLink.style.display = "none";
+        }
+      } else {
+        adminNavLink.style.display = "none";
+      }
     }
 
     if (user) {

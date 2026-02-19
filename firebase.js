@@ -1,4 +1,4 @@
-// firebase.js - Updated with password reset functionality
+// firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getAuth,
@@ -8,6 +8,10 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import {
+  getFunctions,
+  httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-functions.js";
 import {
   getFirestore,
   doc,
@@ -43,9 +47,13 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db   = getFirestore(app);
+const app       = initializeApp(firebaseConfig);
+export const auth      = getAuth(app);
+export const db        = getFirestore(app);
+const functions        = getFunctions(app);
+
+// Call a named Cloud Function (Callable)
+export const callFunction = (name) => httpsCallable(functions, name);
 
 // Auth helpers
 export const signIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
@@ -53,7 +61,7 @@ export const signUp = (email, password) => createUserWithEmailAndPassword(auth, 
 export const signOut = () => firebaseSignOut(auth);
 export const onAuth = (cb) => onAuthStateChanged(auth, cb);
 
-// NEW: Password reset functionality
+// Password reset
 export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
 // Firestore exports

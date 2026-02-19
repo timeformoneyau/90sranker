@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shelf Life - Iconic Store Signage Style</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&amp;family=Inter:wght@400;700&amp;family=Orbitron:wght@500;700&amp;family=Libre+Barcode+39&amp;family=Roboto+Condensed:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {theme: {extend: {colors: {"deep-navy": "#0a1128", "signage-blue": "#0033cc", "signage-yellow": "#ffcc00", "neon-pink": "#ff0099", "vfd-green": "#20ffaa", "dark-charcoal": "#0a0a0c", primary: "#2C097F", "background-light": "#f6f6f8", "background-dark": "#151022"}, fontFamily: {"serif-90s": ["Playfair Display", "serif"], vfd: ["Orbitron", "sans-serif"], barcode: ["'Libre Barcode 39'", "cursive"], signage: ["'Roboto Condensed'", "sans-serif"], sans: ["Inter", "sans-serif"], display: "Be Vietnam Pro"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                background-color: theme('colors.deep-navy');
+                color: #e5e5e5;
+            }
+        }
+        .aisle-bg-fade {
+            background: linear-gradient(to bottom, 
+                rgba(10, 17, 40, 0.7) 0%, 
+                rgba(10, 17, 40, 0.95) 80%,
+                theme('colors.deep-navy') 100%
+            );
+        }
+        .marquee-sign {
+            background: theme('colors.signage-blue');
+            border: 4px solid #ffffff;
+            box-shadow: 
+                0 0 20px rgba(0, 51, 204, 0.6),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+            position: relative;
+            transform: perspective(1000px) rotateX(5deg);
+        }
+        .marquee-text {
+            color: theme('colors.signage-yellow');
+            text-shadow: 2px 2px 0px #000, 0 0 10px rgba(255, 204, 0, 0.5);
+            font-family: 'Roboto Condensed', sans-serif;
+            font-style: italic;
+            text-transform: uppercase;
+        }
+        .neon-menu-btn {
+            position: relative;
+            padding: 8px 24px;
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+        .neon-menu-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: theme('colors.neon-pink');
+            box-shadow: 0 0 8px theme('colors.neon-pink'), 0 0 15px theme('colors.neon-pink');
+            opacity: 0.7;
+        }
+        .neon-menu-btn:hover::after {
+            width: 100%;
+            left: 0;
+            opacity: 1;
+        }
+        .member-id-card {
+            background: #fff;
+            color: #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .member-id-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
+        }
+        .mechanical-flip {
+            background: #1a1a1a;
+            border-radius: 4px;
+            padding: 4px 8px;
+            border: 1px solid #333;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+            display: inline-flex;
+            gap: 2px;
+        }
+        .flip-digit {
+            background: linear-gradient(to bottom, #222 0%, #222 48%, #000 50%, #111 52%, #111 100%);
+            color: #eee;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            padding: 4px 6px;
+            border-radius: 2px;
+            min-width: 32px;
+            text-align: center;
+            border: 1px solid #000;
+        }
+        .shelf-ledge {
+            height: 12px;
+            background: linear-gradient(to bottom, #1a1a1a 0%, #050505 100%);
+            width: 100%;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.9);
+            border-top: 1px solid #444;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans selection:bg-signage-yellow selection:text-signage-blue">
+<div class="fixed top-0 left-0 w-full h-full z-0 overflow-hidden">
+<img alt="Video Store Interior" class="w-full h-1/2 object-cover grayscale opacity-30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5CYmEkmd8lRYGCi6zpTURECohB41xyvSV4T21wI6xr-lyePNll4Dlkzw8kR_HUshmKmPUOTo-DDLVMMtsicjHPq7VGgYIL2EcUh9ZWeLvm9ct_mnTiXz38QqV9AXAhWmiYl22QEfnR7Lvq2p51GE_5LsxVwNDkwECMOTEAgg5MG5bgL8NT1T1lDoKgA2Teaa98As-sREW9yxaCXE-qJCpsugW9xejNgn75R4Hob0VLiV1_xabnqamf83oM2im_BP7MkEQFjWrcA"/>
+<div class="aisle-bg-fade absolute inset-0"></div>
+</div>
+<header class="relative z-10 pt-8 pb-4 px-8 flex flex-col items-center">
+<div class="absolute top-8 left-8 hidden lg:block">
+<div class="member-id-card w-64 h-36 p-3 flex flex-col justify-between transform -rotate-1">
+<div class="flex gap-3">
+<div class="w-14 h-16 bg-gray-200 border border-gray-300 overflow-hidden grayscale">
+<img alt="Member" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5CYmEkmd8lRYGCi6zpTURECohB41xyvSV4T21wI6xr-lyePNll4Dlkzw8kR_HUshmKmPUOTo-DDLVMMtsicjHPq7VGgYIL2EcUh9ZWeLvm9ct_mnTiXz38QqV9AXAhWmiYl22QEfnR7Lvq2p51GE_5LsxVwNDkwECMOTEAgg5MG5bgL8NT1T1lDoKgA2Teaa98As-sREW9yxaCXE-qJCpsugW9xejNgn75R4Hob0VLiV1_xabnqamf83oM2im_BP7MkEQFjWrcA"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-[10px]">stars</span>
+<span class="text-[8px] font-bold uppercase tracking-tight text-signage-blue">Official Membership</span>
+</div>
+<h3 class="font-signage text-lg leading-none italic text-signage-blue">SHELF LIFE</h3>
+<p class="text-[9px] font-bold text-gray-500 mt-1 uppercase">Gold Tier Member</p>
+</div>
+</div>
+<div class="flex flex-col">
+<p class="text-[10px] font-bold uppercase mb-1">A. Sterling</p>
+<div class="flex justify-between items-end border-t border-gray-100 pt-1">
+<span class="font-barcode text-2xl leading-none">SL-1995-0422</span>
+<span class="text-[7px] font-mono text-gray-400">EXP 12/99</span>
+</div>
+</div>
+</div>
+</div>
+<div class="marquee-sign px-12 py-6 rounded-sm">
+<h1 class="marquee-text text-5xl md:text-7xl font-bold tracking-tighter">
+                Shelf Life
+            </h1>
+<div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white px-4 py-0.5 text-[8px] font-bold text-signage-blue uppercase tracking-[0.3em] whitespace-nowrap">
+                Video Rental &amp; Boutique
+            </div>
+</div>
+<nav class="mt-12 flex flex-wrap justify-center gap-4">
+<a class="neon-menu-btn" href="#">Action</a>
+<a class="neon-menu-btn" href="#">Drama</a>
+<a class="neon-menu-btn" href="#">Sci-Fi</a>
+<a class="neon-menu-btn" href="#">New Releases</a>
+<a class="neon-menu-btn" href="#">Staff Picks</a>
+</nav>
+</header>
+<main class="relative z-10 container mx-auto px-4 pt-8">
+<div class="flex flex-col items-center">
+<div class="flex flex-col md:flex-row items-end justify-center gap-16 md:gap-32 w-full mb-[-6px]">
+<div class="flex flex-col items-center">
+<div class="relative group">
+<div class="w-[300px] aspect-[2/3] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10">
+<img alt="Jurassic Park" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4HEUTt4KodDCfP2RLbkZx_L2VslGdEyayJG7es4jXeH6Atf2OjiWTeZ1LIlW5P6GZxvIC_nGn79ktGh4QnOASO5i-EX20MLCb9Okxy6iFqta1L8C2y7RtqDgowiRHIAr20xUNrSTwXlX9x71ZCyFpVKHg1W8XwzMtltscfGATSMhv6tmUiRy4vapv27pfa9afol3GSdZhLBbd8ec9pNyyFSA1349qTsq8SWcttqr-Yu9JioV7sUkMFyJIPI8r_uOv73ykaTVeOQ"/>
+</div>
+<div class="mt-8 text-center">
+<h2 class="font-serif-90s text-2xl tracking-wide text-white/90">JURASSIC PARK</h2>
+<p class="text-[10px] text-white/30 uppercase tracking-[0.3em] mt-1 italic">Now Available on VHS</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="relative group">
+<div class="w-[300px] aspect-[2/3] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/10">
+<img alt="Pulp Fiction" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8Dau2memhkA9ryjHxhyqDGsATuAcvp6QTeM41_wRpABLRHSwRBfd5a0QefwNdTenzksGXjU6g11xWWS7uyDGxAjYAIwJyNVT-lgNFC-rgIctKTAnmrm80ihHhFgUiXfS91vV8sJ-LWkzpppUeJ7m-lYEnKrJqvDuesAo2ajMg7TOzeRCszpIOzSdI4iw-2j3iacEzLVVPeSu_Kb4earB5wfCJxVN3xO_Ob-WAoI2TfY-EvBkKi50ypMfZ7xp3oc7K_YGI6KF82Q"/>
+</div>
+<div class="mt-8 text-center">
+<h2 class="font-serif-90s text-2xl tracking-wide text-white/90">PULP FICTION</h2>
+<p class="text-[10px] text-white/30 uppercase tracking-[0.3em] mt-1 italic">Rental Selection #1</p>
+</div>
+</div>
+</div>
+</div>
+<div class="shelf-ledge mt-4"></div>
+<div class="flex flex-col items-center gap-4 mt-20 mb-16">
+<span class="text-[10px] font-bold tracking-[0.5em] uppercase text-white/20">Total Store Transactions</span>
+<div class="mechanical-flip p-3">
+<div class="flip-digit">0</div>
+<div class="flip-digit">0</div>
+<div class="flip-digit">0</div>
+<div class="flip-digit">.</div>
+<div class="flip-digit">4</div>
+<div class="flip-digit">2</div>
+<div class="flip-digit">9</div>
+</div>
+<div class="text-[9px] text-neon-pink/60 font-bold uppercase tracking-widest mt-1">Live Register Feed</div>
+</div>
+</div>
+</main>
+<footer class="relative z-10 mt-12 py-16 border-t border-white/5 bg-black/20">
+<div class="max-w-4xl mx-auto px-6 text-center">
+<div class="flex justify-center gap-12 opacity-40 text-[11px] uppercase font-bold tracking-[0.3em]">
+<a class="hover:text-signage-yellow transition-colors" href="#">History</a>
+<a class="hover:text-signage-yellow transition-colors" href="#">Membership</a>
+<a class="hover:text-signage-yellow transition-colors" href="#">Locations</a>
+<a class="hover:text-signage-yellow transition-colors" href="#">FAQ</a>
+</div>
+<p class="text-[10px] text-white/10 mt-12 tracking-[0.6em] uppercase">Be Kind • Please Rewind • Est. 1995</p>
+</div>
+</footer>
+</body></html>

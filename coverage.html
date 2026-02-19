@@ -177,6 +177,58 @@
     .num { text-align: right; font-variant-numeric: tabular-nums; }
     .hot { color: var(--color-error); font-weight: 700; }
     .cold { color: var(--color-text-2); }
+
+    /* Admin user management */
+    .admin-badge {
+      display: inline-block;
+      background: rgba(232,163,23,0.15);
+      color: var(--color-accent);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .admin-btn-danger {
+      background: transparent;
+      border: 1px solid var(--color-error);
+      color: var(--color-error);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-left: 4px;
+    }
+    .admin-btn-danger:hover:not(:disabled) {
+      background: var(--color-error);
+      color: #fff;
+    }
+    .admin-btn-danger:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .admin-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--color-bg-1);
+      border: 1px solid var(--color-accent);
+      color: var(--color-text-0);
+      padding: 0.75em 1.5em;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease;
+      z-index: 9999;
+    }
+    .admin-toast--visible {
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -217,6 +269,29 @@
       </div>
     </div>
 
+    <!-- Invite / Create User -->
+    <div class="diag-section" id="admin-invite" style="display:none">
+      <h3>Invite New User</h3>
+      <p style="font-size:0.85rem; color:var(--color-text-2); margin-bottom:1rem;">
+        Creates a Firebase Auth account and emails the user a link to set their own password.
+        No temporary password is ever shown or stored.
+      </p>
+      <div style="max-width:400px; display:flex; flex-direction:column; gap:0.6rem;">
+        <input type="email" id="invite-email" placeholder="Email address"
+          style="padding:0.6em 0.75em; background:var(--color-bg-2); border:1px solid var(--color-border);
+                 border-radius:var(--r-sm); color:var(--color-text-0); font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
+        <input type="text" id="invite-display-name" placeholder="Display name (optional)"
+          style="padding:0.6em 0.75em; background:var(--color-bg-2); border:1px solid var(--color-border);
+                 border-radius:var(--r-sm); color:var(--color-text-0); font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
+        <button id="invite-send-btn" type="button"
+          style="padding:0.6em 1.2em; background:var(--color-primary); color:#fff; border:none;
+                 border-radius:var(--r-sm); cursor:pointer; font-family:inherit; font-size:0.875rem; font-weight:700; align-self:flex-start;">
+          Send Invite
+        </button>
+        <div id="invite-status" style="font-size:0.85rem; min-height:1.2em;"></div>
+      </div>
+    </div>
+
     <!-- User Management -->
     <div class="diag-section" id="admin-users" style="display:none">
       <h3>User Management</h3>
@@ -228,6 +303,7 @@
               <th>Username</th>
               <th>Email</th>
               <th class="num">Votes</th>
+              <th>Admin</th>
               <th>Actions</th>
             </tr>
           </thead>

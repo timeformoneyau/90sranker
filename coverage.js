@@ -1,11 +1,11 @@
-import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, orderBy, serverTimestamp } from "./firebase.js";
+import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, orderBy, serverTimestamp, callFunction } from "./firebase.js";
 import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
 // ADMIN GATE
 // ==========================================
 
-const ADMIN_EMAIL = "mjreardon62@gmail.com";
+const SUPER_ADMIN_EMAIL = "mjreardon62@gmail.com";
 
 // ==========================================
 // STATE
@@ -16,6 +16,8 @@ let fullData = [];   // { title, year, key, appearances, wins, losses, winPct, r
 let avgAppearances = 0;
 let currentFilter = "all";
 let currentSort = { key: "appearances", dir: -1 };
+let currentUserIsSuperAdmin = false;
+let currentUserUid = null;
 
 function getMovieKey(m) {
   return makeMovieKey(m.title, m.year);
@@ -29,22 +31,48 @@ window.onload = () => {
   const statusEl = document.getElementById("diag-status");
   const pageEl = document.querySelector(".diag-page");
 
-  onAuth(user => {
-    // Show admin nav link if admin
+  onAuth(async user => {
     const adminNav = document.getElementById("admin-nav-link");
-    if (adminNav) adminNav.style.display = (user && user.email === ADMIN_EMAIL) ? "" : "none";
 
-    if (!user || user.email !== ADMIN_EMAIL) {
+    if (!user) {
+      if (adminNav) adminNav.style.display = "none";
       statusEl.textContent = "";
       pageEl.innerHTML = '<h1>Access Denied</h1><p style="color:var(--color-text-2)">This page is restricted to admin users. <a href="index.html">Back to Home</a></p>';
       return;
     }
+
+    const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL;
+    let isAdmin = isSuperAdmin;
+    if (!isSuperAdmin) {
+      try {
+        const tokenResult = await user.getIdTokenResult();
+        isAdmin = tokenResult.claims.admin === true;
+      } catch (err) {
+        console.error("Token check failed:", err);
+        isAdmin = false;
+      }
+    }
+
+    if (adminNav) adminNav.style.display = isAdmin ? "" : "none";
+
+    if (!isAdmin) {
+      statusEl.textContent = "";
+      pageEl.innerHTML = '<h1>Access Denied</h1><p style="color:var(--color-text-2)">This page is restricted to admin users. <a href="index.html">Back to Home</a></p>';
+      return;
+    }
+
+    currentUserIsSuperAdmin = isSuperAdmin;
+    currentUserUid = user.uid;
+
     const toolsEl = document.getElementById("admin-tools");
     if (toolsEl) toolsEl.style.display = "";
+    const inviteEl = document.getElementById("admin-invite");
+    if (inviteEl) inviteEl.style.display = "";
     const usersEl = document.getElementById("admin-users");
     if (usersEl) usersEl.style.display = "";
     const requestsEl = document.getElementById("admin-requests");
     if (requestsEl) requestsEl.style.display = "";
+    initInviteUser();
     loadDiagnostics();
     loadUserManagement();
     loadMovieRequests();
@@ -317,6 +345,55 @@ function setupControls() {
 }
 
 // ==========================================
+// INVITE USER
+// ==========================================
+
+function initInviteUser() {
+  const btn      = document.getElementById("invite-send-btn");
+  const statusEl = document.getElementById("invite-status");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    const email       = (document.getElementById("invite-email")?.value ?? "").trim();
+    const displayName = (document.getElementById("invite-display-name")?.value ?? "").trim();
+
+    if (!email) {
+      statusEl.textContent = "Please enter an email address.";
+      statusEl.style.color = "var(--color-error)";
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      statusEl.textContent = "Please enter a valid email address.";
+      statusEl.style.color = "var(--color-error)";
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = "Sending…";
+    statusEl.textContent = "";
+
+    try {
+      const createUserInvite = callFunction("createUserInvite");
+      await createUserInvite({ email, displayName });
+      statusEl.textContent = `✓ Invite sent to ${email}`;
+      statusEl.style.color = "var(--color-success)";
+      document.getElementById("invite-email").value        = "";
+      document.getElementById("invite-display-name").value = "";
+      // Refresh user list so the new account appears
+      loadUserManagement();
+    } catch (err) {
+      console.error("Invite failed:", err);
+      // err.message from an HttpsError includes the developer message
+      statusEl.textContent = "Error: " + (err.message || "Failed to send invite.");
+      statusEl.style.color = "var(--color-error)";
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = "Send Invite";
+    }
+  });
+}
+
+// ==========================================
 // USER MANAGEMENT
 // ==========================================
 
@@ -333,14 +410,14 @@ async function loadUserManagement() {
       getDocs(collection(db, "usernames"))
     ]);
 
-    // Build username lookup (lowercase -> doc data)
+    // Build username lookup (uid -> { docId, email })
     const usernamesByUid = {};
     usernamesSnap.forEach(d => {
       const data = d.data();
       usernamesByUid[data.uid] = { docId: d.id, email: data.email };
     });
 
-    // Build user rows, fetching vote counts from per-user stats docs
+    // Build user rows
     const userEntries = [];
     usersSnap.forEach(d => {
       const data = d.data();
@@ -354,7 +431,6 @@ async function loadUserManagement() {
 
     const users = userEntries.map((u, i) => {
       const statsData = statsSnaps[i].exists() ? (statsSnaps[i].data().stats || {}) : {};
-      // Count total votes: sum of all wins (each vote = 1 win for someone)
       let votes = 0;
       for (const key in statsData) {
         votes += (statsData[key].wins || 0);
@@ -364,11 +440,11 @@ async function loadUserManagement() {
         username: u.data.username || null,
         email: u.usernameInfo?.email || u.data.email || "unknown",
         votes,
-        usernameDocId: u.usernameInfo?.docId || null
+        usernameDocId: u.usernameInfo?.docId || null,
+        isAdmin: u.data.isAdmin === true
       };
     });
 
-    // Sort by vote count descending
     users.sort((a, b) => b.votes - a.votes);
 
     statusEl.textContent = `${users.length} registered user${users.length !== 1 ? 's' : ''}`;
@@ -380,28 +456,61 @@ async function loadUserManagement() {
         ? `<span class="admin-username-text">${escapeHtml(u.username)}</span>`
         : `<span style="color:var(--color-error); font-style:italic;">(none)</span>`;
 
+      const isSelf = u.uid === currentUserUid;
+
+      // Admin column: badge + toggle button (super-admin only, not for self)
+      let adminCellHtml = "";
+      if (u.isAdmin) {
+        adminCellHtml += `<span class="admin-badge">★ Admin</span>`;
+      }
+      if (currentUserIsSuperAdmin && !isSelf) {
+        adminCellHtml += u.isAdmin
+          ? `<button class="admin-btn admin-btn-remove-admin" data-uid="${u.uid}" data-is-admin="true">Remove</button>`
+          : `<button class="admin-btn admin-btn-make-admin" data-uid="${u.uid}" data-is-admin="false">Make Admin</button>`;
+      }
+
       tr.innerHTML = `
         <td class="admin-username-cell" data-uid="${u.uid}" data-current="${escapeHtml(u.username || '')}" data-doc-id="${u.usernameDocId || ''}">${usernameDisplay}
           <button class="admin-btn admin-btn-edit" title="${u.username ? 'Edit' : 'Assign'} username">${u.username ? 'Edit' : 'Assign'}</button>
         </td>
-        <td>${escapeHtml(u.email)}</td>
+        <td class="admin-email-cell" data-uid="${u.uid}" data-current="${escapeHtml(u.email)}">
+          <span class="admin-email-text">${escapeHtml(u.email)}</span>
+          <button class="admin-btn admin-btn-edit-email" title="Edit email">Edit</button>
+        </td>
         <td class="num">${u.votes}</td>
+        <td class="admin-role-cell">${adminCellHtml}</td>
         <td>
-          <button class="admin-btn admin-btn-reset" data-email="${escapeHtml(u.email)}">Reset Password</button>
+          <button class="admin-btn admin-btn-reset" data-email="${escapeHtml(u.email)}">Reset Pw</button>
+          <button class="admin-btn admin-btn-danger" data-uid="${u.uid}"${isSelf ? ' disabled title="Cannot delete yourself"' : ""}>Delete</button>
           <span class="admin-action-status"></span>
         </td>
       `;
       tbody.appendChild(tr);
     }
 
-    // Wire up edit buttons
+    // Wire up username edit buttons
     tbody.querySelectorAll(".admin-btn-edit").forEach(btn => {
       btn.addEventListener("click", handleEditUsername);
     });
 
-    // Wire up reset buttons
+    // Wire up email edit buttons
+    tbody.querySelectorAll(".admin-btn-edit-email").forEach(btn => {
+      btn.addEventListener("click", handleEditEmail);
+    });
+
+    // Wire up reset password buttons
     tbody.querySelectorAll(".admin-btn-reset").forEach(btn => {
       btn.addEventListener("click", handleResetPassword);
+    });
+
+    // Wire up delete buttons
+    tbody.querySelectorAll(".admin-btn-danger").forEach(btn => {
+      btn.addEventListener("click", handleDeleteUser);
+    });
+
+    // Wire up admin toggle buttons
+    tbody.querySelectorAll(".admin-btn-make-admin, .admin-btn-remove-admin").forEach(btn => {
+      btn.addEventListener("click", handleToggleAdmin);
     });
 
   } catch (err) {
@@ -492,7 +601,8 @@ function handleEditUsername(e) {
 
       // Get email for the new username doc
       const row = cell.closest("tr");
-      const email = row.children[1].textContent;
+      const emailCell = row.querySelector(".admin-email-cell");
+      const email = emailCell ? emailCell.dataset.current : "";
 
       // Update users/{uid}.username
       await setDoc(doc(db, "users", uid), { username: newUsername }, { merge: true });
@@ -532,6 +642,162 @@ function restoreUsernameCell(cell, username, docId) {
   cell.dataset.docId = docId || '';
 
   cell.querySelector(".admin-btn-edit").addEventListener("click", handleEditUsername);
+}
+
+function handleEditEmail(e) {
+  const cell = e.target.closest(".admin-email-cell");
+  const uid = cell.dataset.uid;
+  const currentEmail = cell.dataset.current;
+
+  const input = document.createElement("input");
+  input.type = "email";
+  input.value = currentEmail;
+  input.placeholder = "Enter email";
+  input.style.cssText = "width:160px; padding:4px 6px; font-size:0.8rem; background:var(--color-bg-2); border:1px solid var(--color-accent); border-radius:4px; color:var(--color-text-0); font-family:inherit;";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.className = "admin-btn admin-btn-save";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.className = "admin-btn admin-btn-cancel";
+
+  const errorSpan = document.createElement("span");
+  errorSpan.style.cssText = "color:var(--color-error); font-size:0.75rem; display:block; margin-top:4px;";
+
+  cell.innerHTML = "";
+  cell.appendChild(input);
+  cell.appendChild(saveBtn);
+  cell.appendChild(cancelBtn);
+  cell.appendChild(errorSpan);
+  input.focus();
+
+  cancelBtn.addEventListener("click", () => {
+    restoreEmailCell(cell, currentEmail);
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    const newEmail = input.value.trim();
+    if (!newEmail) {
+      errorSpan.textContent = "Email cannot be empty.";
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      errorSpan.textContent = "Please enter a valid email address.";
+      return;
+    }
+    if (newEmail === currentEmail) {
+      restoreEmailCell(cell, currentEmail);
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    try {
+      const updateUserEmailFn = callFunction("updateUserEmail");
+      await updateUserEmailFn({ uid, newEmail });
+
+      // Also update the Reset Password button's data-email in this row
+      const row = cell.closest("tr");
+      const resetBtn = row.querySelector(".admin-btn-reset");
+      if (resetBtn) resetBtn.dataset.email = newEmail;
+
+      cell.dataset.current = newEmail;
+      restoreEmailCell(cell, newEmail);
+    } catch (err) {
+      console.error("Email update failed:", err);
+      errorSpan.textContent = "Save failed: " + (err.message || "Unknown error");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save";
+    }
+  });
+}
+
+function restoreEmailCell(cell, email) {
+  cell.innerHTML = `<span class="admin-email-text">${escapeHtml(email)}</span>
+    <button class="admin-btn admin-btn-edit-email" title="Edit email">Edit</button>`;
+  cell.dataset.current = email;
+  cell.querySelector(".admin-btn-edit-email").addEventListener("click", handleEditEmail);
+}
+
+async function handleDeleteUser(e) {
+  const btn = e.target;
+  const uid = btn.dataset.uid;
+  const row = btn.closest("tr");
+  const usernameCell = row.querySelector(".admin-username-cell");
+  const username = usernameCell ? usernameCell.dataset.current : "";
+
+  if (!window.confirm(`Delete user "${username || uid}"? This cannot be undone.`)) return;
+
+  btn.disabled = true;
+  btn.textContent = "Deleting...";
+
+  try {
+    const deleteUserFn = callFunction("deleteUser");
+    await deleteUserFn({ uid });
+    row.remove();
+  } catch (err) {
+    console.error("Delete user failed:", err);
+    const statusSpan = row.querySelector(".admin-action-status");
+    if (statusSpan) {
+      statusSpan.textContent = "Delete failed: " + (err.message || "Unknown error");
+      statusSpan.style.color = "var(--color-error)";
+      setTimeout(() => { statusSpan.textContent = ""; }, 4000);
+    }
+    btn.disabled = false;
+    btn.textContent = "Delete";
+  }
+}
+
+async function handleToggleAdmin(e) {
+  const btn = e.target;
+  const uid = btn.dataset.uid;
+  const currentIsAdmin = btn.dataset.isAdmin === "true";
+  const newIsAdmin = !currentIsAdmin;
+
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  try {
+    const setAdminRoleFn = callFunction("setAdminRole");
+    await setAdminRoleFn({ uid, isAdmin: newIsAdmin });
+
+    // Update the role cell in-place
+    const row = btn.closest("tr");
+    const roleCell = row.querySelector(".admin-role-cell");
+    if (roleCell) {
+      roleCell.innerHTML = newIsAdmin
+        ? `<span class="admin-badge">★ Admin</span><button class="admin-btn admin-btn-remove-admin" data-uid="${uid}" data-is-admin="true">Remove</button>`
+        : `<button class="admin-btn admin-btn-make-admin" data-uid="${uid}" data-is-admin="false">Make Admin</button>`;
+      roleCell.querySelectorAll(".admin-btn-make-admin, .admin-btn-remove-admin").forEach(b => {
+        b.addEventListener("click", handleToggleAdmin);
+      });
+    }
+
+    showToast(
+      newIsAdmin
+        ? "Admin role granted — user must re-login to take effect."
+        : "Admin role revoked — user must re-login to take effect."
+    );
+  } catch (err) {
+    console.error("Toggle admin failed:", err);
+    btn.disabled = false;
+    btn.textContent = currentIsAdmin ? "Remove" : "Make Admin";
+  }
+}
+
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "admin-toast";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { toast.classList.add("admin-toast--visible"); });
+  setTimeout(() => {
+    toast.classList.remove("admin-toast--visible");
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
 }
 
 async function handleResetPassword(e) {

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -20,9 +20,14 @@
     }
     .account-container h2 {
       color: #e5e5e5;
-      margin-bottom: 1.5em;
+      margin-bottom: 0.5em;
       font-size: 1.3rem;
       font-weight: 700;
+    }
+    .account-container .panel-subtitle {
+      color: #607080;
+      font-size: 0.875rem;
+      margin-bottom: 1.5em;
     }
     .account-container input {
       width: 100%;
@@ -54,6 +59,10 @@
     .account-container button:hover {
       background-color: #6b5d47;
     }
+    .account-container button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .account-container button.secondary {
       background-color: #182844;
       color: #a0afc0;
@@ -62,18 +71,18 @@
     .account-container button.secondary:hover {
       background-color: #1e3355;
     }
-    .signup-link {
+    .nav-link-row {
       margin-top: 1em;
       font-size: 0.9rem;
       color: #607080;
     }
-    .signup-link a {
+    .nav-link-row a {
       color: #c4a46a;
       text-decoration: none;
       font-weight: 600;
       cursor: pointer;
     }
-    .signup-link a:hover {
+    .nav-link-row a:hover {
       text-decoration: underline;
     }
     .hidden {
@@ -110,6 +119,11 @@
     .subtext {
       color: #607080;
     }
+    .divider {
+      border: none;
+      border-top: 1px solid #1e3355;
+      margin: 1.25em 0;
+    }
   </style>
 </head>
 <body>
@@ -140,43 +154,67 @@
   <div class="container">
     <div class="account-container">
 
-      <!-- Logged-out state -->
+      <!-- ── Logged-out state ── -->
       <div id="account-logged-out">
-        <h2>Welcome to The Rewind Room</h2>
-        <p class="subtext">Log in or create a new account to save your movie rankings.</p>
 
-        <form id="login-form">
-          <input type="text" id="email" placeholder="Email or Username" required>
-          <input type="password" id="password" placeholder="Password" required>
-          <div id="signup-fields" class="hidden">
-            <input type="text" id="username" placeholder="Choose a Username (3-20 chars, letters/numbers/_)" maxlength="20">
-          </div>
-          <button type="submit" id="login-button">Log In</button>
-        </form>
+        <!-- Login Panel (default) -->
+        <div id="login-panel">
+          <h2>Welcome Back</h2>
+          <p class="panel-subtitle">Log in to save your movie rankings.</p>
 
-        <div class="forgot-password">
-          <a href="#" id="forgot-password-link">Forgot your password?</a>
-        </div>
-
-        <p class="signup-link">
-          Don't have an account? <a href="#" id="signup-trigger">Create one</a>
-        </p>
-
-        <!-- Password Reset Form (hidden by default) -->
-        <div id="reset-password-form" class="hidden">
-          <h2>Reset Password</h2>
-          <p class="subtext">Enter your email address and we'll send you a password reset link.</p>
-          <form id="reset-form">
-            <input type="email" id="reset-email" placeholder="Email" required>
-            <button type="submit">Send Reset Email</button>
+          <form id="login-form">
+            <input type="text"     id="email"    placeholder="Email or Username" autocomplete="username" required>
+            <input type="password" id="password" placeholder="Password"          autocomplete="current-password" required>
+            <button type="submit"  id="login-button">Log In</button>
           </form>
-          <p class="signup-link">
-            <a href="#" id="back-to-login">Back to Login</a>
+
+          <div class="forgot-password">
+            <a href="#" id="forgot-password-link">Forgot your password?</a>
+          </div>
+
+          <hr class="divider">
+
+          <p class="nav-link-row">
+            New here? <a href="#" id="signup-trigger">Create an account</a>
           </p>
         </div>
-      </div>
 
-      <!-- Logged-in state -->
+        <!-- Signup Panel (hidden by default) -->
+        <div id="signup-panel" class="hidden">
+          <h2>Create Your Account</h2>
+          <p class="panel-subtitle">Pick a username and you're in.</p>
+
+          <form id="signup-form">
+            <input type="email"    id="signup-email"    placeholder="Email"                                          autocomplete="email"        required>
+            <input type="password" id="signup-password" placeholder="Password (min 6 characters)"                   autocomplete="new-password" required>
+            <input type="text"     id="signup-username" placeholder="Username (3–20 chars, letters / numbers / _)"  maxlength="20"              required>
+            <button type="submit"  id="signup-button">Create Account</button>
+          </form>
+
+          <p class="nav-link-row">
+            Already have an account? <a href="#" id="back-to-login">Log in</a>
+          </p>
+        </div>
+
+        <!-- Password Reset Panel (hidden by default) -->
+        <div id="reset-password-form" class="hidden">
+          <h2>Reset Password</h2>
+          <p class="panel-subtitle">Enter your email and we'll send a reset link.</p>
+
+          <form id="reset-form">
+            <input type="email" id="reset-email" placeholder="Email" autocomplete="email" required>
+            <button type="submit">Send Reset Email</button>
+          </form>
+
+          <p class="nav-link-row">
+            <a href="#" id="back-to-login-from-reset">Back to login</a>
+          </p>
+        </div>
+
+      </div>
+      <!-- /account-logged-out -->
+
+      <!-- ── Logged-in state ── -->
       <div id="account-logged-in" class="hidden">
         <h2>Your Account</h2>
         <p id="user-username" class="subtext" style="font-weight:600; color:#e5e5e5;"></p>
@@ -184,7 +222,7 @@
         <button id="logout-button">Log Out</button>
       </div>
 
-      <!-- Status Messages -->
+      <!-- Status messages (shown in both states) -->
       <div id="status-message" class="status-message hidden"></div>
 
     </div>
