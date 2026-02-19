@@ -1,4 +1,4 @@
-import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, orderBy, serverTimestamp, callFunction } from "./firebase.js";
+import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, where, orderBy, serverTimestamp, callFunction } from "./firebase.js";
 import { makeMovieKey } from "./movieKeys.js";
 
 // ==========================================
@@ -76,6 +76,8 @@ window.onload = () => {
     loadDiagnostics();
     loadUserManagement();
     loadMovieRequests();
+    const rebuildBtn = document.getElementById("rebuild-stats-btn");
+    if (rebuildBtn) rebuildBtn.addEventListener("click", rebuildGlobalStats);
   });
 };
 
@@ -822,6 +824,53 @@ async function handleResetPassword(e) {
     btn.textContent = "Reset Password";
     btn.disabled = false;
     setTimeout(() => { statusSpan.textContent = ""; }, 3000);
+  }
+}
+
+// ==========================================
+// REBUILD GLOBAL STATS (ADMIN)
+// ==========================================
+
+async function rebuildGlobalStats() {
+  const statusEl = document.getElementById("rebuild-status");
+  if (!statusEl) return;
+
+  if (!window.confirm(
+    "Rebuild stats/global from all votes?\n\n" +
+    "This scans every vote document and recomputes wins/losses from scratch. " +
+    "Use this when rankings look wrong. It may take a few seconds."
+  )) return;
+
+  statusEl.textContent = "Reading all votes…";
+  statusEl.style.color = "var(--color-accent)";
+
+  try {
+    const votesSnap = await getDocs(collection(db, "votes"));
+
+    // Tally wins and losses per movie key from raw vote documents
+    const stats = {};
+    votesSnap.forEach(d => {
+      const { winner, loser } = d.data();
+      if (winner) {
+        if (!stats[winner]) stats[winner] = { wins: 0, losses: 0 };
+        stats[winner].wins++;
+      }
+      if (loser) {
+        if (!stats[loser]) stats[loser] = { wins: 0, losses: 0 };
+        stats[loser].losses++;
+      }
+    });
+
+    // Overwrite stats/global with rebuilt data (merge:true preserves other doc fields)
+    await setDoc(doc(db, "stats", "global"), { stats }, { merge: true });
+
+    const movieCount = Object.keys(stats).length;
+    statusEl.textContent = `✓ Rebuilt from ${votesSnap.size} votes across ${movieCount} movies. Reload the Voting Results page to see updated rankings.`;
+    statusEl.style.color = "var(--color-success)";
+  } catch (err) {
+    console.error("Rebuild failed:", err);
+    statusEl.textContent = "Error: " + err.message;
+    statusEl.style.color = "var(--color-error)";
   }
 }
 

@@ -645,9 +645,10 @@ async function fetchUserVotes(uid) {
 }
 
 async function fetchGlobalMovieVotes(movieKey) {
+  // No limit — we need all votes to compute accurate stats for the modal header.
   const [winSnap, loseSnap] = await Promise.all([
-    getDocs(query(collection(db, "votes"), where("winner", "==", movieKey), limit(25))),
-    getDocs(query(collection(db, "votes"), where("loser", "==", movieKey), limit(25)))
+    getDocs(query(collection(db, "votes"), where("winner", "==", movieKey))),
+    getDocs(query(collection(db, "votes"), where("loser", "==", movieKey)))
   ]);
   const votes = [];
   winSnap.forEach(d => votes.push(d.data()));
@@ -690,6 +691,25 @@ function renderMatchupHistory(votes, movieKey) {
   }).join("");
 }
 
+// Recompute wins/losses from raw vote documents and update the modal header.
+// This keeps the header consistent with the history list when the stats/global
+// aggregate has drifted out of sync with the votes collection.
+function updateModalStatsFromVotes(votes, movieKey) {
+  if (!votes.length) return;
+  const actualWins = votes.filter(v => v.winner === movieKey).length;
+  const actualLosses = votes.filter(v => v.loser === movieKey).length;
+  const actualN = actualWins + actualLosses;
+  if (actualN === 0) return;
+  const actualWinPct = (actualWins / actualN) * 100;
+  const actualWs = Math.round(wilsonScore(actualWins, actualLosses) * 1000) / 10;
+  document.getElementById("matchup-modal-stats").innerHTML = `
+    <div class="matchup-stat"><span class="matchup-stat-val">${actualWins}W - ${actualLosses}L</span><span class="matchup-stat-label">Record</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${actualWinPct.toFixed(1)}%</span><span class="matchup-stat-label">Win Rate</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${actualN}</span><span class="matchup-stat-label">Matchups</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${actualN === 0 ? "—" : actualWs.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
+  `;
+}
+
 async function showMatchupModal(movie) {
   const { key, title, year, wins, losses, n, winPct, displayScore } = movie;
 
@@ -717,6 +737,10 @@ async function showMatchupModal(movie) {
       }
       const votes = await fetchUserVotes(uid);
       const movieVotes = votes.filter(v => v.winner === key || v.loser === key);
+
+      // Recompute stats from raw votes — overrides potentially stale aggregate
+      updateModalStatsFromVotes(movieVotes, key);
+
       listEl.innerHTML = renderMatchupHistory(movieVotes, key);
     } catch (err) {
       console.error("Matchup history error:", err);
@@ -726,6 +750,10 @@ async function showMatchupModal(movie) {
     listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
     try {
       const votes = await fetchGlobalMovieVotes(key);
+
+      // Recompute stats from raw votes — overrides potentially stale aggregate
+      updateModalStatsFromVotes(votes, key);
+
       listEl.innerHTML = renderMatchupHistory(votes, key);
     } catch (err) {
       console.error("Matchup history error:", err);

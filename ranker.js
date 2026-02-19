@@ -574,25 +574,28 @@ async function saveVoteToFirestore(winner, loser) {
     const loserKey = getMovieKey(loser);
     const uid = auth.currentUser?.uid || null;
 
-    // 1. Audit log — individual vote doc (append-only, never scanned by UI)
-    await addDoc(collection(db, "votes"), {
+    // Single atomic batch: vote record + all stat updates committed together.
+    // Previously addDoc was called before the batch, so a batch failure would
+    // leave a vote in the votes collection without updating stats/global.
+    const batch = writeBatch(db);
+
+    // 1. Audit log — individual vote doc (append-only)
+    const voteRef = doc(collection(db, "votes"));
+    batch.set(voteRef, {
       winner: winnerKey,
       loser: loserKey,
       user: uid,
       timestamp: serverTimestamp()
     });
 
-    // 2. Update aggregate stats atomically
-    const batch = writeBatch(db);
-
-    // Global per-movie stats
+    // 2. Global per-movie stats
     const globalRef = doc(db, "stats", "global");
     batch.set(globalRef, {
       [`stats.${winnerKey}.wins`]: increment(1),
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
 
-    // Per-user per-movie stats
+    // 3. Per-user per-movie stats
     if (uid) {
       const userStatsRef = doc(db, "stats", `user_${uid}`);
       batch.set(userStatsRef, {
@@ -601,7 +604,7 @@ async function saveVoteToFirestore(winner, loser) {
       }, { merge: true });
     }
 
-    // Meta counters
+    // 4. Meta counters
     const metaRef = doc(db, "stats", "meta");
     batch.set(metaRef, {
       totalVotes: increment(1)
