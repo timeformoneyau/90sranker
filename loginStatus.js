@@ -135,6 +135,76 @@ function updateAccountIndicator(displayName, user) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// GUEST CONVERSION BANNER
+//
+// Passive (< 5 votes): slim bottom banner, session-dismissible.
+// Urgent (≥ 5 votes): same banner with personalised copy + CTA,
+//   permanently dismissible via localStorage.
+//
+// The banner links directly to account.html#signup (handled by
+// auth.js's DOMContentLoaded hash check).
+// ─────────────────────────────────────────────────────────────
+
+const GUEST_VOTE_THRESHOLD = 5;
+
+function showGuestBanner() {
+  // Never show on the account page — user is already there to sign up
+  if (window.location.pathname.includes("account.html")) return;
+  // Don't mount twice
+  if (document.getElementById("guest-banner")) return;
+
+  const count = parseInt(localStorage.getItem("guestVoteCount") || "0", 10);
+  const isUrgent = count >= GUEST_VOTE_THRESHOLD;
+
+  // Respect dismiss state
+  if (isUrgent  && localStorage.getItem("guestBannerDismissed") === "1") return;
+  if (!isUrgent && sessionStorage.getItem("guestBannerDismissed") === "1") return;
+
+  const banner = document.createElement("div");
+  banner.id = "guest-banner";
+  banner.className = "guest-banner" + (isUrgent ? " guest-banner--urgent" : "");
+
+  if (isUrgent) {
+    banner.innerHTML = `
+      <span class="guest-banner-text">
+        You've ranked <strong>${count} movies</strong> on this device — sign up so they're not lost when you close this tab.
+      </span>
+      <a href="account.html#signup" class="guest-banner-cta">Save My Rankings</a>
+      <button class="guest-banner-dismiss" aria-label="Dismiss">Maybe Later</button>
+    `;
+  } else {
+    banner.innerHTML = `
+      <span class="guest-banner-text">
+        Your picks are only saved to this browser.
+        <a href="account.html#signup" class="guest-banner-link">Create a free account</a>
+        to keep them and unlock personalized recommendations.
+      </span>
+      <button class="guest-banner-dismiss" aria-label="Dismiss">&#x2715;</button>
+    `;
+  }
+
+  document.body.appendChild(banner);
+
+  banner.querySelector(".guest-banner-dismiss").addEventListener("click", () => {
+    banner.remove();
+    if (isUrgent) {
+      localStorage.setItem("guestBannerDismissed", "1");
+    } else {
+      sessionStorage.setItem("guestBannerDismissed", "1");
+    }
+  });
+}
+
+// When the guest crosses the vote threshold mid-session, upgrade the banner live.
+window.addEventListener("guestVoteThresholdReached", () => {
+  const existing = document.getElementById("guest-banner");
+  if (existing) existing.remove();
+  // Clear session dismiss so the urgent version can mount
+  sessionStorage.removeItem("guestBannerDismissed");
+  showGuestBanner();
+});
+
 export function updateLoginStatus() {
   const accountNavLink = document.querySelector('nav a[href="account.html"]');
   const adminNavLink = document.getElementById("admin-nav-link");
@@ -181,6 +251,7 @@ export function updateLoginStatus() {
     } else {
       updateAccountIndicator(null, null);
       removeUsernameOverlay();
+      showGuestBanner();
     }
   });
 }

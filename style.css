@@ -3590,3 +3590,104 @@ tbody tr:last-child td { border-bottom: none; }
   font-weight: var(--fw-bold);
   margin-left: 0.5rem;
 }
+
+
+/* =========================================================
+   GUEST CONVERSION BANNER
+   ========================================================= */
+
+@keyframes guest-banner-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes guest-banner-pulse {
+  0%, 100% { border-top-color: var(--color-accent); }
+  50%       { border-top-color: transparent; }
+}
+
+.guest-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.25rem;
+  background: var(--color-bg-1);
+  border-top: 2px solid var(--color-border);
+  font-size: 0.82rem;
+  color: var(--color-text-1);
+  animation: guest-banner-slide-up 0.3s ease;
+}
+
+.guest-banner--urgent {
+  border-top-color: var(--color-accent);
+  animation: guest-banner-slide-up 0.3s ease,
+             guest-banner-pulse 1.2s ease 0.3s 3;
+}
+
+.guest-banner-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.guest-banner-link {
+  color: var(--color-accent);
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+}
+
+.guest-banner-link:hover {
+  text-decoration: underline;
+}
+
+.guest-banner-cta {
+  flex-shrink: 0;
+  padding: 0.4em 1em;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.guest-banner-cta:hover {
+  opacity: 0.88;
+}
+
+.guest-banner-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-2);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.25em 0.5em;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.guest-banner-dismiss:hover {
+  color: var(--color-text-0);
+}
+
+@media (max-width: 480px) {
+  .guest-banner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+  .guest-banner-text {
+    flex-basis: 100%;
+  }
+}

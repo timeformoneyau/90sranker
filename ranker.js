@@ -532,6 +532,15 @@ async function handleVote(choice) {
   // 4. Update vote counter
   updateVoteCounter();
 
+  // 4b. Track guest vote count for conversion banner (no Firestore — localStorage only)
+  if (!state.uid) {
+    const guestCount = parseInt(localStorage.getItem("guestVoteCount") || "0", 10) + 1;
+    localStorage.setItem("guestVoteCount", String(guestCount));
+    if (guestCount === 5) {
+      window.dispatchEvent(new CustomEvent("guestVoteThresholdReached"));
+    }
+  }
+
   // 5. Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 

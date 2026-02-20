@@ -145,7 +145,11 @@ function showResetPanel() {
   }
 }
 
-window.addEventListener("DOMContentLoaded", () => emailInput?.focus());
+window.addEventListener("DOMContentLoaded", () => {
+  emailInput?.focus();
+  // Deep-link: account.html#signup opens the signup panel directly
+  if (window.location.hash === "#signup") showSignupPanel();
+});
 
 if (signupTrigger)      signupTrigger.addEventListener("click",      (e) => { e.preventDefault(); showSignupPanel(); });
 if (backToLoginLink)    backToLoginLink.addEventListener("click",    (e) => { e.preventDefault(); showLoginPanel(); });
