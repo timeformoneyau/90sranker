@@ -15,10 +15,16 @@ service cloud.firestore {
     // ── usernames ────────────────────────────────────────────────
     // Public read: required for (a) username-based login before the
     // user is authenticated, and (b) uniqueness check during signup.
-    // Write: any authenticated user (signup / username overlay).
+    //
+    // Create: any signed-in user can claim a username, but the uid
+    //   field in the new doc must match their own uid. Admins can
+    //   also create (covers admin username-assignment in the panel).
+    // Update / Delete: admin only — no self-service username changes.
     match /usernames/{username} {
-      allow read:  if true;
-      allow write: if isSignedIn();
+      allow read:   if true;
+      allow create: if isSignedIn()
+          && (request.resource.data.uid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // ── users ────────────────────────────────────────────────────
@@ -38,11 +44,21 @@ service cloud.firestore {
     }
 
     // ── stats ────────────────────────────────────────────────────
-    // Public read (coverage diagnostics uses global stats).
-    // Admin or authenticated users can write (migration scripts etc.).
+    // Public read (leaderboard + recommendation engine use global stats).
+    //
+    // Writes are scoped per doc to limit the blast radius:
+    //   stats/global  — any signed-in user (vote recording is client-side;
+    //                   move to Cloud Functions to fully eliminate this).
+    //   stats/meta    — any signed-in user (vote counter increments).
+    //   stats/user_X  — only the owner (uid matches) or admin.
+    //   anything else — admin only.
     match /stats/{docId} {
-      allow read:  if true;
-      allow write: if isSignedIn();
+      allow read: if true;
+      allow write: if isSignedIn()
+          && (docId == "global"
+              || docId == "meta"
+              || docId == ("user_" + request.auth.uid)
+              || isAdmin());
     }
 
     // ── movieRequests ────────────────────────────────────────────
