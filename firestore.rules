@@ -96,6 +96,28 @@ service cloud.firestore {
       allow read, update: if isAdmin();
     }
 
+    // ── toughCalls ───────────────────────────────────────────────
+    // Community-submitted matchups. Public read so the Face/Off page
+    // loads for guests. Signed-in users can create (flagging a matchup
+    // from the home page) and update (incrementing vote counts).
+    match /toughCalls/{tcId} {
+      allow read:   if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // ── toughCallVotes ───────────────────────────────────────────
+    // One vote doc per user per faceoff (deterministic ID: tcId__uid).
+    // Users can only read and create their own vote doc; no edits.
+    match /toughCallVotes/{voteId} {
+      allow read:   if isSignedIn()
+          && voteId.matches('(.*)__' + request.auth.uid);
+      allow create: if isSignedIn()
+          && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ── adminActions ─────────────────────────────────────────────
     // Written exclusively by Cloud Functions (service account bypasses
     // client rules).  Only admins may read.  Non-admins: no access.
