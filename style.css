@@ -531,7 +531,7 @@ tbody tr:last-child td { border-bottom: none; }
 #compare-section {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 0 var(--s-4);
+  gap: 0 var(--s-3);
   align-items: start;
   justify-items: center;
   padding: var(--s-6) var(--s-4) var(--s-4);
@@ -721,7 +721,7 @@ tbody tr:last-child td { border-bottom: none; }
   transition: transform 100ms var(--ease-out-5, ease);
 }
 
-/* VS Badge — circular coin/emblem centered in the middle column */
+/* VS cluster — PICK ONE label + circular coin, locked as one unit */
 .vs-badge {
   position: absolute;
   top: 35%;
@@ -730,14 +730,14 @@ tbody tr:last-child td { border-bottom: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  gap: 8px; /* fixed px — does not scale with font size */
   pointer-events: none;
   user-select: none;
 }
 
-/* "PICK ONE" label sits directly above the circle */
+/* "PICK ONE" — instruction label above the circle */
 .vs-badge-sub {
-  font-size: 0.82rem;
+  font-size: 0.9375rem; /* 15px */
   letter-spacing: 0.13em;
   color: var(--color-text-1);
   font-weight: var(--fw-semibold);
@@ -746,7 +746,7 @@ tbody tr:last-child td { border-bottom: none; }
   white-space: nowrap;
 }
 
-/* Circular coin/stamp */
+/* Circular coin/stamp — 64px desktop */
 .vs-circle {
   width: 64px;
   height: 64px;
@@ -766,7 +766,7 @@ tbody tr:last-child td { border-bottom: none; }
 .vs-badge-text {
   font-family: var(--font-family);
   font-size: 1.05rem;
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-bold); /* 700 */
   letter-spacing: 0.12em;
   color: var(--color-indigo);
   line-height: 1;
@@ -1947,7 +1947,7 @@ tbody tr:last-child td { border-bottom: none; }
   :root { --container-pad: var(--s-6); }
 
   #compare-section {
-    column-gap: var(--s-5);
+    column-gap: var(--s-4);
   }
 
   .movie-block {
@@ -1958,7 +1958,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media (min-width: 1024px) {
   :root { --container-pad: var(--s-8); }
-  #compare-section { column-gap: var(--s-6); }
+  #compare-section { column-gap: var(--s-5); }
   .movie-block { max-width: 360px; }
 }
 
@@ -2214,6 +2214,16 @@ tbody tr:last-child td { border-bottom: none; }
     width: 18px;
     height: 18px;
     font-size: 0.6rem;
+  }
+
+  /* VS cluster: compact for landscape mobile */
+  .vs-circle {
+    width: 52px;
+    height: 52px;
+  }
+
+  .vs-badge-sub {
+    font-size: 0.8125rem; /* 13px */
   }
 }
 
@@ -3664,8 +3674,8 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 @keyframes guest-banner-pulse {
-  0%, 100% { background: #fce9ed; }
-  50%       { background: #fad5dc; }
+  0%, 100% { background: #f2bcc8; }
+  50%       { background: #eeaaba; }
 }
 
 .guest-banner {
@@ -3675,8 +3685,8 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: center;
   gap: 0.6rem;
   padding: 0.6rem 1.25rem;
-  background: #fce9ed;
-  border-bottom: 1px solid rgba(180, 50, 75, 0.2);
+  background: #f2bcc8;
+  border-bottom: 1px solid rgba(160, 40, 65, 0.25);
   font-size: clamp(0.70rem, 1.2vw, 0.82rem);
   font-weight: var(--fw-semibold);
   color: #4a0f1a;
