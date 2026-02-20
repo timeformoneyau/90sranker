@@ -398,8 +398,8 @@ async function displayMovies() {
 
     const btnA = document.getElementById("posterBtnA");
     const btnB = document.getElementById("posterBtnB");
-    if (btnA) btnA.setAttribute("aria-label", `Select ${A.title}`);
-    if (btnB) btnB.setAttribute("aria-label", `Select ${B.title}`);
+    if (btnA) btnA.setAttribute("aria-label", `Vote for ${A.title}`);
+    if (btnB) btnB.setAttribute("aria-label", `Vote for ${B.title}`);
 
     // Persist current matchup so it survives page refresh
     try {

@@ -557,15 +557,14 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: var(--s-2);
 }
 
-/* Undecided sits in the center column, aligned with SELECT buttons */
+/* Center column: VS badge (absolute) + crowd-vote-wrap at bottom */
 .matchup-undecided {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   align-self: stretch;
   position: relative;
-  /* Push to the bottom of the poster area so it aligns with SELECT row */
-  padding-bottom: calc(36px + var(--s-2)); /* height of Haven't Seen + gap */
+  padding-bottom: var(--s-2);
 }
 
 /* Subtle center column vertical guide */
@@ -729,9 +728,54 @@ tbody tr:last-child td { border-bottom: none; }
   transition: transform 100ms var(--ease-out-5, ease);
 }
 
-/* VS Badge — hidden */
+/* VS Badge — centered in the middle column, roughly at poster mid-height */
 .vs-badge {
-  display: none;
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.vs-badge-text {
+  font-family: var(--font-display, var(--font-family));
+  font-size: 1.15rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.18em;
+  color: var(--color-text-1);
+  line-height: 1;
+  text-shadow: 0 0 18px var(--color-accent-dim), 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.vs-badge-sub {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-2);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Crowd Vote wrapper — hint text above the button */
+.crowd-vote-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.crowd-vote-hint {
+  margin: 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.07em;
+  color: var(--color-text-2);
+  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
 }
 
 /* SELECT button — beveled depth, sits under each poster */
@@ -939,7 +983,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .vote-counter-sub {
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: var(--fw-bold);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2021,6 +2065,10 @@ tbody tr:last-child td { border-bottom: none; }
   }
 
   .matchup-undecided::before {
+    display: none;
+  }
+
+  .vs-badge {
     display: none;
   }
 
@@ -3604,19 +3652,22 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 @keyframes guest-banner-pulse {
-  0%, 100% { background: #c47d10; }
-  50%       { background: #e09420; }
+  0%, 100% { background: #4a1a1a; }
+  50%       { background: #5e2222; }
 }
 
 .guest-banner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
   padding: 0.65rem 1.25rem;
-  background: #c47d10;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+  background: #4a1a1a;
+  border-bottom: 2px solid rgba(180, 60, 60, 0.3);
   font-size: 0.82rem;
-  color: #1a0f00;
+  color: #f0d0d0;
+  text-align: center;
   animation: guest-banner-slide-down 0.3s ease;
 }
 
@@ -3626,26 +3677,28 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .guest-banner-text {
-  flex: 1;
-  line-height: 1.4;
+  flex: 1 1 100%;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .guest-banner-link {
-  color: #1a0f00;
+  color: #f0d0d0;
   font-weight: var(--fw-bold);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .guest-banner-link:hover {
-  opacity: 0.75;
+  color: #fff;
 }
 
 .guest-banner-cta {
   flex-shrink: 0;
   padding: 0.4em 1em;
-  background: #1a0f00;
-  color: #f5c842;
-  border: none;
+  background: rgba(240, 208, 208, 0.15);
+  color: #f0d0d0;
+  border: 1px solid rgba(240, 208, 208, 0.35);
   border-radius: var(--r-sm);
   font-family: inherit;
   font-size: 0.8rem;
@@ -3653,18 +3706,19 @@ tbody tr:last-child td { border-bottom: none; }
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .guest-banner-cta:hover {
-  opacity: 0.82;
+  background: rgba(240, 208, 208, 0.28);
+  color: #fff;
 }
 
 .guest-banner-dismiss {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: rgba(26, 15, 0, 0.6);
+  color: rgba(240, 208, 208, 0.5);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.8rem;
@@ -3674,16 +3728,11 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .guest-banner-dismiss:hover {
-  color: #1a0f00;
+  color: #f0d0d0;
 }
 
 @media (max-width: 480px) {
   .guest-banner {
-    flex-wrap: wrap;
-    gap: 0.5rem;
     padding: 0.75rem 1rem;
-  }
-  .guest-banner-text {
-    flex-basis: 100%;
   }
 }

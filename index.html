@@ -52,16 +52,22 @@
           <span class="movie-year" id="movieA-year"></span>
         </div>
         <button class="btn-remind" onclick="showMovieInfo('A')">Summary</button>
-        <button class="btn-select" onclick="vote('A')">SELECT</button>
+        <button class="btn-select" onclick="vote('A')">WINNER</button>
         <button class="btn-unseen" onclick="markUnseen(movieA)">Haven't Seen</button>
       </div>
 
-      <!-- Undecided (centered between columns) -->
+      <!-- Center column: VS badge + crowd vote -->
       <div class="matchup-undecided">
-        <button class="btn-undecided" onclick="handleUndecided()">
-          <span class="btn-undecided-label">Face / Off</span>
-          <span class="btn-undecided-sub">Send to Community</span>
-        </button>
+        <div class="vs-badge" aria-hidden="true">
+          <span class="vs-badge-text">VS</span>
+          <span class="vs-badge-sub">Pick one.</span>
+        </div>
+        <div class="crowd-vote-wrap">
+          <p class="crowd-vote-hint">Can't decide?</p>
+          <button class="btn-undecided" onclick="handleUndecided()">
+            <span class="btn-undecided-label">CROWD VOTE</span>
+          </button>
+        </div>
       </div>
 
       <!-- Movie B -->
@@ -74,7 +80,7 @@
           <span class="movie-year" id="movieB-year"></span>
         </div>
         <button class="btn-remind" onclick="showMovieInfo('B')">Summary</button>
-        <button class="btn-select" onclick="vote('B')">SELECT</button>
+        <button class="btn-select" onclick="vote('B')">WINNER</button>
         <button class="btn-unseen" onclick="markUnseen(movieB)">Haven't Seen</button>
       </div>
 

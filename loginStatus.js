@@ -175,7 +175,8 @@ function showGuestBanner() {
   if (isUrgent) {
     banner.innerHTML = `
       <span class="guest-banner-text">
-        You've ranked <strong>${count} movies</strong> on this device — sign up so they're not lost when you close this tab.
+        <a href="account.html#signup" class="guest-banner-link">Create a free account</a>
+        to save your voting history and unlock personalized recommendations.
       </span>
       <a href="account.html#signup" class="guest-banner-cta">Save My Rankings</a>
       <button class="guest-banner-dismiss" aria-label="Dismiss">Maybe Later</button>
@@ -183,9 +184,8 @@ function showGuestBanner() {
   } else {
     banner.innerHTML = `
       <span class="guest-banner-text">
-        Your picks are only saved to this browser.
         <a href="account.html#signup" class="guest-banner-link">Create a free account</a>
-        to keep them and unlock personalized recommendations.
+        to save your voting history and unlock personalized recommendations.
       </span>
       <button class="guest-banner-dismiss" aria-label="Dismiss">&#x2715;</button>
     `;
