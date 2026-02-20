@@ -191,7 +191,12 @@ function showGuestBanner() {
     `;
   }
 
-  document.body.appendChild(banner);
+  const nav = document.querySelector("nav");
+  if (nav) {
+    nav.insertAdjacentElement("afterend", banner);
+  } else {
+    document.body.insertAdjacentElement("afterbegin", banner);
+  }
 
   banner.querySelector(".guest-banner-dismiss").addEventListener("click", () => {
     banner.remove();
