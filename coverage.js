@@ -1,5 +1,5 @@
 import { db, auth, onAuth, collection, getDocs, doc, getDoc, setDoc, deleteDoc, resetPassword, updateDoc, query, where, orderBy, serverTimestamp, callFunction } from "./firebase.js";
-import { makeMovieKey } from "./movieKeys.js";
+import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 
 // ==========================================
 // ADMIN GATE
@@ -837,27 +837,44 @@ async function rebuildGlobalStats() {
 
   if (!window.confirm(
     "Rebuild stats/global from all votes?\n\n" +
-    "This scans every vote document and recomputes wins/losses from scratch. " +
+    "This scans every vote document and recomputes wins/losses from scratch, " +
+    "normalizing old-format keys (e.g. 'Title Year') to canonical 'Title|Year'. " +
     "Use this when rankings look wrong. It may take a few seconds."
   )) return;
 
-  statusEl.textContent = "Reading all votes…";
+  statusEl.textContent = "Loading movie list for key normalization…";
   statusEl.style.color = "var(--color-accent)";
+
+  // Build key normalizer from the canonical movie list so old-format keys
+  // ("Title Year") get merged into canonical "Title|Year" entries.
+  let normalizeKey = (k) => k; // identity fallback if list fails to load
+  try {
+    const res = await fetch("movie_list_cleaned.json");
+    const movieList = await res.json();
+    const filtered = movieList.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+    normalizeKey = buildKeyNormalizer(filtered);
+  } catch (err) {
+    console.warn("Could not load movie list (keys will not be normalized):", err);
+  }
+
+  statusEl.textContent = "Reading all votes…";
 
   try {
     const votesSnap = await getDocs(collection(db, "votes"));
 
-    // Tally wins and losses per movie key from raw vote documents
+    // Tally wins/losses per normalized movie key (merges old + new key formats)
     const stats = {};
     votesSnap.forEach(d => {
       const { winner, loser } = d.data();
-      if (winner) {
-        if (!stats[winner]) stats[winner] = { wins: 0, losses: 0 };
-        stats[winner].wins++;
+      const w = winner ? normalizeKey(winner) : null;
+      const l = loser  ? normalizeKey(loser)  : null;
+      if (w) {
+        if (!stats[w]) stats[w] = { wins: 0, losses: 0 };
+        stats[w].wins++;
       }
-      if (loser) {
-        if (!stats[loser]) stats[loser] = { wins: 0, losses: 0 };
-        stats[loser].losses++;
+      if (l) {
+        if (!stats[l]) stats[l] = { wins: 0, losses: 0 };
+        stats[l].losses++;
       }
     });
 

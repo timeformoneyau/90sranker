@@ -7,7 +7,8 @@ import {
   getDocs,
   query,
   where,
-  limit
+  limit,
+  onSnapshot
 } from "./firebase.js";
 
 import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
@@ -115,6 +116,19 @@ function buildRankedData(statsObj) {
     const conf = confidenceLevel(n);
     return { key, title, year, wins, losses, n, winPct, wilsonScore: ws, displayScore: Math.round(ws * 1000) / 10, confidence: conf };
   });
+}
+
+// Normalize all keys in statsObj via the movie-list normalizer, then merge any
+// duplicates (e.g. "Independence Day 1996" + "Independence Day|1996" become one entry).
+function buildNormalizedRankedData(statsObj) {
+  const merged = {};
+  for (const [rawKey, r] of Object.entries(statsObj)) {
+    const key = normalizeKey(rawKey);
+    if (!merged[key]) merged[key] = { wins: 0, losses: 0 };
+    merged[key].wins  += r.wins  || 0;
+    merged[key].losses += r.losses || 0;
+  }
+  return buildRankedData(merged);
 }
 
 // ==========================================
@@ -272,6 +286,7 @@ document.getElementById("global-hide-low").addEventListener("change", applyGloba
 
 // Cached global stats for cross-tab use (e.g. Michael's global rank)
 let cachedGlobalStats = {};
+let unsubGlobal = null;
 
 async function loadGlobalStats() {
   const countEl = document.getElementById("global-count");
@@ -280,25 +295,38 @@ async function loadGlobalStats() {
   tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading global rankings...</td></tr>';
   cards.innerHTML = '<div class="results-empty">Loading...</div>';
 
+  // Fetch total vote count once (stats/meta is not per-vote, so a one-time read is fine)
   try {
-    // Read stats/global (1 Firestore read) + stats/meta (1 read)
-    const [globalSnap, metaSnap] = await Promise.all([
-      getDoc(doc(db, "stats", "global")),
-      getDoc(doc(db, "stats", "meta"))
-    ]);
-
+    const metaSnap = await getDoc(doc(db, "stats", "meta"));
     const totalVotes = metaSnap.exists() ? (metaSnap.data().totalVotes || 0) : 0;
     countEl.textContent = `${totalVotes.toLocaleString()} total votes across all users`;
-
-    cachedGlobalStats = globalSnap.exists() ? (globalSnap.data().stats || {}) : {};
-    globalAllRows = buildRankedData(cachedGlobalStats);
-    applyGlobalFilters();
-  } catch (err) {
-    console.error("loadGlobalStats error:", err);
-    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load global rankings.</td></tr>';
-    cards.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
-    countEl.textContent = "Unable to load";
+  } catch {
+    countEl.textContent = "";
   }
+
+  // Live listener — re-fires automatically whenever a vote is cast (1 read per update).
+  // Returns a Promise that resolves after the first snapshot so callers can await
+  // globalAllRows being populated before rendering dependent UI (e.g. worst movies).
+  if (unsubGlobal) unsubGlobal();
+  return new Promise((resolve) => {
+    let settled = false;
+    unsubGlobal = onSnapshot(
+      doc(db, "stats", "global"),
+      (snap) => {
+        cachedGlobalStats = snap.exists() ? (snap.data().stats || {}) : {};
+        globalAllRows = buildNormalizedRankedData(cachedGlobalStats);
+        applyGlobalFilters();
+        if (!settled) { settled = true; resolve(); }
+      },
+      (err) => {
+        console.error("loadGlobalStats onSnapshot error:", err);
+        tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load global rankings.</td></tr>';
+        cards.innerHTML = '<div class="results-empty results-error">Failed to load global rankings.</div>';
+        countEl.textContent = "Unable to load";
+        if (!settled) { settled = true; resolve(); }
+      }
+    );
+  });
 }
 
 // ==========================================
@@ -351,7 +379,7 @@ async function loadPersonalStats(uid) {
     const matchups = Math.round(totalVotes / 2);
     countEl.textContent = `${matchups.toLocaleString()} votes`;
 
-    personalAllRows = buildRankedData(userStats);
+    personalAllRows = buildNormalizedRankedData(userStats);
     applyPersonalFilters();
   } catch (err) {
     console.error("loadPersonalStats error:", err);
@@ -392,16 +420,11 @@ function renderWorstMovies(allRows) {
 
   const worst = sorted.slice(0, WORST_LIMIT);
 
-  // Build global win-rate lookup from cached stats (already in memory, 0 reads)
+  // Build global win-rate lookup from normalized globalAllRows (already in memory, 0 reads)
   const globalWinRates = {};
-  if (cachedGlobalStats) {
-    for (const [key, s] of Object.entries(cachedGlobalStats)) {
-      const gw = s.wins || 0;
-      const gl = s.losses || 0;
-      const gn = gw + gl;
-      if (gn >= WORST_GLOBAL_MIN) {
-        globalWinRates[key] = ((gw / gn) * 100).toFixed(1);
-      }
+  for (const r of globalAllRows) {
+    if (r.n >= WORST_GLOBAL_MIN) {
+      globalWinRates[r.key] = r.winPct.toFixed(1);
     }
   }
 
@@ -645,14 +668,30 @@ async function fetchUserVotes(uid) {
 }
 
 async function fetchGlobalMovieVotes(movieKey) {
-  // No limit — we need all votes to compute accurate stats for the modal header.
-  const [winSnap, loseSnap] = await Promise.all([
+  // Also query the legacy "Title Year" format (no pipe) to pick up votes written
+  // before the canonical "Title|Year" format was introduced.
+  const altKey = movieKey.includes("|") ? movieKey.replace("|", " ") : null;
+
+  const queryPromises = [
     getDocs(query(collection(db, "votes"), where("winner", "==", movieKey))),
-    getDocs(query(collection(db, "votes"), where("loser", "==", movieKey)))
-  ]);
+    getDocs(query(collection(db, "votes"), where("loser",   "==", movieKey)))
+  ];
+  if (altKey && altKey !== movieKey) {
+    queryPromises.push(getDocs(query(collection(db, "votes"), where("winner", "==", altKey))));
+    queryPromises.push(getDocs(query(collection(db, "votes"), where("loser",   "==", altKey))));
+  }
+
+  const snaps = await Promise.all(queryPromises);
+  const seen  = new Set();
   const votes = [];
-  winSnap.forEach(d => votes.push(d.data()));
-  loseSnap.forEach(d => votes.push(d.data()));
+  snaps.forEach(snap => {
+    snap.forEach(d => {
+      if (!seen.has(d.id)) {
+        seen.add(d.id);
+        votes.push(d.data());
+      }
+    });
+  });
   return votes;
 }
 
@@ -669,8 +708,8 @@ function renderMatchupHistory(votes, movieKey) {
   });
 
   return votes.map(v => {
-    const isWin = v.winner === movieKey;
-    const opponentKey = isWin ? v.loser : v.winner;
+    const isWin = normalizeKey(v.winner) === movieKey;
+    const opponentKey = normalizeKey(isWin ? v.loser : v.winner);
     const opponentTitle = opponentKey.split("|")[0];
     const opponentYear = opponentKey.split("|")[1] || "";
     const resultClass = isWin ? "matchup-row--win" : "matchup-row--loss";
@@ -696,8 +735,8 @@ function renderMatchupHistory(votes, movieKey) {
 // aggregate has drifted out of sync with the votes collection.
 function updateModalStatsFromVotes(votes, movieKey) {
   if (!votes.length) return;
-  const actualWins = votes.filter(v => v.winner === movieKey).length;
-  const actualLosses = votes.filter(v => v.loser === movieKey).length;
+  const actualWins   = votes.filter(v => normalizeKey(v.winner) === movieKey).length;
+  const actualLosses = votes.filter(v => normalizeKey(v.loser)  === movieKey).length;
   const actualN = actualWins + actualLosses;
   if (actualN === 0) return;
   const actualWinPct = (actualWins / actualN) * 100;
@@ -736,7 +775,7 @@ async function showMatchupModal(movie) {
         return;
       }
       const votes = await fetchUserVotes(uid);
-      const movieVotes = votes.filter(v => v.winner === key || v.loser === key);
+      const movieVotes = votes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
 
       // Recompute stats from raw votes — overrides potentially stale aggregate
       updateModalStatsFromVotes(movieVotes, key);
@@ -779,6 +818,10 @@ document.addEventListener("keydown", (e) => {
 // ==========================================
 // INIT
 // ==========================================
+
+window.addEventListener("beforeunload", () => {
+  if (unsubGlobal) unsubGlobal();
+});
 
 window.addEventListener("load", async () => {
   await initNormalizer();
