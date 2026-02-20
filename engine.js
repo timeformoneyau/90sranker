@@ -79,6 +79,14 @@ function keyToTitle(key) {
   return key.split("|")[0];
 }
 
+// Wilson score lower bound — better ranking for movies with few votes than raw win count
+function wilsonScore(wins, total) {
+  if (total === 0) return 0;
+  const z = 1.96; // 95% confidence
+  const p = wins / total;
+  return (p + z * z / (2 * total) - z * Math.sqrt((p * (1 - p) + z * z / (4 * total)) / total)) / (1 + z * z / total);
+}
+
 function getDecade(year) {
   const y = parseInt(year);
   if (y >= 1990 && y <= 1994) return "1990\u20131994";
@@ -150,19 +158,33 @@ function scoreCandidates(candidates, prefs) {
     const attrKeys = Object.keys(attrs);
     if (attrKeys.length === 0) return { movie, score: 0, contributions: [] };
 
-    let score = 0;
+    let nonVibeScore = 0;
+    let vibeScore = 0;
+    let vibeCount = 0;
     const contributions = [];
 
     for (const key of attrKeys) {
       const prefScore = prefs[key] || 0;
       const contribution = prefScore * attrs[key];
-      score += contribution;
-      if (Math.abs(prefScore) > 0) {
-        contributions.push({ key, value: contribution });
+      if (key.startsWith("vibe:")) {
+        vibeScore += contribution;
+        vibeCount++;
+      } else {
+        nonVibeScore += contribution;
+        if (Math.abs(prefScore) > 0) {
+          contributions.push({ key, value: contribution });
+        }
       }
     }
 
-    score /= Math.sqrt(attrKeys.length);
+    // Cap total vibe contribution: divide by sqrt(vibeCount) so 4 vibes ≈ 2× one vibe,
+    // not 4×. Prevents vibes (300+ possible tags) from drowning genre/tone signal.
+    const scaledVibeScore = vibeCount > 1 ? vibeScore / Math.sqrt(vibeCount) : vibeScore;
+    if (Math.abs(scaledVibeScore) > 0) {
+      contributions.push({ key: "vibe:combined", value: scaledVibeScore });
+    }
+
+    const score = nonVibeScore + scaledVibeScore;
     contributions.sort((a, b) => b.value - a.value);
 
     return { movie, score, contributions: contributions.slice(0, 3), communityBoost: 0, similarMovies: [] };
@@ -191,8 +213,8 @@ function computeSimilarity(userStatsA, userStatsB) {
     }
   }
 
-  // Require minimum 10 shared movies for a meaningful comparison
-  if (shared.length < 10) return 0;
+  // Require minimum 5 shared movies for a meaningful comparison
+  if (shared.length < 5) return 0;
 
   // Pearson-like correlation on win rates
   const n = shared.length;
@@ -307,13 +329,15 @@ function applyDiversitySelection(scoredItems, count) {
 
   const selected = [];
   const selectedGenres = [];
+  const selectedTones = [];
 
   // Always pick the #1 scored movie
   selected.push(pool[0]);
   if (pool[0].movie.genre) selectedGenres.push(pool[0].movie.genre);
+  if (pool[0].movie.tone) selectedTones.push(pool[0].movie.tone);
   pool.splice(0, 1);
 
-  // Greedily pick remaining slots with genre-diversity penalty
+  // Greedily pick remaining slots with genre + tone diversity penalty
   while (selected.length < count && pool.length > 0) {
     let bestIdx = 0;
     let bestPenalizedScore = -Infinity;
@@ -324,6 +348,10 @@ function applyDiversitySelection(scoredItems, count) {
         const genreCount = selectedGenres.filter(g => g === pool[i].movie.genre).length;
         penalized *= Math.pow(0.7, genreCount);
       }
+      if (pool[i].movie.tone) {
+        const toneCount = selectedTones.filter(t => t === pool[i].movie.tone).length;
+        penalized *= Math.pow(0.8, toneCount);
+      }
       if (penalized > bestPenalizedScore) {
         bestPenalizedScore = penalized;
         bestIdx = i;
@@ -333,6 +361,7 @@ function applyDiversitySelection(scoredItems, count) {
     const pick = pool[bestIdx];
     selected.push(pick);
     if (pick.movie.genre) selectedGenres.push(pick.movie.genre);
+    if (pick.movie.tone) selectedTones.push(pick.movie.tone);
     pool.splice(bestIdx, 1);
   }
 
@@ -427,12 +456,20 @@ async function getRecommendationsForUser(userId) {
   const isSparse = voteCount < MIN_VOTES_FOR_PERSONALIZATION;
   const { prefs, votedKeys } = buildPreferenceVector(userStats, movieMap);
 
-  // Apply mild negative signal from notInterested movies
+  // Apply mild negative signal from notInterested movies (genre, tone, vibes)
   for (const niKey of notInterestedKeys) {
     const niMovie = movieMap[niKey];
-    if (niMovie?.genre) {
-      const genreKey = `genre:${niMovie.genre}`;
-      prefs[genreKey] = (prefs[genreKey] || 0) - 0.3;
+    if (!niMovie) continue;
+    if (niMovie.genre) {
+      prefs[`genre:${niMovie.genre}`] = (prefs[`genre:${niMovie.genre}`] || 0) - 0.3;
+    }
+    if (niMovie.tone) {
+      prefs[`tone:${niMovie.tone}`] = (prefs[`tone:${niMovie.tone}`] || 0) - 0.15;
+    }
+    if (niMovie.vibes) {
+      niMovie.vibes.split(",").map(v => v.trim().toLowerCase()).filter(Boolean).forEach(v => {
+        prefs[`vibe:${v}`] = (prefs[`vibe:${v}`] || 0) - 0.1;
+      });
     }
   }
 
@@ -459,9 +496,11 @@ async function getRecommendationsForUser(userId) {
       .filter(m => !prefKeys.has(getMovieKey(m)))
       .map(m => {
         const gs = globalStats[getMovieKey(m)] || {};
+        const gw = gs.wins || 0;
+        const gl = gs.losses || 0;
         return {
           movie: m,
-          score: gs.wins || 0,
+          score: wilsonScore(gw, gw + gl),
           contributions: [],
           communityBoost: 0,
           similarMovies: [],
@@ -694,7 +733,7 @@ function buildCardHTML(item, index) {
 
   return `
     <div class="engine-card-poster-wrap">
-      <img class="engine-card-poster" id="engine-poster-${index}" src="" alt="${m.title}" />
+      <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" />
       <div class="engine-card-rank">${index + 1}</div>
       ${unseenBadge}
     </div>
@@ -755,11 +794,13 @@ async function handleSeenIt(index) {
     card.innerHTML = buildCardHTML(replacement, index);
     card.classList.add("engine-card-enter");
 
-    // Fetch poster for replacement
-    fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
-      const img = document.getElementById(`engine-poster-${index}`);
-      if (img && url) img.src = url;
-    });
+    // Fetch poster for replacement (skip if already in JSON)
+    if (!replacement.movie.poster) {
+      fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+        const img = document.getElementById(`engine-poster-${index}`);
+        if (img && url) img.src = url;
+      });
+    }
 
     // Clean up animation class
     card.addEventListener("animationend", () => {
@@ -813,10 +854,12 @@ async function handleNotInterested(index) {
     card.innerHTML = buildCardHTML(replacement, index);
     card.classList.add("engine-card-enter");
 
-    fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
-      const img = document.getElementById(`engine-poster-${index}`);
-      if (img && url) img.src = url;
-    });
+    if (!replacement.movie.poster) {
+      fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+        const img = document.getElementById(`engine-poster-${index}`);
+        if (img && url) img.src = url;
+      });
+    }
 
     card.addEventListener("animationend", () => {
       card.classList.remove("engine-card-enter");
@@ -879,12 +922,14 @@ function renderRecommendations(allScored) {
     return `<div class="engine-card" id="engine-card-${i}">${buildCardHTML(item, i)}</div>`;
   }).join("");
 
-  // Fetch posters in parallel
+  // Fetch posters from TMDB only when the JSON poster field is absent
   displayedItems.forEach((r, i) => {
-    fetchPosterUrl(r.movie.title, r.movie.year).then(url => {
-      const img = document.getElementById(`engine-poster-${i}`);
-      if (img && url) img.src = url;
-    });
+    if (!r.movie.poster) {
+      fetchPosterUrl(r.movie.title, r.movie.year).then(url => {
+        const img = document.getElementById(`engine-poster-${i}`);
+        if (img && url) img.src = url;
+      });
+    }
   });
 }
 
