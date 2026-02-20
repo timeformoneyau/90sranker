@@ -12,17 +12,40 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Usernames must be 3-20 chars, letters/numbers/underscore only.
+    // The doc ID is stored lowercase; we allow [a-z0-9_] for the ID itself.
+    // The users/{uid}.username field uses the same pattern (may include uppercase
+    // as entered, normalised to lowercase for the doc ID).
+    function isValidUsernameField(name) {
+      return name is string
+          && name.size() >= 3
+          && name.size() <= 20
+          && name.matches('^[a-zA-Z0-9_]+$');
+    }
+
+    function isValidUsernameDocId(id) {
+      return id.size() >= 3
+          && id.size() <= 20
+          && id.matches('^[a-z0-9_]+$');
+    }
+
     // ── usernames ────────────────────────────────────────────────
     // Public read: required for (a) username-based login before the
     // user is authenticated, and (b) uniqueness check during signup.
     //
-    // Create: any signed-in user can claim a username, but the uid
-    //   field in the new doc must match their own uid. Admins can
-    //   also create (covers admin username-assignment in the panel).
-    // Update / Delete: admin only — no self-service username changes.
+    // Create:
+    //   - Doc ID must match username format (prevents XSS payloads as doc IDs).
+    //   - uid field in the new doc must match the caller's uid (non-admin).
+    //   - uid and email must be strings; no extra unexpected fields.
+    //   - Admins bypass the uid-ownership check (admin username-assignment).
+    // Update / Delete: admin only.
     match /usernames/{username} {
-      allow read:   if true;
+      allow read: if true;
       allow create: if isSignedIn()
+          && isValidUsernameDocId(username)
+          && request.resource.data.uid is string
+          && request.resource.data.email is string
+          && request.resource.data.keys().hasOnly(['uid', 'email'])
           && (request.resource.data.uid == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }
@@ -30,9 +53,13 @@ service cloud.firestore {
     // ── users ────────────────────────────────────────────────────
     // Each user manages their own profile doc.
     // Admin can read all users (needed by User Management panel).
+    // If the write includes a username field, it must pass format validation.
     match /users/{uid} {
-      allow read:  if isSignedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isSignedIn()
+          && (request.auth.uid == uid || isAdmin())
+          && (!('username' in request.resource.data)
+              || isValidUsernameField(request.resource.data.username));
     }
 
     // ── votes ────────────────────────────────────────────────────

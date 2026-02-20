@@ -107,32 +107,39 @@ function updateAccountIndicator(displayName, user) {
   const indicator = document.getElementById("account-indicator");
   if (!indicator) return;
 
-  if (!user) {
-    indicator.innerHTML = '';
-    return;
-  }
+  // Clear previous content — safe, no user data involved
+  while (indicator.firstChild) indicator.removeChild(indicator.firstChild);
+
+  if (!user) return;
 
   // Determine member since year from metadata
   const createdAt = user.metadata?.creationTime;
   const memberYear = createdAt ? new Date(createdAt).getFullYear() : '';
-  const metaText = memberYear ? `Member since ${memberYear}` : '';
 
-  indicator.innerHTML = `
-    <div class="account-indicator-name">${displayName}</div>
-    <div class="account-indicator-meta">${metaText}</div>
-    <button class="account-indicator-logout" id="indicator-logout">Log out</button>
-  `;
+  // Build DOM nodes — textContent prevents any HTML injection from displayName
+  const nameEl = document.createElement("div");
+  nameEl.className = "account-indicator-name";
+  nameEl.textContent = displayName;
 
-  const logoutBtn = document.getElementById("indicator-logout");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        await signOut();
-      } catch (err) {
-        console.error("[loginStatus] Logout failed:", err);
-      }
-    });
-  }
+  const metaEl = document.createElement("div");
+  metaEl.className = "account-indicator-meta";
+  metaEl.textContent = memberYear ? `Member since ${memberYear}` : '';
+
+  const logoutBtn = document.createElement("button");
+  logoutBtn.className = "account-indicator-logout";
+  logoutBtn.id = "indicator-logout";
+  logoutBtn.textContent = "Log out";
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error("[loginStatus] Logout failed:", err);
+    }
+  });
+
+  indicator.appendChild(nameEl);
+  indicator.appendChild(metaEl);
+  indicator.appendChild(logoutBtn);
 }
 
 // ─────────────────────────────────────────────────────────────
