@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Movie Profile | The Rewind Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/open-props" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="account-indicator" id="account-indicator"></div>
+    <div class="site-title-row">
+      <div class="site-title">THE REWIND ROOM</div>
+      <svg class="site-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon points="24,6 4,24 24,42" fill="var(--color-indigo)"/>
+        <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Voting Results</a></li>
+      <li><a href="engine.html">The Engine</a></li>
+      <li><a href="the-crowd.html">The Crowd</a></li>
+      <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="engine-page">
+
+    <div class="engine-intro">
+      <h1 class="engine-headline">Your Movie Profile</h1>
+      <p class="engine-desc">A breakdown of your taste, built from your matchups. Hover over the chart to explore by genre.</p>
+    </div>
+
+    <div class="engine-status" id="engine-status"></div>
+
+    <!-- Taste chips -->
+    <div id="engine-profile"></div>
+
+    <!-- Profile sections: radar + break from crowd -->
+    <div class="profile-top-row">
+      <div class="profile-section profile-top-col" id="section-taste-profile">
+        <h2 class="profile-section-heading">Genre Breakdown</h2>
+        <div id="taste-profile-content">
+          <div class="engine-empty">Log in and vote to build your taste profile.</div>
+        </div>
+      </div>
+      <div class="profile-section profile-top-col" id="section-break-crowd">
+        <h2 class="profile-section-heading">Where You Break From the Crowd</h2>
+        <div id="break-crowd-content">
+          <div class="engine-empty">Log in and vote to see how your taste differs.</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="engine.html" class="back-link">Back to The Engine</a>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="engine.js"></script>
+  <script type="module" src="loginStatus.js"></script>
+</body>
+</html>

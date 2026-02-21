@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -38,35 +38,18 @@
   <div class="engine-page">
 
     <div class="engine-intro">
-      <h1 class="engine-headline">Your Movie Profile</h1>
-      <p class="engine-desc">A snapshot of your taste, based on your matchups.</p>
+      <h1 class="engine-headline">The Engine</h1>
+      <p class="engine-desc">Your personal picks, tuned to your taste. The more you vote, the smarter this gets.</p>
     </div>
 
-    <!-- Top row: Taste Profile + Break From Crowd side-by-side -->
-    <div class="profile-top-row">
-      <div class="profile-section profile-top-col" id="section-taste-profile">
-        <h2 class="profile-section-heading">Taste Profile</h2>
-        <div id="taste-profile-content">
-          <div class="engine-empty">Log in and vote to build your taste profile.</div>
-        </div>
-      </div>
-      <div class="profile-section profile-top-col" id="section-break-crowd">
-        <h2 class="profile-section-heading">Where You Break From the Crowd</h2>
-        <div id="break-crowd-content">
-          <div class="engine-empty">Log in and vote to see how your taste differs.</div>
-        </div>
-      </div>
+    <!-- Tab Switcher -->
+    <div class="results-tabs">
+      <button class="results-tab active" data-tab="recs">Recommendations</button>
+      <button class="results-tab" data-tab="dna">Movie DNA</button>
     </div>
 
-    <!-- Progress Card -->
-    <div class="profile-section" id="progress-card">
-      <h2 class="profile-section-heading">Your Progress</h2>
-      <div class="engine-empty">Loading...</div>
-    </div>
-
-    <!-- Recommendations -->
-    <div class="profile-section">
-      <h2 class="profile-section-heading">Recommendations</h2>
+    <!-- ===== RECOMMENDATIONS PANEL ===== -->
+    <div class="results-panel active" id="panel-recs">
       <div class="engine-status" id="engine-status">Loading...</div>
       <div id="engine-profile"></div>
       <div class="engine-grid" id="engine-grid">
@@ -79,6 +62,27 @@
         <p><strong>Phase 3 — The Crowd:</strong> The engine finds similar voters and boosts movies they loved that you haven't seen yet.</p>
         <p>With fewer than 10 votes, you'll see popular picks. Recommendations get more personal as your vote count grows.</p>
       </details>
+    </div>
+
+    <!-- ===== MOVIE DNA PANEL ===== -->
+    <div class="results-panel" id="panel-dna">
+      <div class="profile-top-row">
+        <div class="profile-section profile-top-col" id="section-taste-profile">
+          <h2 class="profile-section-heading">Genre Breakdown</h2>
+          <div id="taste-profile-content">
+            <div class="engine-empty">Log in and vote to build your taste profile.</div>
+          </div>
+        </div>
+        <div class="profile-section profile-top-col" id="section-break-crowd">
+          <h2 class="profile-section-heading">Where You Break From the Crowd</h2>
+          <div id="break-crowd-content">
+            <div class="engine-empty">Log in and vote to see how your taste differs.</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:var(--s-3); text-align:center;">
+        <a href="profile.html" style="font-size:0.85rem; color:var(--color-accent); text-decoration:none;">See your full Movie Profile &rarr;</a>
+      </div>
     </div>
 
     <a href="index.html" class="back-link">Back to voting</a>

@@ -2283,6 +2283,24 @@ tbody tr:last-child td { border-bottom: none; }
 
 
 /* =========================================================
+   HOME — BRIEF TAGLINE
+   ========================================================= */
+
+.home-intro {
+  text-align: center;
+  padding: var(--s-3) var(--container-pad) 0;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+.home-intro-desc {
+  font-size: var(--fs-1);
+  color: var(--color-text-2);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================
    13) ENGINE — RECOMMENDATION PAGE
    ========================================================= */
 

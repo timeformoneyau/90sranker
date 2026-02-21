@@ -1220,7 +1220,6 @@ async function loadEngine(user) {
       renderStatus(`Based on ${data.voteCount} votes. The more you vote, the smarter this gets.`);
     }
 
-    renderProgressCard(data);
     renderTasteProfile(data.tasteProfile, data.voteCount);
     renderRecommendations(data.allScored);
     renderTasteProfileChart(data.genrePreferences);
@@ -1232,6 +1231,17 @@ async function loadEngine(user) {
 }
 
 window.addEventListener("load", () => {
+  // Tab switching
+  document.querySelectorAll(".results-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".results-tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".results-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      const panel = document.getElementById("panel-" + btn.dataset.tab);
+      if (panel) panel.classList.add("active");
+    });
+  });
+
   onAuth(user => {
     if (user) {
       loadEngine(user);
@@ -1245,15 +1255,6 @@ window.addEventListener("load", () => {
       if (tasteEl) tasteEl.innerHTML = '<div class="engine-empty">Log in and vote to build your taste profile.</div>';
       const crowdEl = document.getElementById("break-crowd-content");
       if (crowdEl) crowdEl.innerHTML = '<div class="engine-empty">Log in and vote to see how your taste differs.</div>';
-
-      // Show minimal progress for logged-out users
-      const progressEl = document.getElementById("progress-card");
-      if (progressEl) {
-        progressEl.innerHTML = `
-          <h2 class="profile-section-heading">Your Progress</h2>
-          <div class="engine-empty">Log in to track your catalogue coverage and voting progress.</div>
-        `;
-      }
     }
   });
 });

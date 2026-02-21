@@ -330,6 +330,27 @@ async function loadGlobalStats() {
 }
 
 // ==========================================
+// PERSONAL PROGRESS STATS
+// ==========================================
+
+function renderPersonalProgress(matchups, comparedCount) {
+  const el = document.getElementById("personal-progress");
+  if (!el) return;
+  el.innerHTML = `
+    <div class="progress-stats" style="grid-template-columns: repeat(2, 1fr); max-width: 360px; margin-bottom: var(--s-4);">
+      <div class="progress-stat">
+        <div class="progress-stat-val">${matchups.toLocaleString()}</div>
+        <div class="progress-stat-label">Votes Cast</div>
+      </div>
+      <div class="progress-stat">
+        <div class="progress-stat-val">${comparedCount.toLocaleString()}</div>
+        <div class="progress-stat-label">Movies Compared</div>
+      </div>
+    </div>
+  `;
+}
+
+// ==========================================
 // WIRING: PERSONAL (reads stats/user_{uid} — 1 doc)
 // ==========================================
 
@@ -378,6 +399,10 @@ async function loadPersonalStats(uid) {
     // Each vote creates one win + one loss entry, so total matchups = totalVotes / 2
     const matchups = Math.round(totalVotes / 2);
     countEl.textContent = `${matchups.toLocaleString()} votes`;
+
+    // Movies with at least one appearance in any matchup
+    const comparedCount = Object.values(userStats).filter(s => (s.wins || 0) + (s.losses || 0) > 0).length;
+    renderPersonalProgress(matchups, comparedCount);
 
     personalAllRows = buildNormalizedRankedData(userStats);
     applyPersonalFilters();
@@ -799,7 +824,7 @@ async function showMatchupModal(movie) {
       listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
     }
   } else {
-    listEl.innerHTML = '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Matchup history is available in Your Rankings and Global Rankings.</div>';
+    listEl.innerHTML = '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Matchup history is available in Your Results and Community Results.</div>';
   }
 }
 
