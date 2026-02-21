@@ -27,10 +27,8 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html" class="active">Voting Results</a></li>
-      <li><a href="engine.html">Recommended For You</a></li>
-      <li><a href="toughCalls.html">Face / Off</a></li>
-      <li><a href="unseen.html">Unwatched List</a></li>
-      <li><a href="account.html">Your Account</a></li>
+      <li><a href="engine.html">The Engine</a></li>
+      <li><a href="the-crowd.html">The Crowd</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
     </ul>
     <div id="login-status"></div>
@@ -50,9 +48,9 @@
 
     <!-- Tab Switcher -->
     <div class="results-tabs">
-      <button class="results-tab active" data-tab="global">Global Rankings</button>
-      <button class="results-tab" data-tab="personal">Your Rankings</button>
-      <button class="results-tab" data-tab="michaels">Michael's Rankings</button>
+      <button class="results-tab" data-tab="personal">Your Results</button>
+      <button class="results-tab" data-tab="unseen">Your Unseen</button>
+      <button class="results-tab active" data-tab="global">Global Results</button>
     </div>
 
     <!-- ===== GLOBAL TAB ===== -->
@@ -192,8 +190,61 @@
       </div>
     </div>
 
-    <!-- ===== MICHAEL'S RANKINGS TAB ===== -->
-    <div class="results-panel" id="panel-michaels">
+    <!-- ===== YOUR UNSEEN TAB ===== -->
+    <div class="results-panel" id="panel-unseen">
+      <div id="unseen-status" class="unseen-status"></div>
+
+      <div id="unseen-controls" class="unseen-controls" style="display:none">
+        <div class="unseen-controls-row">
+          <div class="unseen-sort">
+            <label class="unseen-sort-label">Sort by</label>
+            <select id="unseen-sort-select" class="unseen-sort-select">
+              <option value="votes">Your Votes (most first)</option>
+              <option value="community">Community Win % (highest)</option>
+              <option value="imdb">IMDB Rating (highest)</option>
+              <option value="genre">Genre (A-Z)</option>
+              <option value="title">Title (A-Z)</option>
+              <option value="year">Year (newest first)</option>
+            </select>
+          </div>
+          <div class="unseen-filter">
+            <label class="unseen-sort-label">Genre</label>
+            <select id="unseen-genre-filter" class="unseen-sort-select">
+              <option value="all">All Genres</option>
+            </select>
+          </div>
+          <div class="unseen-search">
+            <input type="text" id="unseen-search-input" class="unseen-search-input" placeholder="Search movies..." />
+          </div>
+        </div>
+      </div>
+
+      <div id="unseen-table-wrap" class="results-table-wrap" style="display:none">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-movie">Movie</th>
+              <th class="col-num">Genre</th>
+              <th class="col-num">Your Votes</th>
+              <th class="col-num">Community Win %</th>
+              <th class="col-num">IMDB</th>
+              <th class="col-num">Action</th>
+            </tr>
+          </thead>
+          <tbody id="unseen-list"></tbody>
+        </table>
+      </div>
+
+      <div id="unseen-cards" class="result-cards"></div>
+
+      <div id="unseen-empty" class="results-empty" style="display:none">
+        You haven't marked any movies as unwatched yet. When you encounter a movie you haven't seen during voting, click "Haven't Seen" to add it here.
+      </div>
+    </div>
+
+    <!-- Michael's Rankings panel kept in DOM for compatibility, not linked from tabs -->
+    <div class="results-panel" id="panel-michaels" style="display:none !important">
       <div class="results-meta">
         <span id="michaels-status">Loading Michael's rankings...</span>
       </div>
@@ -250,6 +301,7 @@
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="list.js"></script>
+  <script type="module" src="unseen.js"></script>
   <script type="module" src="movieRequests.js"></script>
   <script type="module" src="loginStatus.js"></script>
 </body>

@@ -78,6 +78,8 @@ window.onload = () => {
     loadMovieRequests();
     const rebuildBtn = document.getElementById("rebuild-stats-btn");
     if (rebuildBtn) rebuildBtn.addEventListener("click", rebuildGlobalStats);
+    const rebuildUserBtn = document.getElementById("rebuild-user-stats-btn");
+    if (rebuildUserBtn) rebuildUserBtn.addEventListener("click", rebuildUserStats);
   });
 };
 
@@ -886,6 +888,79 @@ async function rebuildGlobalStats() {
     statusEl.style.color = "var(--color-success)";
   } catch (err) {
     console.error("Rebuild failed:", err);
+    statusEl.textContent = "Error: " + err.message;
+    statusEl.style.color = "var(--color-error)";
+  }
+}
+
+// ==========================================
+// REBUILD USER STATS (ADMIN)
+// ==========================================
+
+async function rebuildUserStats() {
+  const statusEl = document.getElementById("rebuild-status");
+  if (!statusEl) return;
+
+  if (!window.confirm(
+    "Rebuild per-user stats from all votes?\n\n" +
+    "This scans every vote document and recomputes wins/losses per user from scratch, " +
+    "fixing any stats that were stored with the wrong data structure. " +
+    "It may take a few seconds."
+  )) return;
+
+  statusEl.textContent = "Loading movie list for key normalization…";
+  statusEl.style.color = "var(--color-accent)";
+
+  let normalizeKey = (k) => k;
+  try {
+    const res = await fetch("movie_list_cleaned.json");
+    const movieList = await res.json();
+    const filtered = movieList.filter(m => m.title && m.year && !/^title$/i.test(m.title.trim()));
+    normalizeKey = buildKeyNormalizer(filtered);
+  } catch (err) {
+    console.warn("Could not load movie list (keys will not be normalized):", err);
+  }
+
+  statusEl.textContent = "Reading all votes…";
+
+  try {
+    const votesSnap = await getDocs(collection(db, "votes"));
+
+    // Group votes by user uid (ignore guest votes where user is null)
+    const userStats = {};
+    votesSnap.forEach(d => {
+      const { winner, loser, user: uid } = d.data();
+      if (!uid) return;
+      const w = winner ? normalizeKey(winner) : null;
+      const l = loser  ? normalizeKey(loser)  : null;
+      if (!userStats[uid]) userStats[uid] = {};
+      if (w) {
+        if (!userStats[uid][w]) userStats[uid][w] = { wins: 0, losses: 0 };
+        userStats[uid][w].wins++;
+      }
+      if (l) {
+        if (!userStats[uid][l]) userStats[uid][l] = { wins: 0, losses: 0 };
+        userStats[uid][l].losses++;
+      }
+    });
+
+    const uids = Object.keys(userStats);
+    statusEl.textContent = `Writing stats for ${uids.length} user${uids.length !== 1 ? "s" : ""}…`;
+
+    // Overwrite each user's stats doc with correctly-nested data
+    await Promise.all(
+      uids.map(uid =>
+        setDoc(doc(db, "stats", `user_${uid}`), { stats: userStats[uid] })
+      )
+    );
+
+    statusEl.textContent = `✓ Rebuilt user stats for ${uids.length} user${uids.length !== 1 ? "s" : ""} from ${votesSnap.size} votes. Reload the page to see updated counts.`;
+    statusEl.style.color = "var(--color-success)";
+
+    // Refresh the user table so the new vote counts appear immediately
+    loadUserManagement();
+  } catch (err) {
+    console.error("User stats rebuild failed:", err);
     statusEl.textContent = "Error: " + err.message;
     statusEl.style.color = "var(--color-error)";
   }

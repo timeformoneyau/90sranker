@@ -604,22 +604,37 @@ async function saveVoteToFirestore(winner, loser) {
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
 
-    // 3. Per-user per-movie stats
-    if (uid) {
-      const userStatsRef = doc(db, "stats", `user_${uid}`);
-      batch.set(userStatsRef, {
-        [`stats.${winnerKey}.wins`]: increment(1),
-        [`stats.${loserKey}.losses`]: increment(1)
-      }, { merge: true });
-    }
-
-    // 4. Meta counters
+    // 3. Meta counters
     const metaRef = doc(db, "stats", "meta");
     batch.set(metaRef, {
       totalVotes: increment(1)
     }, { merge: true });
 
     await batch.commit();
+
+    // 4. Per-user stats written AFTER batch — updateDoc handles dot-notation as nested paths;
+    //    batch.set(merge:true) would treat them as literal key names (flat structure), which
+    //    breaks the admin screen's doc.data().stats read.
+    if (uid) {
+      const userStatsRef = doc(db, "stats", `user_${uid}`);
+      try {
+        await updateDoc(userStatsRef, {
+          [`stats.${winnerKey}.wins`]: increment(1),
+          [`stats.${loserKey}.losses`]: increment(1)
+        });
+      } catch (err) {
+        if (err.code === "not-found") {
+          // First vote from this user — create the doc with nested structure
+          await setDoc(userStatsRef, {
+            stats: {
+              [winnerKey]: { wins: 1, losses: 0 },
+              [loserKey]: { wins: 0, losses: 1 }
+            }
+          });
+        }
+        // Other errors are non-critical; the vote is already recorded in the batch
+      }
+    }
 
     console.log("Vote saved to Firestore");
   } catch (error) {
@@ -1074,7 +1089,7 @@ async function handleUndecided() {
 
   // Upsert to toughCalls collection
   if (uid) {
-    console.log(`Face / Off: writing tough call ${tcId} for user ${uid}`);
+    console.log(`The Crowd: writing tough call ${tcId} for user ${uid}`);
     const tcRef = doc(db, "toughCalls", tcId);
     try {
       await runTransaction(db, async (transaction) => {
@@ -1103,12 +1118,12 @@ async function handleUndecided() {
           });
         }
       });
-      console.log(`Face / Off: successfully wrote tough call ${tcId}`);
+      console.log(`The Crowd: successfully wrote tough call ${tcId}`);
     } catch (err) {
       console.error("Failed to flag tough call:", err);
     }
   } else {
-    console.warn("Face / Off: skipped write — no uid (user not logged in)");
+    console.warn("The Crowd: skipped write — no uid (user not logged in)");
   }
 
   // Disable buttons to prevent double-clicks
@@ -1136,7 +1151,7 @@ async function handleUndecided() {
 }
 
 /**
- * VHS eject + static sweep animation for Face / Off.
+ * VHS eject + static sweep animation for The Crowd.
  * Resolves when the animation is complete (~350ms total).
  */
 function triggerFaceOffAnimation() {

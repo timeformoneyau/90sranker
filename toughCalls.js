@@ -1,4 +1,4 @@
-// toughCalls.js — Face / Off community voting page
+// toughCalls.js — The Crowd community voting page
 import {
   db,
   auth,
@@ -13,7 +13,9 @@ import {
   limit,
   serverTimestamp,
   increment,
-  writeBatch
+  writeBatch,
+  updateDoc,
+  setDoc
 } from "./firebase.js";
 
 // ==========================================
@@ -77,7 +79,7 @@ async function loadFaceoffs() {
   const gridEl = document.getElementById("tc-grid");
   const emptyEl = document.getElementById("tc-empty");
 
-  statusEl.textContent = "Loading Face / Off matchups...";
+  statusEl.textContent = "Loading matchups...";
   gridEl.innerHTML = "";
   emptyEl.style.display = "none";
 
@@ -106,7 +108,7 @@ async function loadFaceoffs() {
     statusEl.textContent = "";
     await renderGrid();
   } catch (err) {
-    console.error("Failed to load Face / Off matchups:", err);
+    console.error("Failed to load The Crowd matchups:", err);
     statusEl.textContent = "Failed to load matchups. Please refresh.";
   }
 }
@@ -302,13 +304,6 @@ async function handleVote(tcId, choice, card) {
       [`stats.${loserKey}.losses`]: increment(1)
     }, { merge: true });
 
-    // User stats
-    const userStatsRef = doc(db, "stats", `user_${currentUid}`);
-    batch.set(userStatsRef, {
-      [`stats.${winnerKey}.wins`]: increment(1),
-      [`stats.${loserKey}.losses`]: increment(1)
-    }, { merge: true });
-
     // Meta total
     const metaRef = doc(db, "stats", "meta");
     batch.set(metaRef, { totalVotes: increment(1) }, { merge: true });
@@ -318,6 +313,28 @@ async function handleVote(tcId, choice, card) {
     console.error("Failed to save vote:", err);
     card.querySelectorAll(".tc-card-vote").forEach(btn => btn.disabled = false);
     return;
+  }
+
+  // Update per-user stats AFTER batch — updateDoc handles dot-notation as nested paths;
+  // batch.set(merge:true) treats them as literal key names (flat), breaking the admin screen.
+  const userStatsRef = doc(db, "stats", `user_${currentUid}`);
+  try {
+    await updateDoc(userStatsRef, {
+      [`stats.${winnerKey}.wins`]: increment(1),
+      [`stats.${loserKey}.losses`]: increment(1)
+    });
+  } catch (err) {
+    if (err.code === "not-found") {
+      try {
+        await setDoc(userStatsRef, {
+          stats: {
+            [winnerKey]: { wins: 1, losses: 0 },
+            [loserKey]: { wins: 0, losses: 1 }
+          }
+        });
+      } catch { /* non-critical */ }
+    }
+    // Other errors are non-critical; the vote is already recorded in the batch
   }
 
   // Update local state and re-render just this card

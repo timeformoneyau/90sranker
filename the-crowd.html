@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Crowd | The Rewind Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/open-props" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="account-indicator" id="account-indicator"></div>
+    <div class="site-title-row">
+      <div class="site-title">THE REWIND ROOM</div>
+      <svg class="site-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon points="24,6 4,24 24,42" fill="var(--color-indigo)"/>
+        <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Voting Results</a></li>
+      <li><a href="engine.html">The Engine</a></li>
+      <li><a href="the-crowd.html" class="active">The Crowd</a></li>
+      <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="tc-page">
+    <div class="tc-intro">
+      <h1 class="tc-headline">The Crowd</h1>
+      <p class="tc-desc">The matchups no one could call. Cast your vote and see how the community decides.</p>
+    </div>
+
+    <div class="tc-status" id="tc-status">Loading matchups...</div>
+
+    <div class="tc-grid" id="tc-grid"></div>
+
+    <div class="tc-empty" id="tc-empty" style="display:none">
+      No more matchups in The Crowd right now. Check back later.
+    </div>
+
+    <a href="index.html" class="back-link">Back to voting</a>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="toughCalls.js"></script>
+  <script type="module" src="loginStatus.js"></script>
+</body>
+</html>

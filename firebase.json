@@ -18,11 +18,14 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "functions/**",
-      "migrate*.html",
-      "find-orphans.html",
-      "stitchcode.html"
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/toughCalls.html",
+        "destination": "/the-crowd.html",
+        "type": 301
+      }
     ]
   },
   "firestore": {
