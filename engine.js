@@ -738,8 +738,10 @@ function buildCardHTML(item, index) {
       ${unseenBadge}
     </div>
     <div class="engine-card-body">
-      <div class="engine-card-title">${m.title}</div>
-      <div class="engine-card-year">${m.year}</div>
+      <div class="engine-card-header">
+        <span class="engine-card-title">${m.title}</span>
+        <span class="engine-card-year">${m.year}</span>
+      </div>
       <div class="engine-card-tags">
         <span class="engine-tag engine-tag--genre">${m.genre || ""}</span>
         ${m.tone ? `<span class="engine-tag">${m.tone}</span>` : ""}
@@ -747,8 +749,10 @@ function buildCardHTML(item, index) {
       </div>
       <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
       ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
-      <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
-      <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
+      <div class="engine-card-actions">
+        <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
+        <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
+      </div>
     </div>`;
 }
 

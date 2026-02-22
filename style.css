@@ -2441,64 +2441,72 @@ tbody tr:last-child td { border-bottom: none; }
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* Recommendation Grid */
+/* Recommendation List */
 .engine-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--s-5);
+  display: flex;
+  flex-direction: column;
   margin-bottom: var(--s-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
 }
 
 .engine-empty {
-  grid-column: 1 / -1;
   text-align: center;
   color: var(--color-text-2);
   font-style: italic;
   padding: var(--s-8) var(--s-4);
 }
 
-/* Card */
+/* Row */
 .engine-card {
+  display: flex;
+  flex-direction: row;
+  gap: var(--s-4);
+  align-items: flex-start;
+  padding: var(--s-4) var(--s-5);
   background: var(--color-bg-1);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  transition: border-color var(--t-base), box-shadow var(--t-base);
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--t-base);
+}
+
+.engine-card:last-child {
+  border-bottom: none;
 }
 
 .engine-card:hover {
-  border-color: var(--color-accent-dim);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  background: rgba(212, 162, 74, 0.025);
 }
 
 /* Poster */
 .engine-card-poster-wrap {
   position: relative;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  background: var(--color-bg-2);
-  overflow: hidden;
+  flex-shrink: 0;
+  width: 88px;
 }
 
 .engine-card-poster {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
   display: block;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-2);
 }
 
 .engine-card-rank {
   position: absolute;
-  top: var(--s-2);
-  left: var(--s-2);
-  width: 28px;
-  height: 28px;
+  top: var(--s-1);
+  left: var(--s-1);
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-accent);
   color: var(--color-bg-0);
-  font-size: var(--fs-0);
+  font-size: 0.6rem;
   font-weight: var(--fw-black);
   border-radius: var(--r-sm);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -2507,30 +2515,43 @@ tbody tr:last-child td { border-bottom: none; }
 /* "Unwatched" badge */
 .engine-card-unseen-badge {
   position: absolute;
-  top: var(--s-2);
-  right: var(--s-2);
-  padding: 3px 8px;
-  font-size: 0.6rem;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 3px 4px;
+  font-size: 0.55rem;
   font-weight: var(--fw-bold);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: #fff;
-  background: rgba(239, 68, 68, 0.85);
-  border-radius: var(--r-sm);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  background: rgba(239, 68, 68, 0.88);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
   pointer-events: none;
 }
 
-/* Card body */
+/* Row body */
 .engine-card-body {
-  padding: var(--s-3);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-1) 0;
+}
+
+/* Title + year on one line */
+.engine-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  flex-wrap: wrap;
 }
 
 .engine-card-title {
   font-weight: var(--fw-bold);
-  font-size: var(--fs-2);
+  font-size: var(--fs-3);
   color: var(--color-text-0);
-  margin-bottom: 2px;
   line-height: var(--lh-tight);
 }
 
@@ -2539,14 +2560,13 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--color-accent);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.1em;
-  margin-bottom: var(--s-2);
+  flex-shrink: 0;
 }
 
 .engine-card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: var(--s-2);
 }
 
 .engine-tag {
@@ -2566,17 +2586,29 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .engine-card-reason {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-style: italic;
   color: var(--color-text-1);
   line-height: 1.5;
-  margin-bottom: var(--s-2);
 }
 
+/* Summary — clamped to 2 lines */
 .engine-card-blurb {
   font-size: var(--fs-0);
   color: var(--color-text-2);
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Actions row */
+.engine-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
 }
 
 /* Back link (reuse results page pattern) */
@@ -2599,48 +2631,13 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--color-accent);
 }
 
-/* Responsive */
-@media (max-width: 767px) {
-  .engine-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--s-3);
-  }
-
-  .engine-card-title {
-    font-size: var(--fs-1);
-  }
-
-  .engine-card-reason {
-    font-size: 0.6rem;
-  }
-
-  .engine-card-blurb {
-    display: none;
-  }
-
-  .engine-headline {
-    font-size: var(--fs-4);
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .engine-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .engine-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-/* "Seen it" button */
-.engine-btn-seen {
-  display: block;
-  width: 100%;
-  margin-top: var(--s-2);
-  padding: 6px 0;
+/* "Seen it" / "Not interested" buttons — inline */
+.engine-btn-seen,
+.engine-btn-not-interested {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  padding: 5px var(--s-3);
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.7rem;
   font-weight: var(--fw-bold);
@@ -2660,28 +2657,37 @@ tbody tr:last-child td { border-bottom: none; }
   background: rgba(212, 162, 74, 0.06);
 }
 
-.engine-btn-not-interested {
-  display: block;
-  width: 100%;
-  margin-top: var(--s-1);
-  padding: 6px 0;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-2);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  transition: color var(--t-base), border-color var(--t-base), background var(--t-base);
-}
-
 .engine-btn-not-interested:hover {
   color: var(--color-error);
   border-color: var(--color-error);
   background: rgba(239, 68, 68, 0.06);
+}
+
+/* Responsive — mobile */
+@media (max-width: 599px) {
+  .engine-card {
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .engine-card-poster-wrap {
+    width: 66px;
+  }
+
+  .engine-card-blurb {
+    display: none;
+  }
+
+  .engine-btn-seen,
+  .engine-btn-not-interested {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .engine-headline {
+    font-size: var(--fs-4);
+  }
 }
 
 /* Profile page sections */
