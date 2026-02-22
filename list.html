@@ -27,7 +27,7 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="list.html" class="active">Voting Results</a></li>
-      <li><a href="engine.html">The Engine</a></li>
+      <li><a href="engine.html">Recommendations</a></li>
       <li><a href="the-crowd.html">The Crowd</a></li>
       <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
     </ul>
@@ -38,23 +38,19 @@
 
     <!-- Results Intro -->
     <div class="results-intro">
-      <h1 class="results-headline">Rankings that get more accurate the more you vote.</h1>
-      <p class="results-desc">Movies are ranked using an Adjusted Score that balances win rate with the number of matchups, so a movie that's 1&ndash;0 doesn't outrank a movie that's 40&ndash;10.</p>
-      <details class="results-details">
-        <summary>How the Adjusted Score works</summary>
-        <p>The Adjusted Score is a confidence-weighted win rating. Movies with more matchups are ranked more reliably, while movies with only a few votes are shown as low confidence until they've been tested more.</p>
-      </details>
+      <h1 class="results-headline">Voting Results</h1>
+      <p class="results-desc">Rankings are based on votes and an <span class="adj-score-tip" tabindex="0">Adjusted Score<span class="adj-score-tooltip">Adjusted Score balances win percentage with total matchups so a movie that&rsquo;s 1&ndash;0 doesn&rsquo;t outrank a movie that&rsquo;s 40&ndash;10.</span></span> that balances win rate and matchup volume.</p>
     </div>
 
     <!-- Tab Switcher -->
     <div class="results-tabs">
-      <button class="results-tab" data-tab="personal">Your Results</button>
-      <button class="results-tab" data-tab="unseen">Your Unseen</button>
-      <button class="results-tab active" data-tab="global">Community Results</button>
+      <button class="results-tab active" data-tab="personal">Your Results</button>
+      <button class="results-tab" data-tab="global">Community Results</button>
+      <button class="results-tab" data-tab="unseen">Your Unseen Movies</button>
     </div>
 
     <!-- ===== GLOBAL TAB ===== -->
-    <div class="results-panel active" id="panel-global">
+    <div class="results-panel" id="panel-global">
       <div class="results-controls">
         <div class="results-controls-row">
           <div class="control-group">
@@ -114,7 +110,7 @@
     </div>
 
     <!-- ===== PERSONAL TAB ===== -->
-    <div class="results-panel" id="panel-personal">
+    <div class="results-panel active" id="panel-personal">
       <div id="personal-progress"></div>
       <div class="results-controls">
         <div class="results-controls-row">
@@ -193,6 +189,10 @@
 
     <!-- ===== YOUR UNSEEN TAB ===== -->
     <div class="results-panel" id="panel-unseen">
+      <div class="results-intro">
+        <h2 class="results-headline" style="font-size: clamp(var(--fs-4), 3vw, var(--fs-6));">Your Unseen Movies</h2>
+        <p class="results-desc">Movies you&rsquo;ve marked as unseen. They won&rsquo;t appear in your matchups. If you clicked one by mistake, select &ldquo;Put Back&rdquo; to restore it to voting.</p>
+      </div>
       <div id="unseen-status" class="unseen-status"></div>
 
       <div id="unseen-controls" class="unseen-controls" style="display:none">
@@ -228,7 +228,7 @@
               <th class="col-movie">Movie</th>
               <th class="col-num">Genre</th>
               <th class="col-num">Your Votes</th>
-              <th class="col-num">Community Win %</th>
+              <th class="col-num">Community Adj. Score</th>
               <th class="col-num">IMDB</th>
               <th class="col-num">Action</th>
             </tr>

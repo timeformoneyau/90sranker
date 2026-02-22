@@ -34,6 +34,7 @@ let currentUid = null;
 let faceoffs = [];          // 10 most recent faceoffs
 let userVotes = {};         // { faceoffId: "A" | "B" }
 const posterCache = {};
+const userCache = {};       // { uid: username | null }
 
 // ==========================================
 // TMDB
@@ -54,6 +55,19 @@ async function fetchPosterUrl(title, year) {
   } catch {
     return "./fallback.jpg";
   }
+}
+
+// ==========================================
+// USERNAME LOOKUP
+// ==========================================
+
+async function fetchUsernames(uids) {
+  const toFetch = uids.filter(uid => uid && !(uid in userCache));
+  if (!toFetch.length) return;
+  const snaps = await Promise.all(toFetch.map(uid => getDoc(doc(db, "users", uid))));
+  snaps.forEach((snap, i) => {
+    userCache[toFetch[i]] = snap.exists() ? (snap.data().username || null) : null;
+  });
 }
 
 // ==========================================
@@ -99,6 +113,10 @@ async function loadFaceoffs() {
       emptyEl.style.display = "";
       return;
     }
+
+    // Prefetch usernames for all card creators
+    const creatorUids = [...new Set(faceoffs.map(f => f.createdByUid).filter(Boolean))];
+    await fetchUsernames(creatorUids);
 
     // Load current user's votes for these faceoffs
     if (currentUid) {
@@ -170,11 +188,13 @@ async function buildCard(tc, index) {
   const pctA = totalVotes > 0 ? Math.round(((tc.votesA || 0) / totalVotes) * 100) : 0;
   const pctB = totalVotes > 0 ? 100 - pctA : 0;
 
-  // Compact meta: date · couldn't-decide count on one line
+  // Compact meta: date · couldn't-decide count · nominated by @username
   const undecidedCount = tc.flagCount || 1;
+  const nominatorUsername = tc.createdByUid ? userCache[tc.createdByUid] : null;
+  const nominatorText = nominatorUsername ? ` · nominated by @${escapeHtml(nominatorUsername)}` : "";
   const metaInfo = dateStr
-    ? `${dateStr} · ${undecidedCount} couldn't decide`
-    : `${undecidedCount} couldn't decide`;
+    ? `${dateStr} · ${undecidedCount} couldn't decide${nominatorText}`
+    : `${undecidedCount} couldn't decide${nominatorText}`;
 
   // Status badge — lives in the meta bar instead of floating below the card
   let metaBadge = "";
