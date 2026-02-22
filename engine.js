@@ -737,7 +737,7 @@ function buildCardHTML(item, index) {
       <div class="engine-card-rank">${index + 1}</div>
       ${unseenBadge}
     </div>
-    <div class="engine-card-body">
+    <div class="engine-card-title-block">
       <div class="engine-card-header">
         <span class="engine-card-title">${m.title}</span>
         <span class="engine-card-year">${m.year}</span>
@@ -747,12 +747,16 @@ function buildCardHTML(item, index) {
         ${m.tone ? `<span class="engine-tag">${m.tone}</span>` : ""}
         ${vibeChips}
       </div>
+    </div>
+    <div class="engine-card-reason-col">
       <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
+    </div>
+    <div class="engine-card-blurb-col">
       ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
-      <div class="engine-card-actions">
-        <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
-        <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
-      </div>
+    </div>
+    <div class="engine-card-actions">
+      <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
+      <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
     </div>`;
 }
 
