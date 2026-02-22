@@ -52,6 +52,25 @@
     <div class="results-panel active" id="panel-recs">
       <div class="engine-status" id="engine-status">Loading...</div>
       <div id="engine-profile"></div>
+
+      <!-- Filter + Sort controls (shown by JS once data loads) -->
+      <div class="engine-controls" id="engine-controls" style="display:none">
+        <div class="engine-controls-row">
+          <div class="engine-control-group">
+            <span class="engine-control-label">Genre</span>
+            <div class="engine-genre-chips" id="engine-genre-chips"></div>
+          </div>
+          <div class="engine-control-group">
+            <span class="engine-control-label">Sort</span>
+            <select class="engine-sort-select" id="engine-sort-select">
+              <option value="recommended">Recommended order</option>
+              <option value="community">Community Score ↑</option>
+              <option value="foryou">For You ↑</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="engine-grid" id="engine-grid">
         <div class="engine-empty">Loading recommendations...</div>
       </div>

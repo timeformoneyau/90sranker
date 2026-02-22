@@ -67,6 +67,18 @@ let unseenMovieKeys = new Set();
 // Set of movie keys the user marked "not interested" — permanently hidden from recommendations
 let notInterestedKeys = new Set();
 
+// Precomputed community rank map: { "Title|Year": { rank, score } } — built once per load
+let communityRanks = {};
+
+// Stats + movie map cached at module level so computeRankMaps() can access them
+let globalStatsCache = {};
+let movieMapCache = {};
+
+// Full recommendation list (before filter/sort) + active filter/sort state
+let allRecommendations = [];
+let activeGenreFilter = null;
+let activeSortMode = "recommended";
+
 // ==========================================
 // UTILITY
 // ==========================================
@@ -544,6 +556,10 @@ async function getRecommendationsForUser(userId) {
     notInterestedCount: notInterestedKeys.size
   };
 
+  // Cache stats + movieMap so computeRankMaps() can use them without extra reads
+  globalStatsCache = globalStats;
+  movieMapCache = movieMap;
+
   cache = { uid: userId, results: output };
   return output;
 }
@@ -716,6 +732,90 @@ async function removeUnseenDesignation(movieKey) {
 }
 
 // ==========================================
+// RANKINGS — compute once after data load
+// ==========================================
+
+function computeRankMaps() {
+  const scored = [];
+  for (const [key, s] of Object.entries(globalStatsCache)) {
+    const w = s.wins || 0, l = s.losses || 0, n = w + l;
+    if (n >= 5) scored.push({ key, score: wilsonScore(w, n) });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  communityRanks = {};
+  scored.forEach(({ key, score }, i) => {
+    communityRanks[key] = { rank: i + 1, score };
+  });
+}
+
+// ==========================================
+// UI — FILTER / SORT CONTROLS
+// ==========================================
+
+function renderControls(allScored) {
+  const controlsEl = document.getElementById("engine-controls");
+  if (!controlsEl) return;
+
+  const genres = [...new Set(allScored.map(item => item.movie.genre).filter(Boolean))].sort();
+
+  const chipsEl = document.getElementById("engine-genre-chips");
+  if (chipsEl) {
+    chipsEl.innerHTML = "";
+    const allBtn = document.createElement("button");
+    allBtn.className = "engine-genre-chip active";
+    allBtn.dataset.genre = "all";
+    allBtn.textContent = "All";
+    chipsEl.appendChild(allBtn);
+    genres.forEach(g => {
+      const btn = document.createElement("button");
+      btn.className = "engine-genre-chip";
+      btn.dataset.genre = g;
+      btn.textContent = g;
+      chipsEl.appendChild(btn);
+    });
+    chipsEl.querySelectorAll(".engine-genre-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        chipsEl.querySelectorAll(".engine-genre-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeGenreFilter = btn.dataset.genre === "all" ? null : btn.dataset.genre;
+        applyFiltersAndSort();
+      });
+    });
+  }
+
+  const sortEl = document.getElementById("engine-sort-select");
+  if (sortEl) {
+    sortEl.addEventListener("change", () => {
+      activeSortMode = sortEl.value;
+      applyFiltersAndSort();
+    });
+  }
+
+  controlsEl.style.display = "";
+}
+
+function applyFiltersAndSort() {
+  let filtered = allRecommendations.slice();
+
+  if (activeGenreFilter) {
+    filtered = filtered.filter(item => item.movie.genre === activeGenreFilter);
+  }
+
+  if (activeSortMode === "community") {
+    filtered.sort((a, b) => {
+      const rankA = communityRanks[getMovieKey(a.movie)]?.rank ?? 99999;
+      const rankB = communityRanks[getMovieKey(b.movie)]?.rank ?? 99999;
+      return rankA - rankB;
+    });
+  } else if (activeSortMode === "foryou") {
+    // "For You" order = original recommendation rank (ascending matchRank = best first)
+    filtered.sort((a, b) => (a.matchRank || 99999) - (b.matchRank || 99999));
+  }
+
+  renderRecommendations(filtered);
+}
+
+// ==========================================
 // UI — RENDER SINGLE CARD
 // ==========================================
 
@@ -730,6 +830,11 @@ function buildCardHTML(item, index) {
   const unseenBadge = isUnseen
     ? `<div class="engine-card-unseen-badge">Unwatched</div>`
     : "";
+
+  const commData = communityRanks[key];
+  const commRankText = commData ? `#${commData.rank}` : "\u2014";
+  const commScoreText = commData ? `${Math.round(commData.score * 100)}%` : "";
+  const matchRankText = item.matchRank ? `#${item.matchRank}` : "";
 
   return `
     <div class="engine-card-poster-wrap">
@@ -748,10 +853,16 @@ function buildCardHTML(item, index) {
         ${vibeChips}
       </div>
     </div>
+    <div class="engine-card-community">
+      <div class="engine-score-rank">${commRankText}</div>
+      ${commScoreText ? `<div class="engine-score-val">${commScoreText}</div>` : ""}
+    </div>
+    <div class="engine-card-match">
+      ${matchRankText ? `<div class="engine-score-rank">${matchRankText}</div>` : ""}
+      <div class="engine-score-label">for&nbsp;you</div>
+    </div>
     <div class="engine-card-reason-col">
       <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
-    </div>
-    <div class="engine-card-blurb-col">
       ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
     </div>
     <div class="engine-card-actions">
@@ -926,7 +1037,16 @@ function renderRecommendations(allScored) {
   displayedItems = allScored.slice(0, DISPLAY_COUNT);
   overflowQueue = allScored.slice(DISPLAY_COUNT);
 
-  grid.innerHTML = displayedItems.map((item, i) => {
+  const header = `<div class="engine-list-header">
+    <div></div>
+    <div>Movie</div>
+    <div class="engine-col-label--center">Community</div>
+    <div class="engine-col-label--center">For You</div>
+    <div>Why Recommended</div>
+    <div></div>
+  </div>`;
+
+  grid.innerHTML = header + displayedItems.map((item, i) => {
     return `<div class="engine-card" id="engine-card-${i}">${buildCardHTML(item, i)}</div>`;
   }).join("");
 
@@ -1228,8 +1348,13 @@ async function loadEngine(user) {
       renderStatus(`Based on ${data.voteCount} votes. The more you vote, the smarter this gets.`);
     }
 
+    computeRankMaps();
+    data.allScored.forEach((item, i) => { item.matchRank = i + 1; });
+    allRecommendations = data.allScored;
+
     renderTasteProfile(data.tasteProfile, data.voteCount);
-    renderRecommendations(data.allScored);
+    renderControls(allRecommendations);
+    renderRecommendations(allRecommendations);
     renderTasteProfileChart(data.genrePreferences);
     renderBreakFromCrowd(data.breakFromCrowd);
   } catch (err) {
