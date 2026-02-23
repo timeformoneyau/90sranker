@@ -63,10 +63,11 @@ service cloud.firestore {
     }
 
     // ── votes ────────────────────────────────────────────────────
-    // Authenticated users can append votes. Admin can read for stats.
+    // Authenticated users can append votes.
+    // Admin can read all votes; users can read their own votes (for matchup history).
     match /votes/{voteId} {
       allow create: if isSignedIn();
-      allow read:   if isAdmin();
+      allow read:   if isAdmin() || (isSignedIn() && resource.data.user == request.auth.uid);
       allow update, delete: if false;
     }
 

@@ -14,6 +14,15 @@ import {
 import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 
 // ==========================================
+// ADMIN
+// ==========================================
+
+const ADMIN_EMAIL = "mjreardon62@gmail.com";
+let currentIsAdmin = false;
+let adminSelectedUid = null;
+let adminSelectedUsername = null;
+
+// ==========================================
 // KEY NORMALIZATION
 // ==========================================
 
@@ -299,9 +308,12 @@ async function loadGlobalStats() {
   try {
     const metaSnap = await getDoc(doc(db, "stats", "meta"));
     const totalVotes = metaSnap.exists() ? (metaSnap.data().totalVotes || 0) : 0;
-    countEl.textContent = `${totalVotes.toLocaleString()} total votes across all users`;
+    const globalCountText = `${totalVotes.toLocaleString()} total votes across all users`;
+    countEl.textContent = globalCountText;
+    countEl.dataset.globalCount = globalCountText;
   } catch {
     countEl.textContent = "";
+    countEl.dataset.globalCount = "";
   }
 
   // Live listener — re-fires automatically whenever a vote is cast (1 read per update).
@@ -327,6 +339,77 @@ async function loadGlobalStats() {
       }
     );
   });
+}
+
+// ==========================================
+// ADMIN — USER LIST + FILTER
+// ==========================================
+
+async function loadAdminUserList() {
+  const group = document.getElementById("admin-user-filter-group");
+  const select = document.getElementById("admin-user-select");
+  if (!group || !select) return;
+
+  try {
+    const snap = await getDocs(collection(db, "usernames"));
+    const users = [];
+    snap.forEach(d => users.push({ username: d.id, uid: d.data().uid }));
+    users.sort((a, b) => a.username.localeCompare(b.username));
+
+    users.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.uid;
+      opt.textContent = u.username;
+      select.appendChild(opt);
+    });
+
+    group.style.display = "";
+    select.addEventListener("change", onAdminUserFilterChange);
+  } catch (err) {
+    console.error("Failed to load user list:", err);
+  }
+}
+
+async function onAdminUserFilterChange() {
+  const select = document.getElementById("admin-user-select");
+  const uid = select.value;
+  const username = uid ? select.options[select.selectedIndex].textContent : null;
+  adminSelectedUid = uid || null;
+  adminSelectedUsername = username || null;
+
+  const countEl = document.getElementById("global-count");
+
+  if (!uid) {
+    // Restore real global data
+    globalAllRows = buildNormalizedRankedData(cachedGlobalStats);
+    if (countEl) countEl.textContent = countEl.dataset.globalCount || "";
+    applyGlobalFilters();
+    return;
+  }
+
+  const tbody = document.getElementById("global-list");
+  const cards = document.getElementById("global-cards");
+  tbody.innerHTML = '<tr><td colspan="7" class="results-empty">Loading...</td></tr>';
+  cards.innerHTML = '<div class="results-empty">Loading...</div>';
+
+  try {
+    const snap = await getDoc(doc(db, "stats", `user_${uid}`));
+    const userStats = snap.exists() ? (snap.data().stats || {}) : {};
+    globalAllRows = buildNormalizedRankedData(userStats);
+
+    // Update the vote count label for this user
+    let totalVotes = 0;
+    for (const s of Object.values(userStats)) {
+      totalVotes += (s.wins || 0) + (s.losses || 0);
+    }
+    if (countEl) countEl.textContent = `${Math.round(totalVotes / 2).toLocaleString()} votes by @${username}`;
+
+    applyGlobalFilters();
+  } catch (err) {
+    console.error("Failed to load user stats:", err);
+    tbody.innerHTML = '<tr><td colspan="7" class="results-empty results-error">Failed to load user rankings.</td></tr>';
+    cards.innerHTML = '<div class="results-empty results-error">Failed to load.</div>';
+  }
 }
 
 // ==========================================
@@ -813,12 +896,31 @@ async function showMatchupModal(movie) {
   } else if (activeTab === "global") {
     listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
     try {
-      const votes = await fetchGlobalMovieVotes(key);
-
-      // Recompute stats from raw votes — overrides potentially stale aggregate
-      updateModalStatsFromVotes(votes, key);
-
-      listEl.innerHTML = renderMatchupHistory(votes, key);
+      if (adminSelectedUid) {
+        // Admin is viewing a specific user's results — show that user's votes for this movie
+        const allVotes = await fetchUserVotes(adminSelectedUid);
+        const votes = allVotes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
+        updateModalStatsFromVotes(votes, key);
+        listEl.innerHTML = renderMatchupHistory(votes, key);
+      } else if (currentIsAdmin) {
+        // Admin global view — show all community votes for this movie
+        const votes = await fetchGlobalMovieVotes(key);
+        updateModalStatsFromVotes(votes, key);
+        listEl.innerHTML = renderMatchupHistory(votes, key);
+      } else {
+        // Non-admin: show their own votes for this movie (uses updated Firestore rule)
+        const uid = cachedUserUid || (await new Promise(resolve => onAuth(u => resolve(u?.uid))));
+        if (!uid) {
+          listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Log in to see your matchup history for this film.</div>';
+          return;
+        }
+        const allVotes = await fetchUserVotes(uid);
+        const votes = allVotes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
+        updateModalStatsFromVotes(votes, key);
+        listEl.innerHTML = votes.length
+          ? renderMatchupHistory(votes, key)
+          : '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">You haven\'t voted on this film yet.</div>';
+      }
     } catch (err) {
       console.error("Matchup history error:", err);
       listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
@@ -852,7 +954,19 @@ window.addEventListener("load", async () => {
   await initNormalizer();
   onAuth(async user => {
     if (user) {
+      // Detect admin status
+      const isAdminEmail = user.email === ADMIN_EMAIL;
+      let isAdmin = isAdminEmail;
+      if (!isAdminEmail) {
+        try {
+          const tokenResult = await user.getIdTokenResult();
+          isAdmin = tokenResult.claims.admin === true;
+        } catch { isAdmin = false; }
+      }
+      currentIsAdmin = isAdmin;
+
       await loadPersonalStats(user.uid);
+      if (isAdmin) await loadAdminUserList();
     } else {
       document.getElementById("personal-list").innerHTML = '<tr><td colspan="7" class="results-empty">Log in to see your personal rankings.</td></tr>';
       document.getElementById("personal-cards").innerHTML = '<div class="results-empty">Log in to see your rankings.</div>';
