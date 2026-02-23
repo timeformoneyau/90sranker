@@ -29,11 +29,12 @@ const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
 const ATTR_WEIGHTS = {
-  genre: 1.0,
-  vibe: 0.8,
-  tone: 0.75,
-  decade: 0.5,
-  category: 0.5
+  genre:    1.0,
+  director: 0.9,
+  tone:     0.7,
+  vibe:     0.7,
+  decade:   0.5,
+  category: 0.4
 };
 
 const MIN_VOTES_FOR_PERSONALIZATION = 10;
@@ -108,8 +109,9 @@ function getDecade(year) {
 
 function getMovieAttributes(movie) {
   const attrs = {};
-  if (movie.genre) attrs[`genre:${movie.genre}`] = ATTR_WEIGHTS.genre;
-  if (movie.tone) attrs[`tone:${movie.tone}`] = ATTR_WEIGHTS.tone;
+  if (movie.genre)    attrs[`genre:${movie.genre}`]       = ATTR_WEIGHTS.genre;
+  if (movie.director) attrs[`director:${movie.director}`] = ATTR_WEIGHTS.director;
+  if (movie.tone)     attrs[`tone:${movie.tone}`]         = ATTR_WEIGHTS.tone;
   if (movie.category) attrs[`category:${movie.category}`] = ATTR_WEIGHTS.category;
   const decade = getDecade(movie.year);
   if (decade) attrs[`decade:${decade}`] = ATTR_WEIGHTS.decade;
@@ -151,9 +153,13 @@ function buildPreferenceVector(userStats, movieMap) {
     if (!movie) continue;
 
     const attrs = getMovieAttributes(movie);
-    // Net signal: wins push attributes positive, losses push negative
+    // Confidence-aware signal: normalized win rate × log(total) — avoids raw count inflation
+    const total = w + l;
+    const winRate = w / total;
+    const confidence = Math.log(total + 1);
+    const signal = (winRate - 0.5) * confidence;
     for (const [attrKey, weight] of Object.entries(attrs)) {
-      prefs[attrKey] = (prefs[attrKey] || 0) + weight * (w - l);
+      prefs[attrKey] = (prefs[attrKey] || 0) + weight * signal;
     }
   }
 
@@ -164,7 +170,7 @@ function buildPreferenceVector(userStats, movieMap) {
 // PHASE 2 — CANDIDATE SCORING
 // ==========================================
 
-function scoreCandidates(candidates, prefs) {
+function scoreCandidates(candidates, prefs, niDirGenrePairs = new Map()) {
   return candidates.map(movie => {
     const attrs = getMovieAttributes(movie);
     const attrKeys = Object.keys(attrs);
@@ -196,10 +202,17 @@ function scoreCandidates(candidates, prefs) {
       contributions.push({ key: "vibe:combined", value: scaledVibeScore });
     }
 
-    const score = nonVibeScore + scaledVibeScore;
+    // NI multiplicative penalty: ×0.85 per director+genre pair shared with Not Interested movies
+    let niMultiplier = 1.0;
+    if (movie.director && movie.genre) {
+      const pair = `${movie.director}|${movie.genre}`;
+      const count = niDirGenrePairs.get(pair) || 0;
+      if (count > 0) niMultiplier = Math.pow(0.85, count);
+    }
+    const score = (nonVibeScore + scaledVibeScore) * niMultiplier;
     contributions.sort((a, b) => b.value - a.value);
 
-    return { movie, score, contributions: contributions.slice(0, 3), communityBoost: 0, similarMovies: [] };
+    return { movie, score, contributions: contributions.slice(0, 3), communityBoost: 0, communityScore: 0, similarMovies: [] };
   });
 }
 
@@ -335,7 +348,7 @@ function applyDiversitySelection(scoredItems, count) {
   // Sort by final score (score + communityBoost) descending
   const pool = scoredItems.map(item => ({
     ...item,
-    finalScore: item.score + (item.communityBoost || 0)
+    finalScore: item.score + (item.communityBoost || 0) + (item.communityScore || 0)
   }));
   pool.sort((a, b) => b.finalScore - a.finalScore);
 
@@ -468,20 +481,24 @@ async function getRecommendationsForUser(userId) {
   const isSparse = voteCount < MIN_VOTES_FOR_PERSONALIZATION;
   const { prefs, votedKeys } = buildPreferenceVector(userStats, movieMap);
 
-  // Apply mild negative signal from notInterested movies (genre, tone, vibes)
+  // Stronger NI negative signal — ≈ equivalent to 5 losses per attribute
+  const NI_SIGNAL = -0.5 * Math.log(6); // ≈ -0.896
+  const niDirGenrePairs = new Map();
   for (const niKey of notInterestedKeys) {
     const niMovie = movieMap[niKey];
     if (!niMovie) continue;
-    if (niMovie.genre) {
-      prefs[`genre:${niMovie.genre}`] = (prefs[`genre:${niMovie.genre}`] || 0) - 0.3;
-    }
-    if (niMovie.tone) {
-      prefs[`tone:${niMovie.tone}`] = (prefs[`tone:${niMovie.tone}`] || 0) - 0.15;
-    }
+    if (niMovie.genre)    prefs[`genre:${niMovie.genre}`]       = (prefs[`genre:${niMovie.genre}`]       || 0) + ATTR_WEIGHTS.genre    * NI_SIGNAL;
+    if (niMovie.director) prefs[`director:${niMovie.director}`] = (prefs[`director:${niMovie.director}`] || 0) + ATTR_WEIGHTS.director * NI_SIGNAL;
+    if (niMovie.tone)     prefs[`tone:${niMovie.tone}`]         = (prefs[`tone:${niMovie.tone}`]         || 0) + ATTR_WEIGHTS.tone     * NI_SIGNAL;
     if (niMovie.vibes) {
       niMovie.vibes.split(",").map(v => v.trim().toLowerCase()).filter(Boolean).forEach(v => {
-        prefs[`vibe:${v}`] = (prefs[`vibe:${v}`] || 0) - 0.1;
+        prefs[`vibe:${v}`] = (prefs[`vibe:${v}`] || 0) + ATTR_WEIGHTS.vibe * NI_SIGNAL;
       });
+    }
+    // Track director+genre pairs for multiplicative penalty in scoreCandidates
+    if (niMovie.director && niMovie.genre) {
+      const pair = `${niMovie.director}|${niMovie.genre}`;
+      niDirGenrePairs.set(pair, (niDirGenrePairs.get(pair) || 0) + 1);
     }
   }
 
@@ -497,7 +514,7 @@ async function getRecommendationsForUser(userId) {
     // For sparse users, mix preference-based picks with globally popular movies
     let prefPicks = [];
     if (voteCount > 0) {
-      const scored = scoreCandidates(candidates, prefs);
+      const scored = scoreCandidates(candidates, prefs, niDirGenrePairs);
       scored.sort((a, b) => b.score - a.score);
       prefPicks = scored.slice(0, Math.floor(DISPLAY_COUNT / 2));
       prefPicks.forEach(r => { r.reason = generateReason(r); });
@@ -527,7 +544,16 @@ async function getRecommendationsForUser(userId) {
     // Apply diversity even for sparse users
     allScored = applyDiversitySelection(combined, DISPLAY_COUNT * 3);
   } else {
-    let scored = scoreCandidates(candidates, prefs);
+    let scored = scoreCandidates(candidates, prefs, niDirGenrePairs);
+
+    // Community quality floor — blend Wilson score into personalized score (no new reads)
+    const COMMUNITY_WEIGHT = 0.2;
+    for (const item of scored) {
+      const gs = globalStats[getMovieKey(item.movie)] || {};
+      const gw = gs.wins || 0;
+      const gl = gs.losses || 0;
+      item.communityScore = wilsonScore(gw, gw + gl) * COMMUNITY_WEIGHT;
+    }
 
     // Phase 3 — Collaborative filtering
     await applyCollaborativeBoost(scored, userStats, userId, movieMap);
