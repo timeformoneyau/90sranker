@@ -653,10 +653,11 @@ async function getRecommendationsForUser(userId) {
   // Compute profile data: genre preferences (with global consensus), break-from-crowd
   const genrePreferences = computeGenrePreferenceScores(userStats, globalStats, movieMap);
   const breakFromCrowd = computeBreakFromCrowd(userStats, globalStats, movieMap);
+  const directorAffinities = computeDirectorAffinities(userStats, movieMap, globalStats);
 
   const output = {
     allScored, tasteProfile, voteCount, isSparse,
-    genrePreferences, breakFromCrowd,
+    genrePreferences, breakFromCrowd, directorAffinities,
     totalMovies: movies.length,
     comparedCount: votedKeys.size,
     unseenCount: unseenKeys.size,
@@ -789,6 +790,61 @@ function computeBreakFromCrowd(userStats, globalStats, movieMap) {
   const higher = rows.filter(r => r.delta > 0).slice(0, 5);
   const lower = rows.filter(r => r.delta < 0).slice(0, 5);
   return { higher, lower, hasData: higher.length > 0 || lower.length > 0 };
+}
+
+// ==========================================
+// PROFILE — FAVORITE DIRECTORS
+// ==========================================
+
+function computeDirectorAffinities(userStats, movieMap, globalStats) {
+  const dirMap = {};
+
+  for (const [key, s] of Object.entries(userStats)) {
+    const movie = movieMap[key];
+    if (!movie?.director) continue;
+    const w = s.wins || 0, l = s.losses || 0;
+    if (w === 0 && l === 0) continue;
+    if (!dirMap[movie.director]) dirMap[movie.director] = { wins: 0, losses: 0, films: [] };
+    dirMap[movie.director].wins += w;
+    dirMap[movie.director].losses += l;
+    dirMap[movie.director].films.push({ key, title: movie.title, year: movie.year, w, l });
+  }
+
+  const results = [];
+  for (const [director, data] of Object.entries(dirMap)) {
+    if (data.films.length < 3) continue;
+    const total = data.wins + data.losses;
+    const winRate = data.wins / total;
+    // Same confidence-aware signal as buildPreferenceVector × director weight
+    const affinity = (winRate - 0.5) * Math.log(total + 1) * ATTR_WEIGHTS.director;
+
+    // Sort films by community wilson score, fallback to user win rate
+    const sortedFilms = data.films
+      .map(f => {
+        const gs = globalStats[f.key] || {};
+        const gw = gs.wins || 0, gl = gs.losses || 0;
+        const adj = (gw + gl >= 5) ? wilsonScore(gw, gw + gl) : (f.w / (f.w + f.l));
+        return { ...f, adj };
+      })
+      .sort((a, b) => b.adj - a.adj);
+
+    results.push({
+      director,
+      winRate: Math.round(winRate * 100),
+      filmCount: data.films.length,
+      affinity,
+      topFilms: sortedFilms.slice(0, 3).map(f => ({ title: f.title, year: f.year }))
+    });
+  }
+
+  results.sort((a, b) => b.affinity - a.affinity);
+  const top5 = results.slice(0, 5);
+  const maxAffinity = top5.length > 0 ? Math.max(...top5.map(d => d.affinity)) : 1;
+  top5.forEach(d => {
+    d.affinityNorm = maxAffinity > 0 ? Math.max(0, d.affinity / maxAffinity) : 0;
+    d.affinityDisplay = d.affinity.toFixed(2);
+  });
+  return top5;
 }
 
 // ==========================================
@@ -1472,6 +1528,59 @@ function renderBreakFromCrowd(breakData) {
 }
 
 // ==========================================
+// UI — RENDER FAVORITE DIRECTORS
+// ==========================================
+
+function renderDirectorAffinities(directors) {
+  const el = document.getElementById("director-affinities-content");
+  if (!el) return;
+
+  if (!directors || directors.length === 0) {
+    el.innerHTML = '<div class="engine-empty">Rate at least 3 films by the same director to see your favorites.</div>';
+    return;
+  }
+
+  const listHtml = directors.map((d, i) => `
+    <div class="director-row${i >= 3 ? ' director-row--extra' : ''}">
+      <div class="director-rank">${i + 1}</div>
+      <div class="director-info">
+        <div class="director-name">${d.director}</div>
+        <div class="director-meta">${d.winRate}% win rate &middot; ${d.filmCount} film${d.filmCount !== 1 ? 's' : ''} rated</div>
+        <div class="director-films">${d.topFilms.map(f => `<span class="director-film">${f.title} (${f.year})</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+
+  const barsHtml = directors.map(d => `
+    <div class="director-bar-row">
+      <div class="director-bar-name">${d.director}</div>
+      <div class="director-bar-track">
+        <div class="director-bar-fill" style="width:${Math.round(d.affinityNorm * 100)}%"></div>
+      </div>
+      <div class="director-bar-value">${d.affinityDisplay}</div>
+    </div>`).join('');
+
+  const showAllBtn = directors.length > 3
+    ? `<button class="directors-show-all" id="directors-show-all-btn" onclick="toggleDirectorsExpand()">Show all ${directors.length} directors</button>`
+    : '';
+
+  el.innerHTML = `
+    <div class="directors-layout">
+      <div class="directors-list">${listHtml}</div>
+      <div class="directors-bars">${barsHtml}</div>
+    </div>
+    ${showAllBtn}`;
+}
+
+function toggleDirectorsExpand() {
+  const list = document.querySelector('.directors-list');
+  const btn = document.getElementById('directors-show-all-btn');
+  if (!list || !btn) return;
+  const expanded = list.classList.toggle('directors-expanded');
+  btn.textContent = expanded ? 'Show fewer' : 'Show all 5 directors';
+}
+window.toggleDirectorsExpand = toggleDirectorsExpand;
+
+// ==========================================
 // UI — RENDER PROGRESS CARD
 // ==========================================
 
@@ -1546,6 +1655,7 @@ async function loadEngine(user) {
     renderRecommendations(allRecommendations);
     renderTasteProfileChart(data.genrePreferences);
     renderBreakFromCrowd(data.breakFromCrowd);
+    renderDirectorAffinities(data.directorAffinities);
   } catch (err) {
     console.error("Engine error:", err);
     renderStatus("Something went wrong loading recommendations.", true);
@@ -1581,6 +1691,8 @@ window.addEventListener("load", () => {
       if (tasteEl) tasteEl.innerHTML = '<div class="engine-empty">Log in and vote to build your taste profile.</div>';
       const crowdEl = document.getElementById("break-crowd-content");
       if (crowdEl) crowdEl.innerHTML = '<div class="engine-empty">Log in and vote to see how your taste differs.</div>';
+      const dirEl = document.getElementById("director-affinities-content");
+      if (dirEl) dirEl.innerHTML = '<div class="engine-empty">Log in and vote to discover your favorite directors.</div>';
     }
   });
 });
