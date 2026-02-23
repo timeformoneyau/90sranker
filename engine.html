@@ -39,10 +39,12 @@
 
     <div class="engine-intro">
       <h1 class="engine-headline">Recommendations</h1>
-      <p class="engine-desc">These recommendations are curated for you from your voting history — and they sharpen as you keep voting.</p>
-      <span class="engine-info-link" tabindex="0">How the Recommendation Engine works
-        <span class="engine-info-popover">Your votes build a taste signal over time. The Engine blends your wins and losses with director and genre affinities, applies your Not Interested exclusions, and incorporates light community voting to keep the list anchored to proven picks. The result is a ranked shortlist that should feel more "you" with every matchup.</span>
-      </span>
+      <p class="engine-desc">These recommendations are curated for you from your voting history. They sharpen as you keep voting.</p>
+      <div class="engine-infobox" tabindex="0">
+        <span class="engine-infobox-icon">ℹ</span>
+        <span class="engine-infobox-label">How the Recommendation Engine works</span>
+        <div class="engine-infobox-popover">Your votes build a taste signal over time. The Engine blends your wins and losses with director and genre affinities, applies your Not Interested exclusions, and incorporates light community voting to keep the list anchored to proven picks. The result is a ranked shortlist that feels more "you" with every matchup.</div>
+      </div>
     </div>
 
     <!-- Tab Switcher -->
@@ -54,7 +56,6 @@
     <!-- ===== RECOMMENDATIONS PANEL ===== -->
     <div class="results-panel active" id="panel-recs">
       <div class="engine-status" id="engine-status">Loading...</div>
-      <div id="engine-profile"></div>
 
       <!-- Sort + Filter controls (shown by JS once data loads) -->
       <div class="engine-controls" id="engine-controls" style="display:none">

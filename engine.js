@@ -905,6 +905,58 @@ function applyFiltersAndSort() {
 // UI — RENDER SINGLE CARD
 // ==========================================
 
+// Build WHY chips for a recommendation item based on its scoring signals
+function buildWhyChips(item) {
+  const chips = [];
+  const contributions = item.contributions || [];
+  const hasCollabBoost  = (item.communityBoost  || 0) > 0.1;
+  const hasCommunityFloor = (item.communityScore || 0) > 0.04;
+
+  const dirContrib   = contributions.find(c => c.key.startsWith("director:") && c.value > 0);
+  const genreContrib = contributions.find(c => c.key.startsWith("genre:")    && c.value > 0);
+  const vibeOrTone   = contributions.find(c =>
+    (c.key.startsWith("vibe:") || c.key.startsWith("tone:") || c.key.startsWith("decade:")) && c.value > 0
+  );
+
+  if (dirContrib) {
+    const director = dirContrib.key.split(":")[1];
+    chips.push({ label: `Favored director: ${director}`, cls: "director" });
+  }
+  if (genreContrib) {
+    const genre = genreContrib.key.split(":")[1];
+    chips.push({ label: `Top genre: ${genre}`, cls: "genre" });
+  } else if (vibeOrTone) {
+    chips.push({ label: "Genre fit", cls: "genre" });
+  }
+  if (hasCollabBoost) {
+    chips.push({ label: "Similar voters", cls: "collab" });
+  }
+  if (hasCommunityFloor && chips.length < 3) {
+    chips.push({ label: "Community floor", cls: "community" });
+  }
+  if (chips.length === 0) {
+    chips.push({ label: "Strong personal signal", cls: "general" });
+  }
+  return chips.slice(0, 3);
+}
+
+function handlePosterError(imgEl, index) {
+  const item = displayedItems[index];
+  if (!item) return;
+  const { movie } = item;
+  const key = getMovieKey(movie);
+  console.warn(`[Poster] Load failed: ${key}`);
+  imgEl.onerror = null; // prevent loop
+  fetchPosterUrl(movie.title, movie.year).then(url => {
+    if (url) {
+      imgEl.src = url;
+    } else {
+      imgEl.classList.add("engine-poster--broken");
+      console.warn(`[Poster] TMDB also failed: ${key}`);
+    }
+  });
+}
+
 function buildCardHTML(item, index) {
   const m = item.movie;
   const key = getMovieKey(m);
@@ -921,13 +973,17 @@ function buildCardHTML(item, index) {
     ? `<div class="engine-card-director">${m.director}</div>`
     : "";
 
+  const whyChips = buildWhyChips(item)
+    .map(c => `<span class="engine-why-chip engine-why-chip--${c.cls}">${c.label}</span>`)
+    .join("");
+
   return `
     <div class="engine-card-rank-cell">
       <div class="engine-rank-badge">${index + 1}</div>
     </div>
     <div class="engine-card-rec">
       <div class="engine-card-poster-wrap">
-        <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" />
+        <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" onerror="handlePosterError(this, ${index});" />
         ${unseenBadge}
       </div>
       <div class="engine-card-rec-content">
@@ -943,11 +999,11 @@ function buildCardHTML(item, index) {
       <div class="engine-adj-score">${adjScore}</div>
     </div>
     <div class="engine-card-why">
-      <div class="engine-card-reason">${item.reason}</div>
+      <div class="engine-why-chips">${whyChips}</div>
     </div>
     <div class="engine-card-actions">
-      <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
-      <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})" title="Not interested">Not interested</button>
+      <button class="engine-btn-seen" onclick="handleSeenIt(${index})">Seen it</button>
+      <button class="engine-btn-not-interested" onclick="handleNotInterested(${index})">Not interested</button>
     </div>`;
 }
 
@@ -1077,6 +1133,11 @@ async function handleNotInterested(index) {
 function renderStatus(message, isWarning = false) {
   const el = document.getElementById("engine-status");
   if (!el) return;
+  if (!message) {
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "";
   el.textContent = message;
   el.className = "engine-status" + (isWarning ? " engine-status--warn" : "");
 }
@@ -1118,9 +1179,9 @@ function renderRecommendations(allScored) {
   overflowQueue = allScored.slice(DISPLAY_COUNT);
 
   const header = `<div class="engine-list-header">
-    <div></div>
+    <div class="engine-col-label--center">#</div>
     <div>Recommendation</div>
-    <div class="engine-col-label--center">Adj.&nbsp;Score</div>
+    <div class="engine-col-label--center">Michael&nbsp;Adj.&nbsp;Score</div>
     <div>Why</div>
     <div></div>
   </div>`;
@@ -1129,12 +1190,19 @@ function renderRecommendations(allScored) {
     return `<div class="engine-card" id="engine-card-${i}">${buildCardHTML(item, i)}</div>`;
   }).join("");
 
-  // Fetch posters from TMDB only when the JSON poster field is absent
+  // Fetch posters from TMDB when the JSON poster field is absent
   displayedItems.forEach((r, i) => {
     if (!r.movie.poster) {
       fetchPosterUrl(r.movie.title, r.movie.year).then(url => {
         const img = document.getElementById(`engine-poster-${i}`);
-        if (img && url) img.src = url;
+        if (img) {
+          if (url) {
+            img.src = url;
+          } else {
+            img.classList.add("engine-poster--broken");
+            console.warn(`[Poster] No result: ${getMovieKey(r.movie)}`);
+          }
+        }
       });
     }
   });
@@ -1434,7 +1502,6 @@ async function loadEngine(user) {
     data.allScored.forEach((item, i) => { item.matchRank = i + 1; });
     allRecommendations = data.allScored;
 
-    renderTasteProfile(data.tasteProfile, data.voteCount);
     renderControls(allRecommendations);
     renderRecommendations(allRecommendations);
     renderTasteProfileChart(data.genrePreferences);
@@ -1468,7 +1535,6 @@ window.addEventListener("load", () => {
     } else {
       currentUid = null;
       renderStatus("Log in to get personalized recommendations.", true);
-      renderTasteProfile(null, 0);
       const grid = document.getElementById("engine-grid");
       if (grid) grid.innerHTML = '<div class="engine-empty">Your picks will appear here once you log in and start voting.</div>';
       const tasteEl = document.getElementById("taste-profile-content");
@@ -1525,3 +1591,4 @@ window.handleSeenIt = handleSeenIt;
 window.handleNotInterested = handleNotInterested;
 window.showEngineSummary = showEngineSummary;
 window.closeEngineSummary = closeEngineSummary;
+window.handlePosterError = handlePosterError;
