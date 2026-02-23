@@ -40,11 +40,6 @@
     <div class="engine-intro">
       <h1 class="engine-headline">Recommendations</h1>
       <p class="engine-desc">These recommendations are curated for you from your voting history. They sharpen as you keep voting.</p>
-      <div class="engine-infobox" tabindex="0">
-        <span class="engine-infobox-icon">ℹ</span>
-        <span class="engine-infobox-label">How the Recommendation Engine works</span>
-        <div class="engine-infobox-popover">Your votes build a taste signal over time. The Engine blends your wins and losses with director and genre affinities, applies your Not Interested exclusions, and incorporates light community voting to keep the list anchored to proven picks. The result is a ranked shortlist that feels more "you" with every matchup.</div>
-      </div>
     </div>
 
     <!-- Tab Switcher -->
@@ -60,18 +55,25 @@
       <!-- Sort + Filter controls (shown by JS once data loads) -->
       <div class="engine-controls" id="engine-controls" style="display:none">
         <div class="engine-controls-row">
-          <div class="engine-control-group">
-            <span class="engine-control-label">Sort by:</span>
-            <select class="engine-sort-select" id="engine-sort-select">
-              <option value="recommended">Recommendation</option>
-              <option value="adjusted">Adjusted Score</option>
-            </select>
+          <div class="engine-controls-left">
+            <div class="engine-control-group">
+              <span class="engine-control-label">Sort by:</span>
+              <select class="engine-sort-select" id="engine-sort-select">
+                <option value="recommended">Recommendation</option>
+                <option value="adjusted">Adjusted Score</option>
+              </select>
+            </div>
+            <div class="engine-control-group">
+              <span class="engine-control-label">Genre:</span>
+              <select class="engine-genre-select" id="engine-genre-select">
+                <option value="all">All Genres</option>
+              </select>
+            </div>
           </div>
-          <div class="engine-control-group">
-            <span class="engine-control-label">Genre:</span>
-            <select class="engine-genre-select" id="engine-genre-select">
-              <option value="all">All Genres</option>
-            </select>
+          <div class="engine-infobox engine-infobox--inline" tabindex="0">
+            <span class="engine-infobox-label">How it works</span>
+            <span class="engine-infobox-icon">ⓘ</span>
+            <div class="engine-infobox-popover">Your votes build a taste signal over time. The Engine blends your wins and losses with director and genre affinities, applies your Not Interested exclusions, and incorporates light community voting to keep the list anchored to proven picks. The result is a ranked shortlist that feels more "you" with every matchup.</div>
           </div>
         </div>
       </div>

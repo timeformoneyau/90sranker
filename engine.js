@@ -129,16 +129,29 @@ function getMovieAttributes(movie) {
   return attrs;
 }
 
-async function fetchPosterUrl(title, year) {
+const basicInfoCache = {};
+
+async function fetchMovieBasic(title, year) {
+  const key = `${title}|${year}`;
+  if (basicInfoCache[key]) return basicInfoCache[key];
   try {
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
     const res = await fetch(url);
     const data = await res.json();
-    const posterPath = data.results?.[0]?.poster_path;
-    return posterPath ? TMDB_IMAGE_BASE + posterPath : null;
+    const result = data.results?.[0];
+    const info = {
+      posterUrl: result?.poster_path ? TMDB_IMAGE_BASE + result.poster_path : null,
+      overview: result?.overview || null
+    };
+    basicInfoCache[key] = info;
+    return info;
   } catch {
-    return null;
+    return { posterUrl: null, overview: null };
   }
+}
+
+async function fetchPosterUrl(title, year) {
+  return (await fetchMovieBasic(title, year)).posterUrl;
 }
 
 async function fetchMovieInfo(title, year) {
@@ -963,19 +976,18 @@ function buildCardHTML(item, index) {
   const isUnseen = unseenMovieKeys.has(key);
 
   const unseenBadge = isUnseen
-    ? `<div class="engine-card-unseen-badge">Unwatched</div>`
-    : "";
+    ? `<div class="engine-card-unseen-badge">Unwatched</div>` : "";
 
-  const commData = communityRanks[key];
-  const adjScore = commData ? `${Math.round(commData.score * 1000) / 10}%` : "\u2014";
-
-  const directorHtml = m.director
-    ? `<div class="engine-card-director">${m.director}</div>`
-    : "";
-
-  const whyChips = buildWhyChips(item)
-    .map(c => `<span class="engine-why-chip engine-why-chip--${c.cls}">${c.label}</span>`)
-    .join("");
+  // WHY chips: build all, then show 1-2 + overflow badges
+  const allChips = buildWhyChips(item);
+  const chipsHtml = allChips.map((c, i) => {
+    const cls = `engine-why-chip engine-why-chip--${c.cls} why-chip-${i + 1}`;
+    return `<span class="${cls}">${c.label}</span>`;
+  }).join('');
+  const desktopOverflow = allChips.length >= 3
+    ? `<span class="engine-why-chip engine-why-chip--overflow why-overflow-d">+${allChips.length - 2}</span>` : '';
+  const mobileOverflow = allChips.length >= 2
+    ? `<span class="engine-why-chip engine-why-chip--overflow why-overflow-m">+${allChips.length - 1}</span>` : '';
 
   return `
     <div class="engine-card-rank-cell">
@@ -983,23 +995,29 @@ function buildCardHTML(item, index) {
     </div>
     <div class="engine-card-rec">
       <div class="engine-card-poster-wrap">
-        <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" onerror="handlePosterError(this, ${index});" />
+        <img class="engine-card-poster" id="engine-poster-${index}"
+          src="${m.poster && m.poster.startsWith('http') ? m.poster : ''}"
+          alt="${m.title}"
+          onerror="handlePosterError(this, ${index});" />
         ${unseenBadge}
       </div>
       <div class="engine-card-rec-content">
         <div class="engine-card-header">
-          <span class="engine-card-title">${m.title}</span>
+          <button class="engine-card-title-btn" onclick="showEngineSummary(${index})">${m.title}</button>
           <span class="engine-card-year">${m.year}</span>
         </div>
-        ${directorHtml}
-        <button class="engine-summary-link" onclick="showEngineSummary(${index})">Summary</button>
+        <div class="engine-card-snippet" id="engine-snippet-${index}">
+          <span class="engine-card-snippet-text"></span>
+        </div>
       </div>
     </div>
-    <div class="engine-card-score">
-      <div class="engine-adj-score">${adjScore}</div>
+    <div class="engine-card-director-cell">
+      ${m.director ? m.director : '<span class="engine-director-empty">\u2014</span>'}
     </div>
     <div class="engine-card-why">
-      <div class="engine-why-chips">${whyChips}</div>
+      <div class="engine-why-chips">
+        ${chipsHtml}${desktopOverflow}${mobileOverflow}
+      </div>
     </div>
     <div class="engine-card-actions">
       <button class="engine-btn-seen" onclick="handleSeenIt(${index})">Seen it</button>
@@ -1049,13 +1067,20 @@ async function handleSeenIt(index) {
     card.innerHTML = buildCardHTML(replacement, index);
     card.classList.add("engine-card-enter");
 
-    // Fetch poster for replacement (skip if already in JSON)
-    if (!replacement.movie.poster) {
-      fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+    // Fetch poster + snippet for replacement
+    const needsPoster = !replacement.movie.poster || !replacement.movie.poster.startsWith('http');
+    fetchMovieBasic(replacement.movie.title, replacement.movie.year).then(basic => {
+      if (needsPoster) {
         const img = document.getElementById(`engine-poster-${index}`);
-        if (img && url) img.src = url;
-      });
-    }
+        if (img && basic.posterUrl) img.src = basic.posterUrl;
+      }
+      const snippetEl = document.getElementById(`engine-snippet-${index}`);
+      if (snippetEl && basic.overview) {
+        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
+        const textEl = snippetEl.querySelector('.engine-card-snippet-text');
+        if (textEl) textEl.textContent = trunc;
+      }
+    }).catch(() => {});
 
     // Clean up animation class
     card.addEventListener("animationend", () => {
@@ -1109,12 +1134,19 @@ async function handleNotInterested(index) {
     card.innerHTML = buildCardHTML(replacement, index);
     card.classList.add("engine-card-enter");
 
-    if (!replacement.movie.poster) {
-      fetchPosterUrl(replacement.movie.title, replacement.movie.year).then(url => {
+    const needsPoster = !replacement.movie.poster || !replacement.movie.poster.startsWith('http');
+    fetchMovieBasic(replacement.movie.title, replacement.movie.year).then(basic => {
+      if (needsPoster) {
         const img = document.getElementById(`engine-poster-${index}`);
-        if (img && url) img.src = url;
-      });
-    }
+        if (img && basic.posterUrl) img.src = basic.posterUrl;
+      }
+      const snippetEl = document.getElementById(`engine-snippet-${index}`);
+      if (snippetEl && basic.overview) {
+        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
+        const textEl = snippetEl.querySelector('.engine-card-snippet-text');
+        if (textEl) textEl.textContent = trunc;
+      }
+    }).catch(() => {});
 
     card.addEventListener("animationend", () => {
       card.classList.remove("engine-card-enter");
@@ -1179,9 +1211,9 @@ function renderRecommendations(allScored) {
   overflowQueue = allScored.slice(DISPLAY_COUNT);
 
   const header = `<div class="engine-list-header">
-    <div class="engine-col-label--center">#</div>
+    <div></div>
     <div>Recommendation</div>
-    <div class="engine-col-label--center">Michael&nbsp;Adj.&nbsp;Score</div>
+    <div>Director</div>
     <div>Why</div>
     <div></div>
   </div>`;
@@ -1190,21 +1222,29 @@ function renderRecommendations(allScored) {
     return `<div class="engine-card" id="engine-card-${i}">${buildCardHTML(item, i)}</div>`;
   }).join("");
 
-  // Fetch posters from TMDB when the JSON poster field is absent
-  displayedItems.forEach((r, i) => {
-    if (!r.movie.poster) {
-      fetchPosterUrl(r.movie.title, r.movie.year).then(url => {
+  // Progressive snippet + poster loading via fetchMovieBasic (1 request per movie)
+  displayedItems.forEach(async (r, i) => {
+    const needsPoster = !r.movie.poster || !r.movie.poster.startsWith('http');
+    try {
+      const basic = await fetchMovieBasic(r.movie.title, r.movie.year);
+
+      // Update poster if missing from JSON
+      if (needsPoster) {
         const img = document.getElementById(`engine-poster-${i}`);
         if (img) {
-          if (url) {
-            img.src = url;
-          } else {
-            img.classList.add("engine-poster--broken");
-            console.warn(`[Poster] No result: ${getMovieKey(r.movie)}`);
-          }
+          if (basic.posterUrl) { img.src = basic.posterUrl; }
+          else { img.classList.add("engine-poster--broken"); console.warn(`[Poster] No result: ${getMovieKey(r.movie)}`); }
         }
-      });
-    }
+      }
+
+      // Populate snippet overview
+      const snippetEl = document.getElementById(`engine-snippet-${i}`);
+      if (snippetEl && basic.overview) {
+        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
+        const textEl = snippetEl.querySelector('.engine-card-snippet-text');
+        if (textEl) textEl.textContent = trunc;
+      }
+    } catch { /* silent fail */ }
   });
 }
 
