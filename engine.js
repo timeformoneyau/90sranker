@@ -80,6 +80,12 @@ let allRecommendations = [];
 let activeGenreFilter = null;
 let activeSortMode = "recommended";
 
+// Cache for TMDB movie info (shared with summary modal)
+const movieInfoCache = {};
+
+// Reason rotation counters — incremented per category to avoid consecutive repetition
+const reasonUseCounts = {};
+
 // ==========================================
 // UTILITY
 // ==========================================
@@ -133,6 +139,41 @@ async function fetchPosterUrl(title, year) {
   } catch {
     return null;
   }
+}
+
+async function fetchMovieInfo(title, year) {
+  const cacheKey = `${title.trim()}|${year}`;
+  if (movieInfoCache[cacheKey]) return movieInfoCache[cacheKey];
+
+  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
+  const searchRes = await fetch(searchUrl);
+  const searchData = await searchRes.json();
+  const movieId = searchData.results?.[0]?.id;
+  if (!movieId) throw new Error("Movie not found on TMDB");
+
+  const [detailRes, videosRes, creditsRes] = await Promise.all([
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`),
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`),
+    fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`)
+  ]);
+
+  const detail = await detailRes.json();
+  const videos = await videosRes.json();
+  const credits = await creditsRes.json();
+
+  const trailer = videos.results?.find(v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"));
+
+  const info = {
+    overview: detail.overview || null,
+    genres: (detail.genres || []).map(g => g.name),
+    runtime: detail.runtime || null,
+    rating: detail.vote_average || null,
+    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
+    cast: (credits.cast || []).slice(0, 5).map(c => c.name)
+  };
+
+  movieInfoCache[cacheKey] = info;
+  return info;
 }
 
 // ==========================================
@@ -398,37 +439,64 @@ function applyDiversitySelection(scoredItems, count) {
 // ==========================================
 
 function generateReason(item) {
+  const contributions = item.contributions || [];
   const hasCollabBoost = (item.communityBoost || 0) > 0.1;
-  const top = (item.contributions || [])[0];
+  const hasCommunityFloor = (item.communityScore || 0) > 0.04;
 
-  // Pure collaborative signal — no strong attribute match
-  if (hasCollabBoost && (!top || top.value <= 0)) {
-    return "Loved by voters with similar taste to yours";
+  // Find positive attribute contributions by type
+  const genreContrib  = contributions.find(c => c.key.startsWith("genre:")    && c.value > 0);
+  const dirContrib    = contributions.find(c => c.key.startsWith("director:") && c.value > 0);
+
+  const genre    = genreContrib ? genreContrib.key.split(":")[1]  : null;
+  const director = dirContrib   ? dirContrib.key.split(":")[1]    : null;
+
+  // Determine category — prefer director+genre combo when both are strong
+  let category;
+  if (dirContrib && genreContrib) {
+    category = "dirgenre";
+  } else if (dirContrib) {
+    category = "director";
+  } else if (genreContrib) {
+    category = "genre";
+  } else if (hasCollabBoost || hasCommunityFloor) {
+    category = "community";
+  } else {
+    category = "patterns";
   }
 
-  if (!top || top.value <= 0) return "A 90s classic worth checking out";
+  const banks = {
+    dirgenre: [
+      () => `A strong ${genre} match from ${director}.`,
+      () => `Combines your ${genre} preference with a favored director.`,
+      () => `This sits at the intersection of your strongest signals.`
+    ],
+    director: [
+      () => `You frequently reward films by ${director}.`,
+      () => `${director} ranks strongly in your history.`,
+      () => `Your votes consistently elevate ${director}.`
+    ],
+    genre: [
+      () => `You consistently reward ${genre} films.`,
+      () => `Your votes lean strongly toward ${genre}.`,
+      () => `${genre} performs well in your rankings.`,
+      () => `This aligns with your high-performing ${genre} picks.`
+    ],
+    community: [
+      () => `Strong personal fit with solid community backing.`,
+      () => `Your taste aligns with proven crowd strength.`,
+      () => `High personal alignment, supported by community voting.`
+    ],
+    patterns: [
+      () => `Similar films perform well in your rankings.`,
+      () => `Comparable picks trend upward for you.`,
+      () => `Your matchup history favors this profile.`
+    ]
+  };
 
-  const [type, value] = top.key.split(":");
-
-  // Build the attribute reason
-  let attrReason;
-  switch (type) {
-    case "genre":    attrReason = `Because you tend to prefer ${value.toLowerCase()} films`; break;
-    case "decade":   attrReason = `Matches your taste for ${value} era movies`; break;
-    case "tone":     attrReason = `Fits your preference for ${value} movies`; break;
-    case "category": attrReason = value === "cult"
-                       ? "Right up your alley \u2014 a cult favorite"
-                       : "A crowd-pleasing pick based on your votes"; break;
-    case "vibe":     attrReason = `Matches the ${value} vibe you gravitate toward`; break;
-    default:         attrReason = "Based on your voting history";
-  }
-
-  // Combine attribute reason with collaborative signal
-  if (hasCollabBoost) {
-    return `${attrReason} \u2014 and similar voters love it`;
-  }
-
-  return attrReason;
+  const bank = banks[category];
+  const count = reasonUseCounts[category] || 0;
+  reasonUseCounts[category] = count + 1;
+  return bank[count % bank.length]();
 }
 
 // ==========================================
@@ -784,28 +852,19 @@ function renderControls(allScored) {
 
   const genres = [...new Set(allScored.map(item => item.movie.genre).filter(Boolean))].sort();
 
-  const chipsEl = document.getElementById("engine-genre-chips");
-  if (chipsEl) {
-    chipsEl.innerHTML = "";
-    const allBtn = document.createElement("button");
-    allBtn.className = "engine-genre-chip active";
-    allBtn.dataset.genre = "all";
-    allBtn.textContent = "All";
-    chipsEl.appendChild(allBtn);
+  // Populate genre dropdown
+  const genreSelect = document.getElementById("engine-genre-select");
+  if (genreSelect) {
+    genreSelect.innerHTML = '<option value="all">All Genres</option>';
     genres.forEach(g => {
-      const btn = document.createElement("button");
-      btn.className = "engine-genre-chip";
-      btn.dataset.genre = g;
-      btn.textContent = g;
-      chipsEl.appendChild(btn);
+      const opt = document.createElement("option");
+      opt.value = g;
+      opt.textContent = g;
+      genreSelect.appendChild(opt);
     });
-    chipsEl.querySelectorAll(".engine-genre-chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        chipsEl.querySelectorAll(".engine-genre-chip").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        activeGenreFilter = btn.dataset.genre === "all" ? null : btn.dataset.genre;
-        applyFiltersAndSort();
-      });
+    genreSelect.addEventListener("change", () => {
+      activeGenreFilter = genreSelect.value === "all" ? null : genreSelect.value;
+      applyFiltersAndSort();
     });
   }
 
@@ -827,14 +886,15 @@ function applyFiltersAndSort() {
     filtered = filtered.filter(item => item.movie.genre === activeGenreFilter);
   }
 
-  if (activeSortMode === "community") {
+  if (activeSortMode === "adjusted") {
+    // Adjusted Score = community Wilson score, descending
     filtered.sort((a, b) => {
-      const rankA = communityRanks[getMovieKey(a.movie)]?.rank ?? 99999;
-      const rankB = communityRanks[getMovieKey(b.movie)]?.rank ?? 99999;
-      return rankA - rankB;
+      const scoreA = communityRanks[getMovieKey(a.movie)]?.score ?? 0;
+      const scoreB = communityRanks[getMovieKey(b.movie)]?.score ?? 0;
+      return scoreB - scoreA;
     });
-  } else if (activeSortMode === "foryou") {
-    // "For You" order = original recommendation rank (ascending matchRank = best first)
+  } else {
+    // "recommended" = engine order = original matchRank ascending (best first)
     filtered.sort((a, b) => (a.matchRank || 99999) - (b.matchRank || 99999));
   }
 
@@ -849,47 +909,41 @@ function buildCardHTML(item, index) {
   const m = item.movie;
   const key = getMovieKey(m);
   const isUnseen = unseenMovieKeys.has(key);
-  const vibeChips = m.vibes
-    ? m.vibes.split(",").slice(0, 2).map(v => `<span class="engine-tag">${v.trim()}</span>`).join("")
-    : "";
 
   const unseenBadge = isUnseen
     ? `<div class="engine-card-unseen-badge">Unwatched</div>`
     : "";
 
   const commData = communityRanks[key];
-  const commRankText = commData ? `#${commData.rank}` : "\u2014";
-  const commScoreText = commData ? `${Math.round(commData.score * 100)}%` : "";
-  const matchRankText = item.matchRank ? `#${item.matchRank}` : "";
+  const adjScore = commData ? `${Math.round(commData.score * 1000) / 10}%` : "\u2014";
+
+  const directorHtml = m.director
+    ? `<div class="engine-card-director">${m.director}</div>`
+    : "";
 
   return `
-    <div class="engine-card-poster-wrap">
-      <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" />
-      <div class="engine-card-rank">${index + 1}</div>
-      ${unseenBadge}
+    <div class="engine-card-rank-cell">
+      <div class="engine-rank-badge">${index + 1}</div>
     </div>
-    <div class="engine-card-title-block">
-      <div class="engine-card-header">
-        <span class="engine-card-title">${m.title}</span>
-        <span class="engine-card-year">${m.year}</span>
+    <div class="engine-card-rec">
+      <div class="engine-card-poster-wrap">
+        <img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster || ""}" alt="${m.title}" />
+        ${unseenBadge}
       </div>
-      <div class="engine-card-tags">
-        <span class="engine-tag engine-tag--genre">${m.genre || ""}</span>
-        ${m.tone ? `<span class="engine-tag">${m.tone}</span>` : ""}
-        ${vibeChips}
+      <div class="engine-card-rec-content">
+        <div class="engine-card-header">
+          <span class="engine-card-title">${m.title}</span>
+          <span class="engine-card-year">${m.year}</span>
+        </div>
+        ${directorHtml}
+        <button class="engine-summary-link" onclick="showEngineSummary(${index})">Summary</button>
       </div>
     </div>
-    <div class="engine-card-community">
-      <div class="engine-score-rank">${commRankText}</div>
-      ${commScoreText ? `<div class="engine-score-val">${commScoreText}</div>` : ""}
+    <div class="engine-card-score">
+      <div class="engine-adj-score">${adjScore}</div>
     </div>
-    <div class="engine-card-match">
-      ${matchRankText ? `<div class="engine-score-rank">${matchRankText}</div>` : ""}
-      <div class="engine-score-label">for&nbsp;you</div>
-    </div>
-    <div class="engine-card-reason-col">
-      <div class="engine-card-reason">\u201c${item.reason}\u201d</div>
-      ${m.blurb ? `<div class="engine-card-blurb">${m.blurb}</div>` : ""}
+    <div class="engine-card-why">
+      <div class="engine-card-reason">${item.reason}</div>
     </div>
     <div class="engine-card-actions">
       <button class="engine-btn-seen" onclick="handleSeenIt(${index})" title="Remove from recommendations">Seen it</button>
@@ -1036,7 +1090,7 @@ function renderTasteProfile(profile, voteCount) {
     return;
   }
 
-  let html = `<div class="engine-profile-header">Your Taste Profile <span class="engine-profile-votes">(${voteCount} votes)</span></div>`;
+  let html = `<div class="engine-profile-header">Your Taste Profile</div>`;
   html += '<div class="engine-profile-chips">';
 
   for (const item of profile.liked) {
@@ -1065,10 +1119,9 @@ function renderRecommendations(allScored) {
 
   const header = `<div class="engine-list-header">
     <div></div>
-    <div>Movie</div>
-    <div class="engine-col-label--center">Community</div>
-    <div class="engine-col-label--center">For You</div>
-    <div>Why Recommended</div>
+    <div>Recommendation</div>
+    <div class="engine-col-label--center">Adj.&nbsp;Score</div>
+    <div>Why</div>
     <div></div>
   </div>`;
 
@@ -1369,10 +1422,13 @@ async function loadEngine(user) {
     const data = await getRecommendationsForUser(user.uid);
 
     if (data.isSparse) {
-      renderStatus(`You\u2019ve cast ${data.voteCount} vote${data.voteCount !== 1 ? "s" : ""}. Vote more to sharpen these picks.`, true);
+      renderStatus("Keep voting to sharpen your picks.", true);
     } else {
-      renderStatus(`Based on ${data.voteCount} votes. The more you vote, the smarter this gets.`);
+      renderStatus("");
     }
+
+    // Reset reason rotation counters for a fresh render
+    Object.keys(reasonUseCounts).forEach(k => { reasonUseCounts[k] = 0; });
 
     computeRankMaps();
     data.allScored.forEach((item, i) => { item.matchRank = i + 1; });
@@ -1401,6 +1457,11 @@ window.addEventListener("load", () => {
     });
   });
 
+  // Close summary modal when clicking the backdrop
+  document.getElementById("engine-movie-info-modal")?.addEventListener("click", e => {
+    if (e.target.id === "engine-movie-info-modal") closeEngineSummary();
+  });
+
   onAuth(user => {
     if (user) {
       loadEngine(user);
@@ -1418,6 +1479,49 @@ window.addEventListener("load", () => {
   });
 });
 
+// ==========================================
+// UI — MOVIE SUMMARY MODAL
+// ==========================================
+
+async function showEngineSummary(index) {
+  const item = displayedItems[index];
+  if (!item) return;
+  const { movie } = item;
+
+  const modal = document.getElementById("engine-movie-info-modal");
+  const titleEl = document.getElementById("engine-info-modal-title");
+  const bodyEl = document.getElementById("engine-info-modal-body");
+
+  titleEl.textContent = `${movie.title} (${movie.year})`;
+  bodyEl.innerHTML = '<div class="info-modal-loading">Loading...</div>';
+  modal.classList.remove("hidden");
+
+  try {
+    const info = await fetchMovieInfo(movie.title, movie.year);
+    let html = `<p class="info-modal-overview">${info.overview || "No summary available."}</p>`;
+    html += '<div class="info-modal-meta">';
+    if (info.genres?.length) {
+      html += '<div class="info-modal-genres">';
+      info.genres.forEach(g => { html += `<span class="info-genre-tag">${g}</span>`; });
+      html += '</div>';
+    }
+    if (info.runtime) html += `<span class="info-modal-runtime">${info.runtime} min</span>`;
+    if (info.rating)  html += `<span class="info-modal-rating">\u2605 ${info.rating.toFixed(1)}</span>`;
+    html += '</div>';
+    if (info.cast?.length) html += `<div class="info-modal-cast">Cast: ${info.cast.join(", ")}</div>`;
+    if (info.trailerUrl) html += `<a href="${info.trailerUrl}" target="_blank" rel="noopener noreferrer" class="info-modal-trailer-btn">\u25b6 Watch Trailer</a>`;
+    bodyEl.innerHTML = html;
+  } catch {
+    bodyEl.innerHTML = '<p class="info-modal-error">Could not load movie info. Please try again.</p>';
+  }
+}
+
+function closeEngineSummary() {
+  document.getElementById("engine-movie-info-modal")?.classList.add("hidden");
+}
+
 // Expose for inline onclick handlers
 window.handleSeenIt = handleSeenIt;
 window.handleNotInterested = handleNotInterested;
+window.showEngineSummary = showEngineSummary;
+window.closeEngineSummary = closeEngineSummary;

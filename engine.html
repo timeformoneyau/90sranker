@@ -39,7 +39,10 @@
 
     <div class="engine-intro">
       <h1 class="engine-headline">Recommendations</h1>
-      <p class="engine-desc">Your personal picks, tuned to your taste. The more you vote, the smarter this gets.</p>
+      <p class="engine-desc">These recommendations are curated for you from your voting history — and they sharpen as you keep voting.</p>
+      <span class="engine-info-link" tabindex="0">How the Recommendation Engine works
+        <span class="engine-info-popover">Your votes build a taste signal over time. The Engine blends your wins and losses with director and genre affinities, applies your Not Interested exclusions, and incorporates light community voting to keep the list anchored to proven picks. The result is a ranked shortlist that should feel more "you" with every matchup.</span>
+      </span>
     </div>
 
     <!-- Tab Switcher -->
@@ -53,19 +56,20 @@
       <div class="engine-status" id="engine-status">Loading...</div>
       <div id="engine-profile"></div>
 
-      <!-- Filter + Sort controls (shown by JS once data loads) -->
+      <!-- Sort + Filter controls (shown by JS once data loads) -->
       <div class="engine-controls" id="engine-controls" style="display:none">
         <div class="engine-controls-row">
           <div class="engine-control-group">
-            <span class="engine-control-label">Genre</span>
-            <div class="engine-genre-chips" id="engine-genre-chips"></div>
+            <span class="engine-control-label">Sort by:</span>
+            <select class="engine-sort-select" id="engine-sort-select">
+              <option value="recommended">Recommendation</option>
+              <option value="adjusted">Adjusted Score</option>
+            </select>
           </div>
           <div class="engine-control-group">
-            <span class="engine-control-label">Sort</span>
-            <select class="engine-sort-select" id="engine-sort-select">
-              <option value="recommended">Recommended order</option>
-              <option value="community">Community Score ↑</option>
-              <option value="foryou">For You ↑</option>
+            <span class="engine-control-label">Genre:</span>
+            <select class="engine-genre-select" id="engine-genre-select">
+              <option value="all">All Genres</option>
             </select>
           </div>
         </div>
@@ -74,13 +78,6 @@
       <div class="engine-grid" id="engine-grid">
         <div class="engine-empty">Loading recommendations...</div>
       </div>
-      <details class="results-details" style="margin-top:var(--s-4)">
-        <summary>How recommendations work</summary>
-        <p><strong>Phase 1 — Your Taste:</strong> Every time you pick a winner, the engine learns which genres, tones, vibes, and eras you prefer.</p>
-        <p><strong>Phase 2 — Scoring:</strong> Every movie you haven't voted on is scored against your taste profile.</p>
-        <p><strong>Phase 3 — The Crowd:</strong> The engine finds similar voters and boosts movies they loved that you haven't seen yet.</p>
-        <p>With fewer than 10 votes, you'll see popular picks. Recommendations get more personal as your vote count grows.</p>
-      </details>
     </div>
 
     <!-- ===== INSIGHTS PANEL ===== -->
@@ -105,6 +102,19 @@
     </div>
 
     <a href="index.html" class="back-link">Back to voting</a>
+  </div>
+
+  <!-- Movie Info Modal (same component as home page) -->
+  <div id="engine-movie-info-modal" class="info-modal-backdrop hidden">
+    <div class="info-modal">
+      <div class="info-modal-header">
+        <h3 class="info-modal-title" id="engine-info-modal-title"></h3>
+        <button class="info-modal-close" onclick="closeEngineSummary()">&times;</button>
+      </div>
+      <div class="info-modal-body" id="engine-info-modal-body">
+        <div class="info-modal-loading">Loading...</div>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
