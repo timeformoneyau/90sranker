@@ -807,7 +807,7 @@ function computeDirectorAffinities(userStats, movieMap, globalStats) {
     if (!dirMap[movie.director]) dirMap[movie.director] = { wins: 0, losses: 0, films: [] };
     dirMap[movie.director].wins += w;
     dirMap[movie.director].losses += l;
-    dirMap[movie.director].films.push({ key, title: movie.title, year: movie.year, w, l });
+    dirMap[movie.director].films.push({ key, title: movie.title, year: movie.year, w, l, poster: movie.poster || null });
   }
 
   const results = [];
@@ -833,17 +833,12 @@ function computeDirectorAffinities(userStats, movieMap, globalStats) {
       winRate: Math.round(winRate * 100),
       filmCount: data.films.length,
       affinity,
-      topFilms: sortedFilms.slice(0, 3).map(f => ({ title: f.title, year: f.year }))
+      topFilms: sortedFilms.slice(0, 3).map(f => ({ title: f.title, year: f.year, poster: f.poster || null }))
     });
   }
 
   results.sort((a, b) => b.affinity - a.affinity);
   const top5 = results.slice(0, 5);
-  const maxAffinity = top5.length > 0 ? Math.max(...top5.map(d => d.affinity)) : 1;
-  top5.forEach(d => {
-    d.affinityNorm = maxAffinity > 0 ? Math.max(0, d.affinity / maxAffinity) : 0;
-    d.affinityDisplay = d.affinity.toFixed(2);
-  });
   return top5;
 }
 
@@ -1132,9 +1127,11 @@ async function handleSeenIt(index) {
       }
       const snippetEl = document.getElementById(`engine-snippet-${index}`);
       if (snippetEl && basic.overview) {
-        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
         const textEl = snippetEl.querySelector('.engine-card-snippet-text');
-        if (textEl) textEl.textContent = trunc;
+        if (textEl) {
+          textEl.textContent = basic.overview;
+          textEl.title = basic.overview;
+        }
       }
     }).catch(() => {});
 
@@ -1198,9 +1195,11 @@ async function handleNotInterested(index) {
       }
       const snippetEl = document.getElementById(`engine-snippet-${index}`);
       if (snippetEl && basic.overview) {
-        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
         const textEl = snippetEl.querySelector('.engine-card-snippet-text');
-        if (textEl) textEl.textContent = trunc;
+        if (textEl) {
+          textEl.textContent = basic.overview;
+          textEl.title = basic.overview;
+        }
       }
     }).catch(() => {});
 
@@ -1296,9 +1295,11 @@ function renderRecommendations(allScored) {
       // Populate snippet overview
       const snippetEl = document.getElementById(`engine-snippet-${i}`);
       if (snippetEl && basic.overview) {
-        const trunc = basic.overview.length > 95 ? basic.overview.slice(0, 95) + '\u2026' : basic.overview;
         const textEl = snippetEl.querySelector('.engine-card-snippet-text');
-        if (textEl) textEl.textContent = trunc;
+        if (textEl) {
+          textEl.textContent = basic.overview;
+          textEl.title = basic.overview;
+        }
       }
     } catch { /* silent fail */ }
   });
@@ -1540,45 +1541,37 @@ function renderDirectorAffinities(directors) {
     return;
   }
 
-  const listHtml = directors.map((d, i) => `
-    <div class="director-row${i >= 3 ? ' director-row--extra' : ''}">
-      <div class="director-rank">${i + 1}</div>
-      <div class="director-info">
-        <div class="director-name">${d.director}</div>
-        <div class="director-meta">${d.winRate}% win rate &middot; ${d.filmCount} film${d.filmCount !== 1 ? 's' : ''} rated</div>
-        <div class="director-films">${d.topFilms.map(f => `<span class="director-film">${f.title} (${f.year})</span>`).join('')}</div>
-      </div>
-    </div>`).join('');
+  const rows = directors.map((d, i) => {
+    const filmsHtml = d.topFilms.map(f => {
+      const hasPoster = f.poster && f.poster.startsWith('http');
+      const posterHtml = hasPoster
+        ? `<img class="dir-film-poster" src="${f.poster}" alt="" loading="lazy" onerror="this.style.display='none'">`
+        : '';
+      return `<span class="dir-film-item">${posterHtml}<span class="dir-film-title">${f.title} <span class="dir-film-year">(${f.year})</span></span></span>`;
+    }).join('');
 
-  const barsHtml = directors.map(d => `
-    <div class="director-bar-row">
-      <div class="director-bar-name">${d.director}</div>
-      <div class="director-bar-track">
-        <div class="director-bar-fill" style="width:${Math.round(d.affinityNorm * 100)}%"></div>
-      </div>
-      <div class="director-bar-value">${d.affinityDisplay}</div>
-    </div>`).join('');
-
-  const showAllBtn = directors.length > 3
-    ? `<button class="directors-show-all" id="directors-show-all-btn" onclick="toggleDirectorsExpand()">Show all ${directors.length} directors</button>`
-    : '';
+    return `
+      <div class="dir-table-row">
+        <div class="dir-cell dir-cell--rank"><div class="dir-rank-badge">${i + 1}</div></div>
+        <div class="dir-cell dir-cell--name">${d.director}</div>
+        <div class="dir-cell dir-cell--rate">${d.winRate}%</div>
+        <div class="dir-cell dir-cell--count">${d.filmCount}</div>
+        <div class="dir-cell dir-cell--films">${filmsHtml}</div>
+      </div>`;
+  }).join('');
 
   el.innerHTML = `
-    <div class="directors-layout">
-      <div class="directors-list">${listHtml}</div>
-      <div class="directors-bars">${barsHtml}</div>
-    </div>
-    ${showAllBtn}`;
+    <div class="dir-table">
+      <div class="dir-table-header">
+        <div class="dir-header-cell"></div>
+        <div class="dir-header-cell">Director</div>
+        <div class="dir-header-cell">Win Rate</div>
+        <div class="dir-header-cell">Films Rated</div>
+        <div class="dir-header-cell">Top Films</div>
+      </div>
+      ${rows}
+    </div>`;
 }
-
-function toggleDirectorsExpand() {
-  const list = document.querySelector('.directors-list');
-  const btn = document.getElementById('directors-show-all-btn');
-  if (!list || !btn) return;
-  const expanded = list.classList.toggle('directors-expanded');
-  btn.textContent = expanded ? 'Show fewer' : 'Show all 5 directors';
-}
-window.toggleDirectorsExpand = toggleDirectorsExpand;
 
 // ==========================================
 // UI — RENDER PROGRESS CARD
