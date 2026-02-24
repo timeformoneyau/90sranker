@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Design System | The Rewind Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/open-props" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    .ds-page { max-width: 900px; margin: 0 auto; padding: var(--s-8) var(--s-5) var(--s-10); }
+    .ds-hero { margin-bottom: var(--s-8); border-bottom: 1px solid var(--color-border); padding-bottom: var(--s-6); }
+    .ds-hero-label { font-size: var(--text-caption); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-2); margin-bottom: var(--s-2); }
+    .ds-hero-title { font-family: var(--font-display); font-size: var(--text-display); font-weight: var(--fw-black); color: var(--color-text-0); margin: 0 0 var(--s-3); }
+    .ds-hero-desc { font-size: var(--text-body); color: var(--color-text-1); max-width: 580px; line-height: 1.6; margin: 0; }
+    .ds-section { margin-bottom: var(--s-8); }
+    .ds-section-title { font-size: var(--text-section); font-weight: var(--fw-semibold); color: var(--color-text-0); margin: 0 0 var(--s-2); }
+    .ds-section-desc { font-size: var(--text-body); color: var(--color-text-1); margin: 0 0 var(--s-5); line-height: 1.6; }
+    .ds-table { width: 100%; border-collapse: collapse; border: 1px solid var(--color-border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: var(--s-4); }
+    .ds-table th { background: var(--color-bg-2); color: var(--color-text-1); font-size: var(--text-meta); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: 0.06em; padding: var(--s-3) var(--s-4); text-align: left; border-bottom: 2px solid var(--color-border); }
+    .ds-table td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--color-border); font-size: var(--text-body); color: var(--color-text-1); vertical-align: middle; }
+    .ds-table tbody tr:last-child td { border-bottom: none; }
+    .ds-table tbody tr:hover { background: rgba(212,162,74,0.025); }
+    .ds-token { font-family: 'Space Grotesk', monospace; font-size: var(--text-caption); background: var(--color-bg-2); border: 1px solid var(--color-border); border-radius: var(--r-sm); padding: 1px 6px; color: var(--color-accent); white-space: nowrap; }
+    .ds-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1); vertical-align: middle; margin-right: 6px; }
+    .ds-type-specimen { padding: var(--s-2) 0; }
+    .ds-weight-tag { font-size: var(--text-caption); color: var(--color-text-2); margin-left: var(--s-2); }
+    .ds-rule { border: none; border-top: 1px solid var(--color-border); margin: var(--s-6) 0; }
+    .ds-pattern-card { background: var(--color-bg-1); border: 1px solid var(--color-border); border-radius: var(--r-lg); padding: var(--s-5); margin-bottom: var(--s-4); }
+    .ds-pattern-label { font-size: var(--text-caption); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-2); margin-bottom: var(--s-3); }
+    .ds-contract-row { display: flex; gap: var(--s-3); align-items: baseline; padding: var(--s-2) 0; border-bottom: 1px solid var(--color-border); }
+    .ds-contract-row:last-child { border-bottom: none; }
+    .ds-contract-el { width: 120px; flex-shrink: 0; font-size: var(--text-meta); color: var(--color-text-2); }
+    .ds-contract-val { font-size: var(--text-body); color: var(--color-text-1); }
+    .ds-statement { background: var(--color-bg-2); border-left: 3px solid var(--color-accent); border-radius: 0 var(--r-md) var(--r-md) 0; padding: var(--s-4) var(--s-5); font-size: var(--text-body); color: var(--color-text-1); line-height: 1.6; margin-bottom: var(--s-6); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="account-indicator" id="account-indicator"></div>
+    <div class="site-title-row">
+      <div class="site-title">THE REWIND ROOM</div>
+      <svg class="site-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon points="24,6 4,24 24,42" fill="var(--color-indigo)"/>
+        <polygon points="44,6 24,24 44,42" fill="var(--color-indigo)"/>
+      </svg>
+    </div>
+  </header>
+
+  <nav class="nav-bar">
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="list.html">Voting Results</a></li>
+      <li><a href="engine.html">Recommendations</a></li>
+      <li><a href="the-crowd.html">The Crowd</a></li>
+      <li id="admin-nav-link" style="display:none"><a href="coverage.html">Admin</a></li>
+    </ul>
+    <div id="login-status"></div>
+  </nav>
+
+  <div class="ds-page">
+
+    <div class="ds-hero">
+      <div class="ds-hero-label">Internal Reference</div>
+      <h1 class="ds-hero-title">Design System</h1>
+      <p class="ds-hero-desc">
+        Visual language, type scale, color usage rules, and component contracts for The Rewind Room.
+        Theme: <em>Dark Living Room / TV Glow</em> — warm dark room, ambient screen glow, lamplight amber.
+        Movie posters are the color; everything else is atmosphere.
+      </p>
+    </div>
+
+    <!-- UI PATTERN STATEMENT -->
+    <div class="ds-section">
+      <h2 class="ds-section-title">UI Pattern Statement</h2>
+      <div class="ds-statement">
+        List rows and matchup cards are the dominant UI pattern. Tables are reserved for dense data views.
+        The primary interaction surface is the pairwise comparison — two posters, one choice.
+        All supporting UI (rankings, recommendations, stats) uses this vocabulary: rows, cards, and data tables.
+      </div>
+    </div>
+
+    <hr class="ds-rule">
+
+    <!-- TYPOGRAPHY SCALE -->
+    <div class="ds-section">
+      <h2 class="ds-section-title">Typography Scale</h2>
+      <p class="ds-section-desc">
+        <strong style="color:var(--color-text-0)">UI font:</strong> Inter (weights 400–700) — used for all UI text.<br>
+        <strong style="color:var(--color-text-0)">Display font:</strong> Space Grotesk 900 — exclusive to the main site title "THE REWIND ROOM".
+      </p>
+
+      <table class="ds-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Size</th>
+            <th>Weight</th>
+            <th>Use</th>
+            <th>Specimen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ds-token">--text-display</span></td>
+            <td>32px</td>
+            <td>600</td>
+            <td>Page headlines, hero headings</td>
+            <td class="ds-type-specimen" style="font-size:32px;font-weight:600;color:var(--color-text-0);line-height:1.1">Headline</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-page</span></td>
+            <td>24px</td>
+            <td>600</td>
+            <td>Page-level section titles</td>
+            <td class="ds-type-specimen" style="font-size:24px;font-weight:600;color:var(--color-text-0);line-height:1.2">Page Title</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-section</span></td>
+            <td>18px</td>
+            <td>600</td>
+            <td>Section headings within a page</td>
+            <td class="ds-type-specimen" style="font-size:18px;font-weight:600;color:var(--color-text-0)">Section Heading</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-title</span></td>
+            <td>17px</td>
+            <td>600</td>
+            <td>Movie titles, card headings, row titles</td>
+            <td class="ds-type-specimen" style="font-size:17px;font-weight:600;color:var(--color-text-0)">Pulp Fiction</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-subtitle</span></td>
+            <td>14px</td>
+            <td>500</td>
+            <td>Director, year, card subtitles</td>
+            <td class="ds-type-specimen" style="font-size:14px;font-weight:500;color:var(--color-text-1)">Quentin Tarantino</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-body</span></td>
+            <td>14px</td>
+            <td>400</td>
+            <td>Body copy, table cells, descriptions</td>
+            <td class="ds-type-specimen" style="font-size:14px;font-weight:400;color:var(--color-text-1)">A gangster film told in non-linear order.</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-meta</span></td>
+            <td>13px</td>
+            <td>400</td>
+            <td>Table headers, labels, tags, secondary info</td>
+            <td class="ds-type-specimen" style="font-size:13px;font-weight:400;color:var(--color-text-2)">Win Rate · 142 matchups</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-caption</span></td>
+            <td>12px</td>
+            <td>400</td>
+            <td>Timestamps, tooltips, supporting captions</td>
+            <td class="ds-type-specimen" style="font-size:12px;font-weight:400;color:var(--color-text-2)">1994 · Crime · Drama</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--text-button</span></td>
+            <td>14px</td>
+            <td>600</td>
+            <td>All button labels</td>
+            <td class="ds-type-specimen" style="font-size:14px;font-weight:600;color:var(--color-text-0)">Select Winner</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="ds-section-desc" style="font-size:var(--text-meta);margin-top:var(--s-2)">
+        Weight rules: Display/Page/Section/Title/Button → 600 &nbsp;·&nbsp; Subtitle → 500 &nbsp;·&nbsp; Body/Meta/Caption → 400
+      </p>
+    </div>
+
+    <hr class="ds-rule">
+
+    <!-- COLOR USAGE -->
+    <div class="ds-section">
+      <h2 class="ds-section-title">Color Usage Rules</h2>
+      <p class="ds-section-desc">Tokens are defined in <code style="font-size:var(--text-caption);background:var(--color-bg-2);padding:1px 5px;border-radius:3px">style.css :root</code>. Apply by semantic role, not by aesthetic preference.</p>
+
+      <table class="ds-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Value</th>
+            <th>Role</th>
+            <th>Use on</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ds-token">--color-text-0</span></td>
+            <td><span class="ds-swatch" style="background:#e6e2d9"></span>#e6e2d9</td>
+            <td>Primary text</td>
+            <td>Titles, headings, active labels</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-text-1</span></td>
+            <td><span class="ds-swatch" style="background:#b0a898"></span>#b0a898</td>
+            <td>Body text</td>
+            <td>Body copy, subtitles, table cells</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-text-2</span></td>
+            <td><span class="ds-swatch" style="background:#6b6560"></span>#6b6560</td>
+            <td>Secondary / meta</td>
+            <td>Labels, captions, timestamps, placeholder text</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-text-3</span></td>
+            <td><span class="ds-swatch" style="background:#4a4540"></span>#4a4540</td>
+            <td>Disabled / ghost</td>
+            <td>Inactive elements, skeleton text</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-accent</span></td>
+            <td><span class="ds-swatch" style="background:#d4a24a"></span>#d4a24a</td>
+            <td>Highlight accent</td>
+            <td>Years, rank numbers, decorative highlights only</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-indigo</span></td>
+            <td><span class="ds-swatch" style="background:#4a6cf7"></span>#4a6cf7</td>
+            <td>Interaction</td>
+            <td>Hover states, focus rings, active nav, links</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-bg-0</span></td>
+            <td><span class="ds-swatch" style="background:#0e1319"></span>#0e1319</td>
+            <td>Page background</td>
+            <td>Base canvas, deepest background</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-bg-1</span></td>
+            <td><span class="ds-swatch" style="background:#141a28"></span>#141a28</td>
+            <td>Surface</td>
+            <td>Card backgrounds, header, panels</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-bg-2</span></td>
+            <td><span class="ds-swatch" style="background:#1b2333"></span>#1b2333</td>
+            <td>Raised surface</td>
+            <td>Table headers, dropdowns, inset areas</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-success</span></td>
+            <td><span class="ds-swatch" style="background:#22c55e"></span>#22c55e</td>
+            <td>Positive signal</td>
+            <td>High win rate, confirmed actions</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--color-error</span></td>
+            <td><span class="ds-swatch" style="background:#ef4444"></span>#ef4444</td>
+            <td>Negative signal</td>
+            <td>Low win rate, errors, destructive actions</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="ds-pattern-card" style="margin-top:var(--s-2)">
+        <div class="ds-pattern-label">Color Rules</div>
+        <ul style="margin:0;padding-left:var(--s-5);font-size:var(--text-body);color:var(--color-text-1);line-height:1.8">
+          <li><span class="ds-token">--color-text-0</span> only for titles and headings</li>
+          <li><span class="ds-token">--color-text-1</span> for body text and subtitles</li>
+          <li><span class="ds-token">--color-text-2</span> for secondary info and meta</li>
+          <li><span class="ds-token">--color-accent</span> only for rank numbers, years, and decorative highlights</li>
+          <li><span class="ds-token">--color-indigo</span> only for interactive states — hover, focus, active</li>
+          <li>No neon gradients on structural UI (header, nav bar, borders)</li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="ds-rule">
+
+    <!-- COMPONENT CONTRACTS -->
+    <div class="ds-section">
+      <h2 class="ds-section-title">Component Contracts</h2>
+      <p class="ds-section-desc">These are binding contracts. Deviating from these sizes/weights breaks the visual hierarchy.</p>
+
+      <!-- Movie Rows -->
+      <div class="ds-pattern-card">
+        <div class="ds-pattern-label">Movie Rows &amp; Matchup Cards</div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Title</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-title</span> (17px) · weight 600 · <span class="ds-token">--color-text-0</span></div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Director / year</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-subtitle</span> (14px) · weight 500 · <span class="ds-token">--color-text-1</span> &nbsp; year uses <span class="ds-token">--color-accent</span></div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Summary</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-body</span> (14px) · weight 400 · <span class="ds-token">--color-text-1</span> · max 4 lines</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Tags / chips</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-meta</span> (13px) · weight 600 · role-specific color</div>
+        </div>
+      </div>
+
+      <!-- Tables -->
+      <div class="ds-pattern-card">
+        <div class="ds-pattern-label">Tables (dense data views)</div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Header</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-meta</span> (13px) · weight 600 · <span class="ds-token">--color-text-1</span> · uppercase + letter-spacing</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Body cells</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-body</span> (14px) · weight 400</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Secondary cells</div>
+          <div class="ds-contract-val"><span class="ds-token">--color-text-2</span> — for rank, metadata, supporting values</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Score / highlight</div>
+          <div class="ds-contract-val">weight 600 · <span class="ds-token">--color-accent</span> — for adjusted score column</div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="ds-pattern-card">
+        <div class="ds-pattern-label">Buttons</div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">All buttons</div>
+          <div class="ds-contract-val"><span class="ds-token">--text-button</span> (14px) · weight 600 · no uppercase · no letter-spacing</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Primary (SELECT)</div>
+          <div class="ds-contract-val">Amber gradient · dark text · weight 600</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Destructive (Skip)</div>
+          <div class="ds-contract-val">Burgundy gradient · light text · weight 600</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Secondary</div>
+          <div class="ds-contract-val">Translucent surface · <span class="ds-token">--color-text-1</span> · weight 600</div>
+        </div>
+        <div class="ds-contract-row">
+          <div class="ds-contract-el">Ghost / link</div>
+          <div class="ds-contract-val">No background · <span class="ds-token">--color-indigo</span> · weight 600</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="ds-rule">
+
+    <!-- FONT STACKS -->
+    <div class="ds-section">
+      <h2 class="ds-section-title">Font Stacks</h2>
+      <table class="ds-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Stack</th>
+            <th>Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ds-token">--font-display</span></td>
+            <td>Space Grotesk, -apple-system, BlinkMacSystemFont, sans-serif</td>
+            <td>Main site title only — "THE REWIND ROOM"</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--font-ui</span></td>
+            <td>Inter, system-ui, -apple-system, sans-serif</td>
+            <td>All UI text — body, labels, buttons, tables</td>
+          </tr>
+          <tr>
+            <td><span class="ds-token">--font-serif</span></td>
+            <td>Playfair Display, Georgia, Times New Roman, serif</td>
+            <td>Reserved for editorial / pull-quote use</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <a href="index.html" class="back-link">Back to Home</a>
+  </div>
+
+  <script type="module" src="loginStatus.js"></script>
+</body>
+</html>
