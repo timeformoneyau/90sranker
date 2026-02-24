@@ -516,7 +516,7 @@ function renderWorstMovies(allRows) {
 
   if (eligible.length === 0) {
     section.style.display = "";
-    tbody.innerHTML = '<tr><td colspan="5" class="results-empty">Vote more to reveal your worst movies (min 5 matchups each).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="results-empty">Vote more to reveal your worst movies (min 5 matchups each).</td></tr>';
     cards.innerHTML = '<div class="results-empty">Vote more to reveal your worst movies.</div>';
     return;
   }
@@ -551,7 +551,6 @@ function renderWorstMovies(allRows) {
       <td class="col-rank">${i + 1}</td>
       <td class="col-movie">${movieCellHTML(m.title, m.year, m.key)}</td>
       <td class="col-num">${m.wins}W – ${m.losses}L</td>
-      <td class="col-num ${pctClass}">${m.winPct.toFixed(1)}%</td>
       <td class="col-num">${communityHTML}</td>
     `;
     tbody.appendChild(tr);
@@ -577,7 +576,6 @@ function renderWorstMovies(allRows) {
         <div class="result-card-title">${m.title} ${m.year ? `<span class="movie-yr">${m.year}</span>` : ""}</div>
         <div class="result-card-stats">
           <span>${m.wins}W – ${m.losses}L</span>
-          <span class="${pctClass}">${m.winPct.toFixed(1)}%</span>
           ${communityText ? `<span>${communityText}</span>` : ""}
         </div>
       </div>

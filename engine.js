@@ -1562,13 +1562,10 @@ function renderDirectorAffinities(directors) {
   }
 
   const rows = directors.map((d, i) => {
-    const filmsHtml = d.topFilms.map(f => {
-      const hasPoster = f.poster && f.poster.startsWith('http');
-      const posterHtml = hasPoster
-        ? `<img class="dir-film-poster" src="${f.poster}" alt="" loading="lazy" onerror="this.style.display='none'">`
-        : '';
-      return `<span class="dir-film-item">${posterHtml}<span class="dir-film-title">${f.title} <span class="dir-film-year">(${f.year})</span></span></span>`;
-    }).join('');
+    // Text-only top films — no poster thumbnails (unreliable)
+    const filmsHtml = d.topFilms.map(f =>
+      `<span class="dir-film-item"><span class="dir-film-title">${f.title} <span class="dir-film-year">(${f.year})</span></span></span>`
+    ).join('');
 
     return `
       <div class="dir-table-row">
@@ -1586,7 +1583,7 @@ function renderDirectorAffinities(directors) {
         <div class="dir-header-cell"></div>
         <div class="dir-header-cell">Director</div>
         <div class="dir-header-cell">Win Rate</div>
-        <div class="dir-header-cell">Films Rated</div>
+        <div class="dir-header-cell">Rated</div>
         <div class="dir-header-cell">Top Films</div>
       </div>
       ${rows}
