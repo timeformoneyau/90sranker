@@ -3349,8 +3349,11 @@ tbody tr:last-child td { border-bottom: none; }
     min-height: 36px;
   }
 
-  /* A) Header: tighter vertical padding on small screens */
+  /* A) Header: flex column so account indicator can be reordered below title */
   .site-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding-top: var(--s-4);
     padding-bottom: var(--s-3);
   }
@@ -3358,6 +3361,40 @@ tbody tr:last-child td { border-bottom: none; }
   .site-logo {
     width: 28px;
     height: 28px;
+  }
+
+  /* Title row stays first */
+  .site-title-row {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Account indicator: below title, one row — username left, logout right */
+  .account-indicator {
+    order: 2;
+    position: static;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--s-2) var(--s-3) 0;
+    margin-top: var(--s-1);
+    text-align: left;
+    font-size: 0.75rem;
+  }
+
+  .account-indicator:empty {
+    display: none;
+  }
+
+  .account-indicator-name {
+    font-size: 0.75rem;
+  }
+
+  .account-indicator-logout {
+    font-size: 0.72rem;
+    color: var(--color-text-1);
   }
 }
 
