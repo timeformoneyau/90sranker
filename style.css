@@ -2820,6 +2820,14 @@ tbody tr:last-child td { border-bottom: none; }
   border: 1px solid var(--color-border);
 }
 
+/* Overflow "+N" chip — hidden on desktop, shown on mobile via media query */
+.engine-badge--overflow {
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-1);
+  border: 1px solid var(--color-border);
+}
+
 /* Mobile-only "Details" expand button — triggers bottom sheet */
 .rec-expand-btn {
   display: none;
@@ -3007,47 +3015,150 @@ tbody tr:last-child td { border-bottom: none; }
   }
 }
 
-/* Responsive — mobile: 2-column stack, show Details button, clamp snippet */
+/* ================================================================
+   MOBILE ENGINE (≤599px) — 3-column card grid, compact controls
+   ================================================================ */
 @media (max-width: 599px) {
+
+  /* B) Controls: compact single row — labels hidden, selects fill space */
+  .engine-controls-row {
+    flex-wrap: nowrap;
+    gap: var(--s-2);
+    align-items: center;
+  }
+
+  .engine-controls-left {
+    flex: 1;
+    flex-wrap: nowrap;
+    gap: var(--s-2);
+    min-width: 0;
+  }
+
+  .engine-control-group {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  /* Hide "Sort by:" / "Genre:" labels — selects are self-explanatory */
+  .engine-control-label {
+    display: none;
+  }
+
+  .engine-sort-select,
+  .engine-genre-select {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.75rem;
+    padding: 5px var(--s-2);
+  }
+
+  /* "How it works" → ⓘ icon only */
+  .engine-infobox--inline {
+    padding: var(--s-1) var(--s-2);
+    flex-shrink: 0;
+    margin-top: 0;
+  }
+
+  .engine-infobox--inline .engine-infobox-label {
+    display: none;
+  }
+
+  /* C) Card: 3-col grid — rank | poster | content, actions below poster+content */
   .engine-card {
-    grid-template-columns: 28px 1fr;
+    grid-template-columns: 20px 44px 1fr;
     grid-template-areas:
-      "rank rec"
-      ".    actions";
+      "rank poster content"
+      ".    actions actions";
     column-gap: var(--s-2);
-    row-gap: var(--s-3);
-    padding: var(--s-3) var(--s-4);
+    row-gap: var(--s-2);
+    padding: var(--s-3) var(--s-3);
+    align-items: start;
   }
 
-  .engine-card-snippet-text {
-    -webkit-line-clamp: 1;
+  /* Dissolve .engine-card-rec so poster-wrap and rec-content become direct grid items */
+  .engine-card-rec {
+    display: contents;
   }
 
-  /* Show Details button on mobile */
+  /* C2) Poster: its own grid area, top-aligned */
+  .engine-card-poster-wrap {
+    grid-area: poster;
+    width: 44px;
+    align-self: start;
+  }
+
+  /* C2) Content: title + director + Details → + badges */
+  .engine-card-rec-content {
+    grid-area: content;
+    gap: 2px;
+    padding-top: 0;
+  }
+
+  /* C2) Title: slightly smaller on mobile */
+  .engine-card-title-btn {
+    font-size: 0.875rem;
+  }
+
+  /* C2) Director: muted but readable (text-1, not invisible text-2) */
+  .engine-card-director {
+    color: var(--color-text-1);
+    font-size: 0.75rem;
+  }
+
+  /* C3) No inline snippet — Details → handles this */
+  .engine-card-snippet {
+    display: none;
+  }
+
+  /* C3) Details → link: compact, indigo */
   .rec-expand-btn {
+    display: inline-block;
+    font-size: 0.72rem;
+    margin-top: 3px;
+  }
+
+  /* C4) Badges: smaller chips, max 2 shown inline; 3+ become +N */
+  .engine-card-badges {
+    margin-top: 4px;
+    gap: 4px;
+  }
+
+  .engine-badge {
+    padding: 2px 7px;
+    font-size: 0.65rem;
+  }
+
+  .engine-badge--mobile-hidden {
+    display: none;
+  }
+
+  .engine-badge--overflow {
     display: inline-block;
   }
 
-  /* Actions side by side on mobile */
+  /* C5) Actions: compact 50/50 row */
   .engine-card-actions {
+    grid-area: actions;
     flex-direction: row;
     gap: var(--s-2);
+    align-self: start;
+    padding-top: var(--s-1);
   }
 
   .engine-btn-seen,
   .engine-btn-not-interested {
     flex: 1;
-    font-size: 0.75rem;
-    padding: 9px var(--s-2);
+    font-size: 0.72rem;
+    padding: 6px 4px;
+    white-space: nowrap;
   }
 
+  /* Rank badge: slightly smaller */
   .engine-rank-badge {
     width: 20px;
     font-size: 0.75rem;
-  }
-
-  .engine-card-poster-wrap {
-    width: 44px;
+    padding-top: 2px;
   }
 
   .engine-headline {
@@ -3206,6 +3317,47 @@ tbody tr:last-child td { border-bottom: none; }
   /* Home instruction readable on small screens */
   .home-intro-desc {
     font-size: var(--fs-2);
+  }
+}
+
+/* ================================================================
+   GLOBAL MOBILE — ≤599px
+   A) Nav: single-row horizontal scroll (no wrap)
+   A) Header: tighter padding so content starts higher
+   ================================================================ */
+@media (max-width: 599px) {
+
+  /* A) Nav: prevent wrapping — scroll horizontally */
+  .nav-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links li a {
+    white-space: nowrap;
+    font-size: 0.68rem;
+    padding: var(--s-1) var(--s-2);
+    min-height: 36px;
+  }
+
+  /* A) Header: tighter vertical padding on small screens */
+  .site-header {
+    padding-top: var(--s-4);
+    padding-bottom: var(--s-3);
+  }
+
+  .site-logo {
+    width: 28px;
+    height: 28px;
   }
 }
 

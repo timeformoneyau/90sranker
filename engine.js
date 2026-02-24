@@ -1063,9 +1063,10 @@ function buildCardHTML(item, index) {
     : "";
 
   const badges = buildBadges(item);
-  const badgesHtml = badges.map(b =>
-    `<span class="engine-badge engine-badge--${b.cls}">${b.label}</span>`
-  ).join("");
+  const overflowCount = Math.max(0, badges.length - 2);
+  const badgesHtml = badges.map((b, i) =>
+    `<span class="engine-badge engine-badge--${b.cls}${i >= 2 ? ' engine-badge--mobile-hidden' : ''}">${b.label}</span>`
+  ).join('') + (overflowCount > 0 ? `<span class="engine-badge engine-badge--overflow">+${overflowCount}</span>` : '');
 
   return `
     <div class="engine-card-rank-cell">
