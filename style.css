@@ -39,6 +39,9 @@
   --color-indigo-dim: rgba(74, 108, 247, 0.3);
   --color-indigo-glow: rgba(74, 108, 247, 0.08);
 
+  /* Tab / nav inactive — lighter steel-blue; readable on dark bg, distinct from active indigo */
+  --color-tab-inactive: #7ba8f0;
+
   /* Burgundy / oxblood — cinema curtain tension */
   --color-burgundy: #5c3a3a;
   --color-burgundy-light: #6e4848;
@@ -366,7 +369,7 @@ p { margin: 0 0 var(--s-4); color: var(--color-text-1); }
   justify-content: center;
   min-height: var(--tap-min);
   padding: var(--s-2) var(--s-3);
-  color: var(--color-text-0);
+  color: var(--color-tab-inactive);
   font-weight: var(--fw-semibold);
   font-size: var(--text-caption);
   letter-spacing: 0.06em;
@@ -1474,7 +1477,7 @@ tbody tr:last-child td { border-bottom: none; }
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
-  color: var(--color-text-1);
+  color: var(--color-tab-inactive);
   font-family: inherit;
   font-size: var(--text-subtitle);
   font-weight: var(--fw-semibold);
@@ -1938,14 +1941,32 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 @media (max-width: 767px) {
+  /* Filter bar: Sort + Genre side by side; Search spans full width below */
   .unseen-controls-row {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-2);
+    align-items: center;
+  }
+
+  .unseen-search {
+    grid-column: 1 / -1;
+  }
+
+  /* Hide labels — placeholder text + first option serve as labels */
+  .unseen-sort-label {
+    display: none;
+  }
+
+  .unseen-sort-select {
+    width: 100%;
+    font-size: 0.75rem;
   }
 
   .unseen-search-input {
     min-width: 0;
     width: 100%;
+    font-size: 0.75rem;
   }
 }
 
@@ -2199,13 +2220,32 @@ tbody tr:last-child td { border-bottom: none; }
     font-size: 0.65rem;
   }
 
+  /* Filter bar: 2-col grid — dropdowns side-by-side, search spans full width */
   .results-controls-row {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--s-2);
+    align-items: end;
   }
 
   .control-group--search {
-    min-width: 100%;
+    grid-column: 1 / -1;
+    min-width: 0;
+    flex: unset;
+  }
+
+  /* Controls fill their grid cell at unified height */
+  .control-group select,
+  .control-group input[type="text"] {
+    width: 100%;
+    height: var(--control-h);
+    font-size: 0.75rem;
+    padding: 0 var(--s-2);
+  }
+
+  /* Hide small uppercase labels on mobile — selected option text serves as label */
+  .control-group label {
+    display: none;
   }
 
   .results-headline {
