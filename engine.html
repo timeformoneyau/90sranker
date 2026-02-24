@@ -127,6 +127,16 @@
     </div>
   </div>
 
+  <!-- Mobile Bottom Sheet (details + actions for mobile tap) -->
+  <div id="rec-sheet-backdrop" class="rec-sheet-backdrop" style="display:none" onclick="closeMobileSheet()"></div>
+  <div id="rec-sheet" class="rec-sheet" style="display:none">
+    <div class="rec-sheet-handle"></div>
+    <button class="rec-sheet-close" onclick="closeMobileSheet()" aria-label="Close">&times;</button>
+    <div id="rec-sheet-header"></div>
+    <div id="rec-sheet-body"></div>
+    <div id="rec-sheet-actions" class="rec-sheet-actions"></div>
+  </div>
+
   <!-- Scripts -->
   <script type="module" src="auth.js"></script>
   <script type="module" src="engine.js"></script>

@@ -969,56 +969,71 @@ function applyFiltersAndSort() {
 // UI — RENDER SINGLE CARD
 // ==========================================
 
-// Build WHY chips for a recommendation item based on its scoring signals
-function buildWhyChips(item) {
-  const chips = [];
+// Build signal badges for a recommendation — always returns ≥2 badges
+function buildBadges(item) {
+  const m = item.movie;
   const contributions = item.contributions || [];
-  const hasCollabBoost  = (item.communityBoost  || 0) > 0.1;
-  const hasCommunityFloor = (item.communityScore || 0) > 0.04;
+  const hasCollabBoost    = (item.communityBoost  || 0) > 0.1;
+  const hasCommunityFloor = (item.communityScore  || 0) > 0.04;
 
   const dirContrib   = contributions.find(c => c.key.startsWith("director:") && c.value > 0);
   const genreContrib = contributions.find(c => c.key.startsWith("genre:")    && c.value > 0);
-  const vibeOrTone   = contributions.find(c =>
-    (c.key.startsWith("vibe:") || c.key.startsWith("tone:") || c.key.startsWith("decade:")) && c.value > 0
-  );
+  const vibeContrib  = contributions.find(c => c.key.startsWith("vibe:")     && c.value > 0);
+  const toneContrib  = contributions.find(c => c.key.startsWith("tone:")     && c.value > 0);
 
+  const badges = [];
+
+  // 1. Genre — always first if available
+  const genre = (genreContrib ? genreContrib.key.split(":")[1] : null) || m.genre || null;
+  if (genre) badges.push({ label: genre, cls: "genre" });
+
+  // 2. Director — if it was a positive scoring signal, show last name
   if (dirContrib) {
     const director = dirContrib.key.split(":")[1];
-    chips.push({ label: `Favored director: ${director}`, cls: "director" });
+    const lastName = director.split(" ").pop();
+    badges.push({ label: `${lastName} pick`, cls: "director" });
   }
-  if (genreContrib) {
-    const genre = genreContrib.key.split(":")[1];
-    chips.push({ label: `Top genre: ${genre}`, cls: "genre" });
-  } else if (vibeOrTone) {
-    chips.push({ label: "Genre fit", cls: "genre" });
+
+  // 3. Tone — from contribution or movie field
+  const tone = (toneContrib ? toneContrib.key.split(":")[1] : null) || m.tone || null;
+  if (tone && badges.length < 4) {
+    badges.push({ label: tone.charAt(0).toUpperCase() + tone.slice(1), cls: "tone" });
   }
-  if (hasCollabBoost) {
-    chips.push({ label: "Similar voters", cls: "collab" });
+
+  // 4. Vibe — from contribution or movie field (first vibe only); skip if tone already shown
+  if (!tone && badges.length < 4) {
+    const vibeRaw = (vibeContrib ? vibeContrib.key.split(":")[1] : null) ||
+                    (m.vibes ? m.vibes.split(",")[0].trim() : null);
+    if (vibeRaw) {
+      badges.push({ label: vibeRaw.charAt(0).toUpperCase() + vibeRaw.slice(1), cls: "vibe" });
+    }
   }
-  if (hasCommunityFloor && chips.length < 3) {
-    chips.push({ label: "Community floor", cls: "community" });
+
+  // 5. Community signal
+  if (badges.length < 4) {
+    if (hasCollabBoost) {
+      badges.push({ label: "People like you", cls: "community" });
+    } else if (hasCommunityFloor) {
+      badges.push({ label: "Community pick", cls: "community" });
+    }
   }
-  if (chips.length === 0) {
-    chips.push({ label: "Strong personal signal", cls: "general" });
+
+  // 6. Decade — fallback to guarantee ≥2 badges
+  if (badges.length < 2) {
+    const yr = parseInt(m.year);
+    const decade = yr >= 1990 && yr <= 1994 ? "Early 90s" : yr >= 1995 ? "Late 90s" : null;
+    if (decade) badges.push({ label: decade, cls: "decade" });
   }
-  return chips.slice(0, 3);
+
+  // 7. Last resort
+  if (badges.length < 2) badges.push({ label: "Strong match", cls: "general" });
+
+  return badges.slice(0, 4);
 }
 
-function handlePosterError(imgEl, index) {
-  const item = displayedItems[index];
-  if (!item) return;
-  const { movie } = item;
-  const key = getMovieKey(movie);
-  console.warn(`[Poster] Load failed: ${key}`);
-  imgEl.onerror = null; // prevent loop
-  fetchPosterUrl(movie.title, movie.year).then(url => {
-    if (url) {
-      imgEl.src = url;
-    } else {
-      imgEl.classList.add("engine-poster--broken");
-      console.warn(`[Poster] TMDB also failed: ${key}`);
-    }
-  });
+// Poster error: hide the broken img — gradient placeholder in wrapper is revealed automatically
+function handlePosterError(imgEl) {
+  imgEl.style.display = "none";
 }
 
 function buildCardHTML(item, index) {
@@ -1026,48 +1041,49 @@ function buildCardHTML(item, index) {
   const key = getMovieKey(m);
   const isUnseen = unseenMovieKeys.has(key);
 
-  const unseenBadge = isUnseen
-    ? `<div class="engine-card-unseen-badge">Unwatched</div>` : "";
+  // Poster placeholder initials from first two title words
+  const titleWords = m.title.replace(/[^a-zA-Z\s]/g, "").split(/\s+/).filter(Boolean);
+  const initials = titleWords.length >= 2
+    ? (titleWords[0][0] + titleWords[1][0]).toUpperCase()
+    : m.title.slice(0, 2).toUpperCase();
 
-  // WHY chips: build all, then show 1-2 + overflow badges
-  const allChips = buildWhyChips(item);
-  const chipsHtml = allChips.map((c, i) => {
-    const cls = `engine-why-chip engine-why-chip--${c.cls} why-chip-${i + 1}`;
-    return `<span class="${cls}">${c.label}</span>`;
-  }).join('');
-  const desktopOverflow = allChips.length >= 3
-    ? `<span class="engine-why-chip engine-why-chip--overflow why-overflow-d">+${allChips.length - 2}</span>` : '';
-  const mobileOverflow = allChips.length >= 2
-    ? `<span class="engine-why-chip engine-why-chip--overflow why-overflow-m">+${allChips.length - 1}</span>` : '';
+  const imgHtml = m.poster && m.poster.startsWith("http")
+    ? `<img class="engine-card-poster" id="engine-poster-${index}" src="${m.poster}" alt="" loading="lazy" onerror="handlePosterError(this)">`
+    : "";
+
+  const posterHtml = `
+    <div class="engine-card-poster-wrap" id="engine-poster-wrap-${index}">
+      <span class="engine-poster-initials" aria-hidden="true">${initials}</span>
+      ${imgHtml}
+      ${isUnseen ? '<div class="engine-card-unseen-badge">Unwatched</div>' : ""}
+    </div>`;
+
+  const dirHtml = m.director
+    ? `<div class="engine-card-director">dir. ${m.director}</div>`
+    : "";
+
+  const badges = buildBadges(item);
+  const badgesHtml = badges.map(b =>
+    `<span class="engine-badge engine-badge--${b.cls}">${b.label}</span>`
+  ).join("");
 
   return `
     <div class="engine-card-rank-cell">
       <div class="engine-rank-badge">${index + 1}</div>
     </div>
     <div class="engine-card-rec">
-      <div class="engine-card-poster-wrap">
-        <img class="engine-card-poster" id="engine-poster-${index}"
-          src="${m.poster && m.poster.startsWith('http') ? m.poster : ''}"
-          alt="${m.title}"
-          onerror="handlePosterError(this, ${index});" />
-        ${unseenBadge}
-      </div>
+      ${posterHtml}
       <div class="engine-card-rec-content">
         <div class="engine-card-header">
-          <button class="engine-card-title-btn" onclick="showEngineSummary(${index})">${m.title}</button>
+          <button class="engine-card-title-btn" onclick="handleTitleClick(${index})">${m.title}</button>
           <span class="engine-card-year">${m.year}</span>
         </div>
+        ${dirHtml}
         <div class="engine-card-snippet" id="engine-snippet-${index}">
           <span class="engine-card-snippet-text"></span>
         </div>
-      </div>
-    </div>
-    <div class="engine-card-director-cell">
-      ${m.director ? m.director : '<span class="engine-director-empty">\u2014</span>'}
-    </div>
-    <div class="engine-card-why">
-      <div class="engine-why-chips">
-        ${chipsHtml}${desktopOverflow}${mobileOverflow}
+        <button class="rec-expand-btn" onclick="showMobileSheet(${index})">Details →</button>
+        <div class="engine-card-badges">${badgesHtml}</div>
       </div>
     </div>
     <div class="engine-card-actions">
@@ -1268,8 +1284,6 @@ function renderRecommendations(allScored) {
   const header = `<div class="engine-list-header">
     <div></div>
     <div>Recommendation</div>
-    <div>Director</div>
-    <div>Why</div>
     <div></div>
   </div>`;
 
@@ -1283,12 +1297,18 @@ function renderRecommendations(allScored) {
     try {
       const basic = await fetchMovieBasic(r.movie.title, r.movie.year);
 
-      // Update poster if missing from JSON
-      if (needsPoster) {
-        const img = document.getElementById(`engine-poster-${i}`);
-        if (img) {
-          if (basic.posterUrl) { img.src = basic.posterUrl; }
-          else { img.classList.add("engine-poster--broken"); console.warn(`[Poster] No result: ${getMovieKey(r.movie)}`); }
+      // Inject poster from TMDB if missing from JSON data
+      if (needsPoster && basic.posterUrl) {
+        const wrap = document.getElementById(`engine-poster-wrap-${i}`);
+        if (wrap && !wrap.querySelector("img")) {
+          const img = document.createElement("img");
+          img.className = "engine-card-poster";
+          img.id = `engine-poster-${i}`;
+          img.src = basic.posterUrl;
+          img.alt = "";
+          img.loading = "lazy";
+          img.onerror = () => { img.style.display = "none"; };
+          wrap.appendChild(img);
         }
       }
 
@@ -1691,6 +1711,80 @@ window.addEventListener("load", () => {
 });
 
 // ==========================================
+// UI — TITLE CLICK ROUTER + MOBILE SHEET
+// ==========================================
+
+function handleTitleClick(index) {
+  if (window.innerWidth <= 599) {
+    showMobileSheet(index);
+  } else {
+    showEngineSummary(index);
+  }
+}
+
+function showMobileSheet(index) {
+  const item = displayedItems[index];
+  if (!item) return;
+  const m = item.movie;
+
+  const backdrop = document.getElementById("rec-sheet-backdrop");
+  const sheet    = document.getElementById("rec-sheet");
+  const headerEl = document.getElementById("rec-sheet-header");
+  const bodyEl   = document.getElementById("rec-sheet-body");
+  const actionsEl = document.getElementById("rec-sheet-actions");
+  if (!sheet || !backdrop) return;
+
+  const badges = buildBadges(item);
+  const badgesHtml = badges.map(b =>
+    `<span class="engine-badge engine-badge--${b.cls}">${b.label}</span>`
+  ).join("");
+
+  headerEl.innerHTML = `
+    <div class="rec-sheet-title">${m.title}</div>
+    <div class="rec-sheet-meta">
+      <span class="rec-sheet-year">${m.year}</span>
+      ${m.director ? `<span class="rec-sheet-director">dir. ${m.director}</span>` : ""}
+    </div>
+    <div class="engine-card-badges rec-sheet-badges">${badgesHtml}</div>`;
+
+  bodyEl.innerHTML = `<p class="rec-sheet-overview">Loading\u2026</p>`;
+
+  actionsEl.innerHTML = `
+    <button class="engine-btn-seen" onclick="handleSeenIt(${index});closeMobileSheet()">Seen it</button>
+    <button class="engine-btn-not-interested" onclick="handleNotInterested(${index});closeMobileSheet()">Not interested</button>`;
+
+  backdrop.style.display = "block";
+  sheet.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  requestAnimationFrame(() => {
+    sheet.classList.add("rec-sheet--open");
+    backdrop.classList.add("rec-sheet-backdrop--open");
+  });
+
+  fetchMovieBasic(m.title, m.year).then(basic => {
+    const p = bodyEl.querySelector(".rec-sheet-overview");
+    if (p) p.textContent = basic.overview || "No summary available.";
+  }).catch(() => {
+    const p = bodyEl.querySelector(".rec-sheet-overview");
+    if (p) p.textContent = "Could not load summary.";
+  });
+}
+
+function closeMobileSheet() {
+  const backdrop = document.getElementById("rec-sheet-backdrop");
+  const sheet    = document.getElementById("rec-sheet");
+  if (!sheet) return;
+  sheet.classList.remove("rec-sheet--open");
+  backdrop.classList.remove("rec-sheet-backdrop--open");
+  setTimeout(() => {
+    backdrop.style.display = "none";
+    sheet.style.display = "none";
+    document.body.style.overflow = "";
+  }, 280);
+}
+
+// ==========================================
 // UI — MOVIE SUMMARY MODAL
 // ==========================================
 
@@ -1732,8 +1826,11 @@ function closeEngineSummary() {
 }
 
 // Expose for inline onclick handlers
-window.handleSeenIt = handleSeenIt;
-window.handleNotInterested = handleNotInterested;
-window.showEngineSummary = showEngineSummary;
-window.closeEngineSummary = closeEngineSummary;
-window.handlePosterError = handlePosterError;
+window.handleSeenIt         = handleSeenIt;
+window.handleNotInterested  = handleNotInterested;
+window.showEngineSummary    = showEngineSummary;
+window.closeEngineSummary   = closeEngineSummary;
+window.handlePosterError    = handlePosterError;
+window.handleTitleClick     = handleTitleClick;
+window.showMobileSheet      = showMobileSheet;
+window.closeMobileSheet     = closeMobileSheet;
