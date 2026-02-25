@@ -754,178 +754,21 @@ async function loadMichaelsRankings() {
 // MATCHUP MODAL — with matchup history
 // ==========================================
 
-let cachedUserVotes = null;
-let cachedUserUid = null;
 
-function getActiveTab() {
-  const active = document.querySelector(".results-tab.active");
-  return active ? active.dataset.tab : "global";
-}
-
-async function fetchUserVotes(uid) {
-  if (cachedUserVotes && cachedUserUid === uid) return cachedUserVotes;
-  const q = query(collection(db, "votes"), where("user", "==", uid));
-  const snap = await getDocs(q);
-  const votes = [];
-  snap.forEach(d => votes.push(d.data()));
-  cachedUserVotes = votes;
-  cachedUserUid = uid;
-  return votes;
-}
-
-async function fetchGlobalMovieVotes(movieKey) {
-  // Also query the legacy "Title Year" format (no pipe) to pick up votes written
-  // before the canonical "Title|Year" format was introduced.
-  const altKey = movieKey.includes("|") ? movieKey.replace("|", " ") : null;
-
-  const queryPromises = [
-    getDocs(query(collection(db, "votes"), where("winner", "==", movieKey))),
-    getDocs(query(collection(db, "votes"), where("loser",   "==", movieKey)))
-  ];
-  if (altKey && altKey !== movieKey) {
-    queryPromises.push(getDocs(query(collection(db, "votes"), where("winner", "==", altKey))));
-    queryPromises.push(getDocs(query(collection(db, "votes"), where("loser",   "==", altKey))));
-  }
-
-  const snaps = await Promise.all(queryPromises);
-  const seen  = new Set();
-  const votes = [];
-  snaps.forEach(snap => {
-    snap.forEach(d => {
-      if (!seen.has(d.id)) {
-        seen.add(d.id);
-        votes.push(d.data());
-      }
-    });
-  });
-  return votes;
-}
-
-function renderMatchupHistory(votes, movieKey) {
-  if (!votes.length) {
-    return '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">No matchups recorded yet for this title.</div>';
-  }
-
-  // Sort by timestamp descending (votes without timestamp go last)
-  votes.sort((a, b) => {
-    const ta = a.timestamp?.toMillis?.() || a.timestamp?.seconds * 1000 || 0;
-    const tb = b.timestamp?.toMillis?.() || b.timestamp?.seconds * 1000 || 0;
-    return tb - ta;
-  });
-
-  return votes.map(v => {
-    const isWin = normalizeKey(v.winner) === movieKey;
-    const opponentKey = normalizeKey(isWin ? v.loser : v.winner);
-    const opponentTitle = opponentKey.split("|")[0];
-    const opponentYear = opponentKey.split("|")[1] || "";
-    const resultClass = isWin ? "matchup-row--win" : "matchup-row--loss";
-    const resultLabel = isWin ? "W" : "L";
-
-    let dateStr = "";
-    const ts = v.timestamp?.toMillis?.() || (v.timestamp?.seconds ? v.timestamp.seconds * 1000 : 0);
-    if (ts) {
-      const d = new Date(ts);
-      dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    }
-
-    return `<div class="matchup-row ${resultClass}">
-      <span class="matchup-row-result">${resultLabel}</span>
-      <span class="matchup-row-opponent">${opponentTitle}${opponentYear ? ` (${opponentYear})` : ""}</span>
-      <span class="matchup-row-date">${dateStr}</span>
-    </div>`;
-  }).join("");
-}
-
-// Recompute wins/losses from raw vote documents and update the modal header.
-// This keeps the header consistent with the history list when the stats/global
-// aggregate has drifted out of sync with the votes collection.
-function updateModalStatsFromVotes(votes, movieKey) {
-  if (!votes.length) return;
-  const actualWins   = votes.filter(v => normalizeKey(v.winner) === movieKey).length;
-  const actualLosses = votes.filter(v => normalizeKey(v.loser)  === movieKey).length;
-  const actualN = actualWins + actualLosses;
-  if (actualN === 0) return;
-  const actualWinPct = (actualWins / actualN) * 100;
-  const actualWs = Math.round(wilsonScore(actualWins, actualLosses) * 1000) / 10;
-  document.getElementById("matchup-modal-stats").innerHTML = `
-    <div class="matchup-stat"><span class="matchup-stat-val">${actualWins}W - ${actualLosses}L</span><span class="matchup-stat-label">Record</span></div>
-    <div class="matchup-stat"><span class="matchup-stat-val">${actualWinPct.toFixed(1)}%</span><span class="matchup-stat-label">Win Rate</span></div>
-    <div class="matchup-stat"><span class="matchup-stat-val">${actualN}</span><span class="matchup-stat-label">Matchups</span></div>
-    <div class="matchup-stat"><span class="matchup-stat-val">${actualN === 0 ? "—" : actualWs.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
-  `;
-}
-
-async function showMatchupModal(movie) {
-  const { key, title, year, wins, losses, n, winPct, displayScore } = movie;
+function showMatchupModal(movie) {
+  const { title, year, wins, losses, n, winPct, displayScore } = movie;
 
   document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
 
   document.getElementById("matchup-modal-stats").innerHTML = `
-    <div class="matchup-stat"><span class="matchup-stat-val">${wins}W - ${losses}L</span><span class="matchup-stat-label">Record</span></div>
+    <div class="matchup-stat"><span class="matchup-stat-val">${wins}W &ndash; ${losses}L</span><span class="matchup-stat-label">Record</span></div>
     <div class="matchup-stat"><span class="matchup-stat-val">${winPct.toFixed(1)}%</span><span class="matchup-stat-label">Win Rate</span></div>
     <div class="matchup-stat"><span class="matchup-stat-val">${n}</span><span class="matchup-stat-label">Matchups</span></div>
     <div class="matchup-stat"><span class="matchup-stat-val">${displayScore.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
   `;
 
-  const listEl = document.getElementById("matchup-modal-list");
+  document.getElementById("matchup-modal-list").innerHTML = "";
   document.getElementById("matchup-modal").classList.remove("hidden");
-
-  const activeTab = getActiveTab();
-
-  if (activeTab === "personal") {
-    listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
-    try {
-      const uid = cachedUserUid || (await new Promise(resolve => onAuth(u => resolve(u?.uid))));
-      if (!uid) {
-        listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Log in to see your matchup history.</div>';
-        return;
-      }
-      const votes = await fetchUserVotes(uid);
-      const movieVotes = votes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
-
-      // Recompute stats from raw votes — overrides potentially stale aggregate
-      updateModalStatsFromVotes(movieVotes, key);
-
-      listEl.innerHTML = renderMatchupHistory(movieVotes, key);
-    } catch (err) {
-      console.error("Matchup history error:", err);
-      listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
-    }
-  } else if (activeTab === "global") {
-    listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Loading matchup history...</div>';
-    try {
-      if (adminSelectedUid) {
-        // Admin is viewing a specific user's results — show that user's votes for this movie
-        const allVotes = await fetchUserVotes(adminSelectedUid);
-        const votes = allVotes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
-        updateModalStatsFromVotes(votes, key);
-        listEl.innerHTML = renderMatchupHistory(votes, key);
-      } else if (currentIsAdmin) {
-        // Admin global view — show all community votes for this movie
-        const votes = await fetchGlobalMovieVotes(key);
-        updateModalStatsFromVotes(votes, key);
-        listEl.innerHTML = renderMatchupHistory(votes, key);
-      } else {
-        // Non-admin: show their own votes for this movie (uses updated Firestore rule)
-        const uid = cachedUserUid || (await new Promise(resolve => onAuth(u => resolve(u?.uid))));
-        if (!uid) {
-          listEl.innerHTML = '<div class="results-empty" style="color:var(--color-text-2);">Log in to see your matchup history for this film.</div>';
-          return;
-        }
-        const allVotes = await fetchUserVotes(uid);
-        const votes = allVotes.filter(v => normalizeKey(v.winner) === key || normalizeKey(v.loser) === key);
-        updateModalStatsFromVotes(votes, key);
-        listEl.innerHTML = votes.length
-          ? renderMatchupHistory(votes, key)
-          : '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">You haven\'t voted on this film yet.</div>';
-      }
-    } catch (err) {
-      console.error("Matchup history error:", err);
-      listEl.innerHTML = '<div class="results-empty results-error">Failed to load matchup history.</div>';
-    }
-  } else {
-    listEl.innerHTML = '<div class="results-empty" style="font-style:normal; color:var(--color-text-2);">Matchup history is available in Your Results and Community Results.</div>';
-  }
 }
 
 function closeMatchupModal() {
