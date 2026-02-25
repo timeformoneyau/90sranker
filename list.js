@@ -8,6 +8,7 @@ import {
   getDocs,
   query,
   where,
+  orderBy,
   limit,
   onSnapshot
 } from "./firebase.js";
@@ -20,6 +21,7 @@ import { makeMovieKey, buildKeyNormalizer } from "./movieKeys.js";
 
 const ADMIN_EMAIL = "mjreardon62@gmail.com";
 let currentIsAdmin = false;
+let currentUid = null;
 let adminSelectedUid = null;
 let adminSelectedUsername = null;
 
@@ -750,7 +752,7 @@ async function loadMichaelsRankings() {
 
 
 function showMatchupModal(movie) {
-  const { title, year, wins, losses, n, winPct, displayScore } = movie;
+  const { title, year, wins, losses, n, winPct, displayScore, key } = movie;
 
   document.getElementById("matchup-modal-title").textContent = title + (year ? ` (${year})` : "");
 
@@ -761,8 +763,55 @@ function showMatchupModal(movie) {
     <div class="matchup-stat"><span class="matchup-stat-val">${displayScore.toFixed(1)}</span><span class="matchup-stat-label">Adj. Score</span></div>
   `;
 
-  document.getElementById("matchup-modal-list").innerHTML = "";
+  const listEl = document.getElementById("matchup-modal-list");
+  if (currentUid && key) {
+    listEl.innerHTML = '<div class="matchup-history-loading">Loading history…</div>';
+    loadMatchupHistory(currentUid, key, listEl);
+  } else {
+    listEl.innerHTML = "";
+  }
+
   document.getElementById("matchup-modal").classList.remove("hidden");
+}
+
+async function loadMatchupHistory(uid, movieKey, listEl) {
+  try {
+    const col = collection(db, "votes");
+    const [wSnap, lSnap] = await Promise.all([
+      getDocs(query(col, where("user", "==", uid), where("winner", "==", movieKey), orderBy("timestamp", "desc"), limit(15))),
+      getDocs(query(col, where("user", "==", uid), where("loser",  "==", movieKey), orderBy("timestamp", "desc"), limit(15)))
+    ]);
+
+    const entries = [];
+    wSnap.forEach(d => entries.push({ won: true,  opponent: d.data().loser,  ts: d.data().timestamp?.toMillis() ?? 0 }));
+    lSnap.forEach(d => entries.push({ won: false, opponent: d.data().winner, ts: d.data().timestamp?.toMillis() ?? 0 }));
+
+    entries.sort((a, b) => b.ts - a.ts);
+    const recent = entries.slice(0, 20);
+
+    if (!recent.length) {
+      listEl.innerHTML = '<div class="matchup-history-empty">No vote history found.</div>';
+      return;
+    }
+
+    const rows = recent.map(e => {
+      const oppTitle = e.opponent.split("|")[0];
+      const oppYear  = e.opponent.split("|")[1] || "";
+      const date     = e.ts ? new Date(e.ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+      const cls      = e.won ? "matchup-row--win" : "matchup-row--loss";
+      const label    = e.won ? "W" : "L";
+      return `<div class="matchup-row ${cls}">
+        <span class="matchup-row-result">${label}</span>
+        <span class="matchup-row-opponent">${oppTitle}${oppYear ? ` <span class="movie-yr">(${oppYear})</span>` : ""}</span>
+        ${date ? `<span class="matchup-row-date">${date}</span>` : ""}
+      </div>`;
+    }).join("");
+
+    listEl.innerHTML = `<div class="matchup-history-label">Recent matchups</div>${rows}`;
+  } catch (err) {
+    console.error("loadMatchupHistory error:", err);
+    listEl.innerHTML = '<div class="matchup-history-empty">Could not load history.</div>';
+  }
 }
 
 function closeMatchupModal() {
@@ -788,6 +837,7 @@ window.addEventListener("beforeunload", () => {
 window.addEventListener("load", async () => {
   await initNormalizer();
   onAuth(async user => {
+    currentUid = user ? user.uid : null;
     if (user) {
       // Detect admin status
       const isAdminEmail = user.email === ADMIN_EMAIL;

@@ -3905,6 +3905,23 @@ tbody tr:last-child td { border-bottom: none; }
   flex-shrink: 0;
 }
 
+.matchup-history-label {
+  font-size: 0.68rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.82);
+  padding: var(--s-2) var(--s-3) var(--s-3);
+}
+
+.matchup-history-loading,
+.matchup-history-empty {
+  padding: var(--s-4) var(--s-3);
+  font-size: var(--text-meta);
+  color: var(--color-text-2);
+  font-style: italic;
+}
+
 /* Responsive: full-width on mobile */
 @media (max-width: 767px) {
   .matchup-modal-backdrop {
