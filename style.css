@@ -2614,7 +2614,7 @@ tbody tr:last-child td { border-bottom: none; }
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-1);
+  color: rgba(255,255,255,0.82);
 }
 
 .engine-empty {
@@ -2797,13 +2797,13 @@ tbody tr:last-child td { border-bottom: none; }
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
 }
 
 /* Director — inside rec content cell, below title */
 .engine-card-director {
   font-size: var(--text-meta);
-  color: var(--color-text-2);
+  color: var(--color-text-1);
   font-weight: var(--fw-regular);
   white-space: nowrap;
   overflow: hidden;

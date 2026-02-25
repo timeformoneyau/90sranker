@@ -3,11 +3,8 @@ import {
   db,
   auth,
   onAuth,
+  callFunction,
   collection,
-  addDoc,
-  writeBatch,
-  increment,
-  serverTimestamp,
   runTransaction,
   doc,
   getDoc,
@@ -115,24 +112,24 @@ async function saveMatchupToFirestore(matchupKey) {
 }
 
 // ==========================================
-// TMDB API
+// TMDB API (via server-side proxy)
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
-const movieInfoCache = {}; // keyed by "Title|Year"
+const posterCache    = {};
+const movieInfoCache = {};
+const tmdbProxy      = callFunction("tmdbProxy");
 
 /**
- * Fetch poster URL from TMDB
+ * Fetch poster URL via the tmdbProxy Cloud Function
  */
 async function fetchPosterUrl(title, year) {
-  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-
+  const cacheKey = `${title}|${year}`;
+  if (posterCache[cacheKey]) return posterCache[cacheKey];
   try {
-    const response = await fetch(url);
-    const data = await response.json();
-    const posterPath = data.results?.[0]?.poster_path;
-    return posterPath ? TMDB_IMAGE_BASE + posterPath : "./fallback.jpg";
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    const url = result.data?.posterUrl || "./fallback.jpg";
+    posterCache[cacheKey] = url;
+    return url;
   } catch (error) {
     console.warn("Failed to fetch poster:", error);
     return "./fallback.jpg";
@@ -140,48 +137,26 @@ async function fetchPosterUrl(title, year) {
 }
 
 // ==========================================
-// MOVIE INFO (TMDB Details)
+// MOVIE INFO (TMDB Details via proxy)
 // ==========================================
 
 /**
- * Fetch detailed movie info from TMDB (with caching)
+ * Fetch detailed movie info via the tmdbProxy Cloud Function (with caching)
  */
 async function fetchMovieInfo(title, year) {
   const cacheKey = `${title.trim()}|${year}`;
   if (movieInfoCache[cacheKey]) return movieInfoCache[cacheKey];
-
-  // Search for movie ID
-  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-  const searchRes = await fetch(searchUrl);
-  const searchData = await searchRes.json();
-  const movieId = searchData.results?.[0]?.id;
-  if (!movieId) throw new Error("Movie not found on TMDB");
-
-  // Fetch details, videos, and credits in parallel
-  const [detailRes, videosRes, creditsRes] = await Promise.all([
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`),
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`),
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`)
-  ]);
-
-  const detail = await detailRes.json();
-  const videos = await videosRes.json();
-  const credits = await creditsRes.json();
-
-  // Find YouTube trailer
-  const trailer = videos.results?.find(
-    v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
-  );
-
+  const result = await tmdbProxy({ title, year, mode: "info" });
+  const data = result.data;
+  if (!data?.overview) throw new Error("Movie not found");
   const info = {
-    overview: detail.overview || null,
-    genres: (detail.genres || []).map(g => g.name),
-    runtime: detail.runtime || null,
-    rating: detail.vote_average || null,
-    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
-    cast: (credits.cast || []).slice(0, 5).map(c => c.name)
+    overview:   data.overview,
+    genres:     data.genres    || [],
+    runtime:    data.runtime   || null,
+    rating:     data.rating    || null,
+    trailerUrl: data.trailerUrl || null,
+    cast:       data.cast      || []
   };
-
   movieInfoCache[cacheKey] = info;
   return info;
 }
@@ -574,71 +549,20 @@ async function handleVote(choice) {
   }
 }
 
+const recordVoteFn = callFunction("recordVote");
+
 /**
- * Save vote to Firestore
+ * Save vote via the recordVote Cloud Function
  */
 async function saveVoteToFirestore(winner, loser) {
+  if (!auth.currentUser) return; // guests don't record stats
   try {
     const winnerKey = getMovieKey(winner);
-    const loserKey = getMovieKey(loser);
-    const uid = auth.currentUser?.uid || null;
-
-    // Single atomic batch: vote record + all stat updates committed together.
-    // Previously addDoc was called before the batch, so a batch failure would
-    // leave a vote in the votes collection without updating stats/global.
-    const batch = writeBatch(db);
-
-    // 1. Audit log — individual vote doc (append-only)
-    const voteRef = doc(collection(db, "votes"));
-    batch.set(voteRef, {
-      winner: winnerKey,
-      loser: loserKey,
-      user: uid,
-      timestamp: serverTimestamp()
-    });
-
-    // 2. Global per-movie stats
-    const globalRef = doc(db, "stats", "global");
-    batch.set(globalRef, {
-      [`stats.${winnerKey}.wins`]: increment(1),
-      [`stats.${loserKey}.losses`]: increment(1)
-    }, { merge: true });
-
-    // 3. Meta counters
-    const metaRef = doc(db, "stats", "meta");
-    batch.set(metaRef, {
-      totalVotes: increment(1)
-    }, { merge: true });
-
-    await batch.commit();
-
-    // 4. Per-user stats written AFTER batch — updateDoc handles dot-notation as nested paths;
-    //    batch.set(merge:true) would treat them as literal key names (flat structure), which
-    //    breaks the admin screen's doc.data().stats read.
-    if (uid) {
-      const userStatsRef = doc(db, "stats", `user_${uid}`);
-      try {
-        await updateDoc(userStatsRef, {
-          [`stats.${winnerKey}.wins`]: increment(1),
-          [`stats.${loserKey}.losses`]: increment(1)
-        });
-      } catch (err) {
-        if (err.code === "not-found") {
-          // First vote from this user — create the doc with nested structure
-          await setDoc(userStatsRef, {
-            stats: {
-              [winnerKey]: { wins: 1, losses: 0 },
-              [loserKey]: { wins: 0, losses: 1 }
-            }
-          });
-        }
-        // Other errors are non-critical; the vote is already recorded in the batch
-      }
-    }
-
-    console.log("Vote saved to Firestore");
+    const loserKey  = getMovieKey(loser);
+    await recordVoteFn({ winnerKey, loserKey });
+    console.log("Vote saved via Cloud Function");
   } catch (error) {
-    console.error("Failed to save vote to Firestore:", error);
+    console.error("Failed to save vote:", error);
   }
 }
 

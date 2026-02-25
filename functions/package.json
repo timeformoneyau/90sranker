@@ -2,7 +2,7 @@
   "name": "shelf-life-functions",
   "version": "1.0.0",
   "description": "Firebase Cloud Functions for The Rewind Room",
-  "engines": { "node": "18" },
+  "engines": { "node": "20" },
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",

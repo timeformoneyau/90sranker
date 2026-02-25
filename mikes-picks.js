@@ -1,5 +1,6 @@
 import {
   db,
+  callFunction,
   doc,
   getDoc
 } from "./firebase.js";
@@ -22,18 +23,15 @@ function wilsonScore(wins, losses) {
 }
 
 // ==========================================
-// TMDB RATINGS
+// TMDB RATINGS (via proxy Cloud Function)
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
+const tmdbProxy = callFunction("tmdbProxy");
 
 async function fetchTmdbRating(title, year) {
   try {
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const movie = data.results?.[0];
-    return movie ? movie.vote_average : null;
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    return result.data?.vote_average ?? null;
   } catch {
     return null;
   }

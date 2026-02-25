@@ -10,6 +10,7 @@ import {
   db,
   auth,
   onAuth,
+  callFunction,
   doc,
   getDoc,
   setDoc,
@@ -24,9 +25,6 @@ import { makeMovieKey } from "./movieKeys.js";
 // ==========================================
 // CONSTANTS
 // ==========================================
-
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
 const ATTR_WEIGHTS = {
   genre:    1.0,
@@ -130,19 +128,15 @@ function getMovieAttributes(movie) {
 }
 
 const basicInfoCache = {};
+const tmdbProxy      = callFunction("tmdbProxy");
 
 async function fetchMovieBasic(title, year) {
   const key = `${title}|${year}`;
   if (basicInfoCache[key]) return basicInfoCache[key];
   try {
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const result = data.results?.[0];
-    const info = {
-      posterUrl: result?.poster_path ? TMDB_IMAGE_BASE + result.poster_path : null,
-      overview: result?.overview || null
-    };
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    const data = result.data;
+    const info = { posterUrl: data?.posterUrlSm || null, overview: data?.overview || null };
     basicInfoCache[key] = info;
     return info;
   } catch {
@@ -157,34 +151,17 @@ async function fetchPosterUrl(title, year) {
 async function fetchMovieInfo(title, year) {
   const cacheKey = `${title.trim()}|${year}`;
   if (movieInfoCache[cacheKey]) return movieInfoCache[cacheKey];
-
-  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-  const searchRes = await fetch(searchUrl);
-  const searchData = await searchRes.json();
-  const movieId = searchData.results?.[0]?.id;
-  if (!movieId) throw new Error("Movie not found on TMDB");
-
-  const [detailRes, videosRes, creditsRes] = await Promise.all([
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`),
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}`),
-    fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`)
-  ]);
-
-  const detail = await detailRes.json();
-  const videos = await videosRes.json();
-  const credits = await creditsRes.json();
-
-  const trailer = videos.results?.find(v => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"));
-
+  const result = await tmdbProxy({ title, year, mode: "info" });
+  const data = result.data;
+  if (!data?.overview) throw new Error("Movie not found");
   const info = {
-    overview: detail.overview || null,
-    genres: (detail.genres || []).map(g => g.name),
-    runtime: detail.runtime || null,
-    rating: detail.vote_average || null,
-    trailerUrl: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
-    cast: (credits.cast || []).slice(0, 5).map(c => c.name)
+    overview:   data.overview,
+    genres:     data.genres    || [],
+    runtime:    data.runtime   || null,
+    rating:     data.rating    || null,
+    trailerUrl: data.trailerUrl || null,
+    cast:       data.cast      || []
   };
-
   movieInfoCache[cacheKey] = info;
   return info;
 }

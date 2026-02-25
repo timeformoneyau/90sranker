@@ -76,16 +76,17 @@ service cloud.firestore {
     //
     // Writes are scoped per doc to limit the blast radius:
     //   stats/global  — any signed-in user (vote recording is client-side;
-    //                   move to Cloud Functions to fully eliminate this).
+    //                   move to Cloud Functions on Blaze plan to lock this down).
     //   stats/meta    — any signed-in user (vote counter increments).
     //   stats/user_X  — only the owner (uid matches) or admin.
     //   anything else — admin only.
     match /stats/{docId} {
       allow read: if true;
+      // stats/global and stats/meta are written exclusively by the recordVote /
+      // recordToughCallVote Cloud Functions via the admin SDK, which bypasses
+      // client rules. Blocking client writes prevents ranking manipulation.
       allow write: if isSignedIn()
-          && (docId == "global"
-              || docId == "meta"
-              || docId == ("user_" + request.auth.uid)
+          && (docId == ("user_" + request.auth.uid)
               || isAdmin());
     }
 
@@ -104,7 +105,8 @@ service cloud.firestore {
     match /toughCalls/{tcId} {
       allow read:   if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      // Vote-count updates handled by recordToughCallVote Cloud Function (admin SDK).
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 

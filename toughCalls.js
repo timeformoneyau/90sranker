@@ -3,27 +3,20 @@ import {
   db,
   auth,
   onAuth,
+  callFunction,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
-  where,
   orderBy,
-  limit,
-  serverTimestamp,
-  increment,
-  writeBatch,
-  updateDoc,
-  setDoc
+  limit
 } from "./firebase.js";
 
 // ==========================================
 // CONSTANTS
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 const PAGE_SIZE = 10;
 
 // ==========================================
@@ -31,27 +24,26 @@ const PAGE_SIZE = 10;
 // ==========================================
 
 let currentUid = null;
-let faceoffs = [];          // 10 most recent faceoffs
-let userVotes = {};         // { faceoffId: "A" | "B" }
+let faceoffs = [];     // 10 most recent faceoffs
+let userVotes = {};    // { faceoffId: "A" | "B" }
 const posterCache = {};
-const userCache = {};       // { uid: username | null }
+const userCache = {};  // { uid: username | null }
+
+const tmdbProxy           = callFunction("tmdbProxy");
+const recordToughCallVote = callFunction("recordToughCallVote");
 
 // ==========================================
-// TMDB
+// TMDB (via server-side proxy)
 // ==========================================
 
 async function fetchPosterUrl(title, year) {
   const cacheKey = `${title}|${year}`;
   if (posterCache[cacheKey]) return posterCache[cacheKey];
-
-  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const posterPath = data.results?.[0]?.poster_path;
-    const result = posterPath ? TMDB_IMAGE_BASE + posterPath : "./fallback.jpg";
-    posterCache[cacheKey] = result;
-    return result;
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    const url = result.data?.posterUrl || "./fallback.jpg";
+    posterCache[cacheKey] = url;
+    return url;
   } catch {
     return "./fallback.jpg";
   }
@@ -272,99 +264,24 @@ async function handleVote(tcId, choice, card) {
   const tc = faceoffs.find(f => f.id === tcId);
   if (!tc) return;
 
-  // Prevent sender from voting (client-side guardrail)
+  // Client-side guardrails (also enforced server-side in the Cloud Function)
   if (tc.createdByUid === currentUid || (tc.flaggedBy && tc.flaggedBy[currentUid])) return;
-
-  // Prevent double-voting (client-side)
   if (userVotes[tcId]) return;
 
-  // Disable buttons immediately
   card.querySelectorAll(".tc-card-vote").forEach(btn => btn.disabled = true);
 
-  const winnerKey = choice === "A" ? tc.movieAKey : tc.movieBKey;
-  const loserKey = choice === "A" ? tc.movieBKey : tc.movieAKey;
-  const voteField = choice === "A" ? "votesA" : "votesB";
-
   try {
-    const batch = writeBatch(db);
-
-    // Normal vote record
-    const voteRef = doc(collection(db, "votes"));
-    batch.set(voteRef, {
-      winner: winnerKey,
-      loser: loserKey,
-      user: currentUid,
-      timestamp: serverTimestamp(),
-      source: "tough_call",
-      toughCallId: tcId
-    });
-
-    // ToughCallVotes record (deterministic ID prevents double-voting)
-    const tcvId = `${tcId}__${currentUid}`;
-    const tcvRef = doc(db, "toughCallVotes", tcvId);
-    batch.set(tcvRef, {
-      toughCallId: tcId,
-      uid: currentUid,
-      vote: choice,
-      votedAt: serverTimestamp()
-    });
-
-    // Update aggregate on toughCalls doc
-    const tcRef = doc(db, "toughCalls", tcId);
-    batch.update(tcRef, {
-      [voteField]: increment(1),
-      totalVotes: increment(1),
-      lastVotedAt: serverTimestamp()
-    });
-
-    // Global stats
-    const statsRef = doc(db, "stats", "global");
-    batch.set(statsRef, {
-      [`stats.${winnerKey}.wins`]: increment(1),
-      [`stats.${loserKey}.losses`]: increment(1)
-    }, { merge: true });
-
-    // Meta total
-    const metaRef = doc(db, "stats", "meta");
-    batch.set(metaRef, { totalVotes: increment(1) }, { merge: true });
-
-    await batch.commit();
+    const result = await recordToughCallVote({ tcId, choice });
+    const { votesA, votesB, totalVotes } = result.data;
+    userVotes[tcId] = choice;
+    tc.votesA      = votesA;
+    tc.votesB      = votesB;
+    tc.totalVotes  = totalVotes;
   } catch (err) {
     console.error("Failed to save vote:", err);
     card.querySelectorAll(".tc-card-vote").forEach(btn => btn.disabled = false);
     return;
   }
-
-  // Update per-user stats AFTER batch — updateDoc handles dot-notation as nested paths;
-  // batch.set(merge:true) treats them as literal key names (flat), breaking the admin screen.
-  const userStatsRef = doc(db, "stats", `user_${currentUid}`);
-  try {
-    await updateDoc(userStatsRef, {
-      [`stats.${winnerKey}.wins`]: increment(1),
-      [`stats.${loserKey}.losses`]: increment(1)
-    });
-  } catch (err) {
-    if (err.code === "not-found") {
-      try {
-        await setDoc(userStatsRef, {
-          stats: {
-            [winnerKey]: { wins: 1, losses: 0 },
-            [loserKey]: { wins: 0, losses: 1 }
-          }
-        });
-      } catch { /* non-critical */ }
-    }
-    // Other errors are non-critical; the vote is already recorded in the batch
-  }
-
-  // Update local state and re-render just this card
-  userVotes[tcId] = choice;
-  if (choice === "A") {
-    tc.votesA = (tc.votesA || 0) + 1;
-  } else {
-    tc.votesB = (tc.votesB || 0) + 1;
-  }
-  tc.totalVotes = (tc.totalVotes || 0) + 1;
 
   const idx = faceoffs.findIndex(f => f.id === tcId);
   if (idx !== -1) {

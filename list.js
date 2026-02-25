@@ -1,6 +1,7 @@
 import {
   db,
   onAuth,
+  callFunction,
   doc,
   getDoc,
   collection,
@@ -29,11 +30,10 @@ let adminSelectedUsername = null;
 let normalizeKey = (k) => k; // identity until movie list loads
 
 // ==========================================
-// POSTER LOOKUP (TMDB API)
+// POSTER LOOKUP (via TMDB proxy Cloud Function)
 // ==========================================
 
-const TMDB_API_KEY = "825459de57821b3ab63446cce9046516";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+const tmdbProxy   = callFunction("tmdbProxy");
 const posterCache = {};
 
 async function initNormalizer() {
@@ -53,11 +53,8 @@ function getPosterUrl(movieKey) {
 
 async function fetchPosterFromTMDB(title, year) {
   try {
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const posterPath = data.results?.[0]?.poster_path;
-    return posterPath ? TMDB_IMAGE_BASE + posterPath : null;
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    return result.data?.posterUrlSm || null;
   } catch {
     return null;
   }
@@ -601,11 +598,8 @@ function renderWorstMovies(allRows) {
 
 async function fetchTmdbRating(title, year) {
   try {
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&year=${year}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const movie = data.results?.[0];
-    return movie ? movie.vote_average : null;
+    const result = await tmdbProxy({ title, year, mode: "search" });
+    return result.data?.vote_average ?? null;
   } catch {
     return null;
   }
