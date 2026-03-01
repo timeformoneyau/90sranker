@@ -4,9 +4,18 @@
   <meta charset="UTF-8" />
   <title>The Rewind Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Preconnect to external origins before any requests fire -->
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://us-central1-sranker-f2642.cloudfunctions.net">
+  <link rel="dns-prefetch" href="https://image.tmdb.org">
+
   <link rel="stylesheet" href="https://unpkg.com/open-props" />
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+  <!-- Load Google Fonts asynchronously so it doesn't block rendering -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap"></noscript>
 </head>
 
 <body>

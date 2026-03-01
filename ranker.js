@@ -136,6 +136,21 @@ async function fetchPosterUrl(title, year) {
   }
 }
 
+/**
+ * Get poster URL for a movie object.
+ * Uses the pre-baked URL from the JSON when available (no Cloud Function call),
+ * otherwise falls back to fetchPosterUrl.
+ */
+function getPosterUrl(movie) {
+  const cacheKey = `${movie.title}|${movie.year}`;
+  if (posterCache[cacheKey]) return Promise.resolve(posterCache[cacheKey]);
+  if (movie.poster && movie.poster.startsWith("http")) {
+    posterCache[cacheKey] = movie.poster;
+    return Promise.resolve(movie.poster);
+  }
+  return fetchPosterUrl(movie.title, movie.year);
+}
+
 // ==========================================
 // MOVIE INFO (TMDB Details via proxy)
 // ==========================================
@@ -256,6 +271,19 @@ function pickTwoRandom(arr) {
  */
 let initialLoadDone = false;
 
+/**
+ * Pure movie selection — picks the next pair from available movies.
+ * No async work; returns [movieA, movieB].
+ * ~30% competitive match, ~70% pure random.
+ */
+function selectMoviePair(available) {
+  if (state.globalStats && Math.random() < 0.3) {
+    const pair = pickCompetitiveMatch(available);
+    if (pair) return pair;
+  }
+  return pickTwoRandom(available);
+}
+
 async function chooseTwoMovies() {
   const available = getAvailableMovies();
 
@@ -282,18 +310,7 @@ async function chooseTwoMovies() {
     } catch { /* ignore parse errors */ }
   }
 
-  // Try competitive match ~30% of the time
-  if (state.globalStats && Math.random() < 0.3) {
-    const pair = pickCompetitiveMatch(available);
-    if (pair) {
-      [state.currentMovies.A, state.currentMovies.B] = pair;
-      await displayMovies();
-      return;
-    }
-  }
-
-  // Default: pure random
-  [state.currentMovies.A, state.currentMovies.B] = pickTwoRandom(available);
+  [state.currentMovies.A, state.currentMovies.B] = selectMoviePair(available);
   await displayMovies();
 }
 
@@ -354,38 +371,41 @@ async function displayMovies() {
   }
 
   try {
-    // Fetch poster URLs and preload images in parallel — wait for both
-    // to be fully decoded before touching the DOM at all
     const [posterA, posterB] = await Promise.all([
-      fetchPosterUrl(A.title, A.year),
-      fetchPosterUrl(B.title, B.year)
+      getPosterUrl(A),
+      getPosterUrl(B)
     ]);
     await Promise.all([preloadImage(posterA), preloadImage(posterB)]);
-
-    // All assets ready — update DOM in one synchronous batch
-    document.getElementById("movieA").textContent = A.title;
-    document.getElementById("movieA-year").textContent = A.year;
-    document.getElementById("movieB").textContent = B.title;
-    document.getElementById("movieB-year").textContent = B.year;
-
-    document.getElementById("posterA").src = posterA;
-    document.getElementById("posterB").src = posterB;
-
-    const btnA = document.getElementById("posterBtnA");
-    const btnB = document.getElementById("posterBtnB");
-    if (btnA) btnA.setAttribute("aria-label", `Vote for ${A.title}`);
-    if (btnB) btnB.setAttribute("aria-label", `Vote for ${B.title}`);
-
-    // Persist current matchup so it survives page refresh
-    try {
-      sessionStorage.setItem("currentMatchup", JSON.stringify({
-        a: getMovieKey(A),
-        b: getMovieKey(B)
-      }));
-    } catch { /* sessionStorage may be unavailable */ }
+    applyMoviesToDOM(A, B, posterA, posterB);
   } catch (error) {
     console.error("Error displaying movies:", error);
   }
+}
+
+/**
+ * Update the DOM with a new matchup. Pure synchronous DOM write —
+ * all async work (poster fetching, preloading) happens before this is called.
+ */
+function applyMoviesToDOM(A, B, posterA, posterB) {
+  document.getElementById("movieA").textContent = A.title;
+  document.getElementById("movieA-year").textContent = A.year;
+  document.getElementById("movieB").textContent = B.title;
+  document.getElementById("movieB-year").textContent = B.year;
+
+  document.getElementById("posterA").src = posterA;
+  document.getElementById("posterB").src = posterB;
+
+  const btnA = document.getElementById("posterBtnA");
+  const btnB = document.getElementById("posterBtnB");
+  if (btnA) btnA.setAttribute("aria-label", `Vote for ${A.title}`);
+  if (btnB) btnB.setAttribute("aria-label", `Vote for ${B.title}`);
+
+  try {
+    sessionStorage.setItem("currentMatchup", JSON.stringify({
+      a: getMovieKey(A),
+      b: getMovieKey(B)
+    }));
+  } catch { /* sessionStorage may be unavailable */ }
 }
 
 /**
@@ -487,27 +507,24 @@ function setMatchupButtonsDisabled(disabled) {
  */
 async function handleVote(choice) {
   const winner = choice === "A" ? state.currentMovies.A : state.currentMovies.B;
-  const loser = choice === "A" ? state.currentMovies.B : state.currentMovies.A;
+  const loser  = choice === "A" ? state.currentMovies.B : state.currentMovies.A;
 
   console.log(`Vote: ${winner.title} beats ${loser.title}`);
 
-  // 1. Save to Firestore (global votes)
-  await saveVoteToFirestore(winner, loser);
-
-  // 2. Track matchup
+  // 1. Fire-and-forget all saves — don't block the UI on network round-trips.
+  //    Errors are logged inside each function; the vote is recorded asynchronously.
+  saveVoteToFirestore(winner, loser);
   const matchupKey = [state.currentMovies.A.title, state.currentMovies.B.title].sort().join("|");
   state.seenMatchups.push(matchupKey);
-  await saveMatchupToFirestore(matchupKey);
-
-  // 3. Record both movies as inferred-seen
+  saveMatchupToFirestore(matchupKey);
   const movieAKey = getMovieKey(state.currentMovies.A);
   const movieBKey = getMovieKey(state.currentMovies.B);
   recordInferredSeen(movieAKey, movieBKey);
 
-  // 4. Update vote counter
-  updateVoteCounter();
+  // 2. Optimistic counter bump — we know the count went up by 1; no read needed.
+  if (flipCounter.el) flipCounter.update(flipCounter.currentValue + 1);
 
-  // 4b. Track guest vote count for conversion banner (no Firestore — localStorage only)
+  // 3. Track guest vote count for conversion banner (localStorage only)
   if (!state.uid) {
     const guestCount = parseInt(localStorage.getItem("guestVoteCount") || "0", 10) + 1;
     localStorage.setItem("guestVoteCount", String(guestCount));
@@ -516,10 +533,21 @@ async function handleVote(choice) {
     }
   }
 
+  // 4. Pick next movies NOW (synchronous) and immediately start fetching their
+  //    posters in the background — they'll load during the ~800ms animation window.
+  const available = getAvailableMovies();
+  let nextA = null, nextB = null, postersPromise = null;
+  if (available.length >= 2) {
+    [nextA, nextB] = selectMoviePair(available);
+    postersPromise = Promise.all([getPosterUrl(nextA), getPosterUrl(nextB)])
+      .then(([pA, pB]) => Promise.all([preloadImage(pA), preloadImage(pB)]).then(() => [pA, pB]))
+      .catch(() => null);
+  }
+
   // 5. Disable buttons to prevent double-clicks
   setMatchupButtonsDisabled(true);
 
-  // 6. Brief highlight on chosen poster, winner dance, confetti burst, then cinematic fade transition
+  // 6. Highlight chosen poster + confetti
   const chosenPoster = document.getElementById(choice === "A" ? "posterA" : "posterB");
   if (chosenPoster) {
     chosenPoster.classList.add("poster-selected", "poster-winner-dance");
@@ -528,14 +556,25 @@ async function handleVote(choice) {
 
   const section = document.getElementById("compare-section");
 
-  // Wait for the highlight moment (350ms), then fade out
+  // 7. Brief highlight (350ms), then fade out (450ms) — posters loading in parallel
   await new Promise(r => setTimeout(r, 350));
 
   if (section) {
     section.classList.add("matchup-fade-out");
     await new Promise(r => setTimeout(r, 450));
     if (chosenPoster) chosenPoster.classList.remove("poster-selected", "poster-winner-dance");
-    await chooseTwoMovies();
+
+    // 8. Await posters — by now the 800ms animation has elapsed, so they're
+    //    usually already ready or just finishing up.
+    const posters = postersPromise ? await postersPromise : null;
+    if (nextA && nextB && posters) {
+      state.currentMovies.A = nextA;
+      state.currentMovies.B = nextB;
+      applyMoviesToDOM(nextA, nextB, posters[0], posters[1]);
+    } else {
+      await chooseTwoMovies(); // fallback if selection or fetch failed
+    }
+
     section.classList.remove("matchup-fade-out");
     section.classList.add("matchup-fade-in");
     section.addEventListener("animationend", () => {
@@ -560,8 +599,9 @@ async function saveVoteToFirestore(winner, loser) {
     const winnerKey = getMovieKey(winner);
     const loserKey  = getMovieKey(loser);
     await recordVoteFn({ winnerKey, loserKey });
-    console.log("Vote saved via Cloud Function");
   } catch (error) {
+    // already-exists = duplicate within 24h cooldown; silently skip
+    if (error?.code === "functions/already-exists") return;
     console.error("Failed to save vote:", error);
   }
 }
@@ -1134,4 +1174,6 @@ Object.defineProperty(window, 'movieB', {
 // START THE APP
 // ==========================================
 
-window.addEventListener("load", initializeApp);
+// Module scripts are deferred — the DOM is already parsed by the time this runs,
+// so we don't need to wait for window.load (which also waits for fonts/images).
+initializeApp();
