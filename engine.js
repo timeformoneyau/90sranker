@@ -1113,11 +1113,14 @@ async function handleSeenIt(index) {
     card.classList.add("engine-card-enter");
 
     // Fetch poster + snippet for replacement
-    const needsPoster = !replacement.movie.poster || !replacement.movie.poster.startsWith('http');
     fetchMovieBasic(replacement.movie.title, replacement.movie.year).then(basic => {
-      if (needsPoster) {
+      // Always use fresh TMDB poster — pre-baked URLs in the JSON can be stale/broken
+      if (basic.posterUrl) {
         const img = document.getElementById(`engine-poster-${index}`);
-        if (img && basic.posterUrl) img.src = basic.posterUrl;
+        if (img) {
+          img.style.display = "";   // un-hide if onerror had hidden it
+          img.src = basic.posterUrl;
+        }
       }
       const snippetEl = document.getElementById(`engine-snippet-${index}`);
       if (snippetEl && basic.overview) {
@@ -1181,11 +1184,14 @@ async function handleNotInterested(index) {
     card.innerHTML = buildCardHTML(replacement, index);
     card.classList.add("engine-card-enter");
 
-    const needsPoster = !replacement.movie.poster || !replacement.movie.poster.startsWith('http');
     fetchMovieBasic(replacement.movie.title, replacement.movie.year).then(basic => {
-      if (needsPoster) {
+      // Always use fresh TMDB poster — pre-baked URLs in the JSON can be stale/broken
+      if (basic.posterUrl) {
         const img = document.getElementById(`engine-poster-${index}`);
-        if (img && basic.posterUrl) img.src = basic.posterUrl;
+        if (img) {
+          img.style.display = "";   // un-hide if onerror had hidden it
+          img.src = basic.posterUrl;
+        }
       }
       const snippetEl = document.getElementById(`engine-snippet-${index}`);
       if (snippetEl && basic.overview) {
@@ -1271,22 +1277,27 @@ function renderRecommendations(allScored) {
 
   // Progressive snippet + poster loading via fetchMovieBasic (1 request per movie)
   displayedItems.forEach(async (r, i) => {
-    const needsPoster = !r.movie.poster || !r.movie.poster.startsWith('http');
     try {
       const basic = await fetchMovieBasic(r.movie.title, r.movie.year);
 
-      // Inject poster from TMDB if missing from JSON data
-      if (needsPoster && basic.posterUrl) {
-        const wrap = document.getElementById(`engine-poster-wrap-${i}`);
-        if (wrap && !wrap.querySelector("img")) {
-          const img = document.createElement("img");
-          img.className = "engine-card-poster";
-          img.id = `engine-poster-${i}`;
-          img.src = basic.posterUrl;
-          img.alt = "";
-          img.loading = "lazy";
-          img.onerror = () => { img.style.display = "none"; };
-          wrap.appendChild(img);
+      // Always use fresh TMDB poster — pre-baked URLs in the JSON can be stale/broken
+      if (basic.posterUrl) {
+        const existingImg = document.getElementById(`engine-poster-${i}`);
+        if (existingImg) {
+          existingImg.style.display = "";   // un-hide if onerror had hidden it
+          existingImg.src = basic.posterUrl;
+        } else {
+          const wrap = document.getElementById(`engine-poster-wrap-${i}`);
+          if (wrap) {
+            const img = document.createElement("img");
+            img.className = "engine-card-poster";
+            img.id = `engine-poster-${i}`;
+            img.src = basic.posterUrl;
+            img.alt = "";
+            img.loading = "lazy";
+            img.onerror = () => { img.style.display = "none"; };
+            wrap.appendChild(img);
+          }
         }
       }
 
