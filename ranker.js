@@ -122,32 +122,30 @@ const tmdbProxy      = callFunction("tmdbProxy");
 /**
  * Fetch poster URL via the tmdbProxy Cloud Function
  */
+// Inline SVG placeholder shown when a poster can't be fetched.
+// A dark-gray rectangle with a film-strip icon — no external file needed.
+const POSTER_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450'%3E%3Crect width='300' height='450' fill='%231a1a1a'/%3E%3Ctext x='150' y='225' text-anchor='middle' dominant-baseline='middle' font-size='72' fill='%23444'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E";
+
 async function fetchPosterUrl(title, year) {
   const cacheKey = `${title}|${year}`;
   if (posterCache[cacheKey]) return posterCache[cacheKey];
   try {
     const result = await tmdbProxy({ title, year, mode: "search" });
-    const url = result.data?.posterUrl || "./fallback.jpg";
+    const url = result.data?.posterUrl || POSTER_PLACEHOLDER;
     posterCache[cacheKey] = url;
     return url;
   } catch (error) {
     console.warn("Failed to fetch poster:", error);
-    return "./fallback.jpg";
+    return POSTER_PLACEHOLDER;
   }
 }
 
 /**
- * Get poster URL for a movie object.
- * Uses the pre-baked URL from the JSON when available (no Cloud Function call),
- * otherwise falls back to fetchPosterUrl.
+ * Get poster URL for a movie object — always goes through fetchPosterUrl
+ * so we get a fresh, verified URL from TMDB via the Cloud Function.
+ * (Pre-baked URLs in the JSON are not reliable — some return 404.)
  */
 function getPosterUrl(movie) {
-  const cacheKey = `${movie.title}|${movie.year}`;
-  if (posterCache[cacheKey]) return Promise.resolve(posterCache[cacheKey]);
-  if (movie.poster && movie.poster.startsWith("http")) {
-    posterCache[cacheKey] = movie.poster;
-    return Promise.resolve(movie.poster);
-  }
   return fetchPosterUrl(movie.title, movie.year);
 }
 
